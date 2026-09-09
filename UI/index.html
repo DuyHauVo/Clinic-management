@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nhập 6 Mẫu Danh Mục BHYT (Mẫu 01/DM - 06/DM) - Cổng Quản Lý BHYT</title>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            antPrimary: '#1677ff',
+            antSuccess: '#52c41a',
+            antWarning: '#faad14',
+            antError: '#ff4d4f',
+            antDark: '#001529',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- SheetJS Library to Read & Validate Excel in Browser -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+  <!-- Custom Design System Styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-layout">
+    
+    <!-- =========================================================
+         ANT DESIGN SIDEBAR NAVIGATION
+    ========================================================= -->
+    <aside class="app-sidebar" id="appSidebar">
+      
+      <!-- Brand Logo -->
+      <a href="index.html" class="sidebar-brand">
+        <div class="brand-icon-box">
+          <i class="fa-solid fa-hospital-user text-white text-base"></i>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">CỔNG BHYT Y TẾ</span>
+          <span class="brand-subtitle">Hệ thống KCB Bệnh viện</span>
+        </div>
+      </a>
+
+      <!-- Menu Navigation -->
+      <nav class="sidebar-menu">
+        
+        <div class="menu-group">
+          <div class="menu-group-title">QUẢN LÝ DỮ LIỆU EXCEL</div>
+          
+          <a href="index.html" class="nav-item active">
+            <i class="fa-solid fa-file-excel"></i>
+            <span>1. Danh mục</span>
+          </a>
+        </div>
+
+
+
+        <div class="menu-group">
+          <div class="menu-group-title">HỒ SƠ BHYT</div>
+          
+          <a href="ho-so.html" class="nav-item" style="margin-bottom: 2px;">
+            <i class="fa-solid fa-folder-open"></i>
+            <span>2. Hồ sơ BHYT</span>
+            <span class="nav-badge danger">32 lỗi</span>
+          </a>
+
+          <div class="nav-sub-items">
+            <a href="ho-so.html" class="nav-sub-item">
+              <span><i class="fa-solid fa-file-lines mr-2 text-blue-400"></i>Hồ sơ tổng hợp</span>
+              <span class="text-[11px] text-gray-400">1.250</span>
+            </a>
+
+            <a href="ho-so.html" class="nav-sub-item">
+              <span><i class="fa-solid fa-triangle-exclamation mr-2 text-amber-400"></i>Hồ sơ xuất toán</span>
+              <span class="nav-badge warning" style="padding: 1px 6px; font-size: 11px;">18 chờ</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="menu-group">
+          <div class="menu-group-title">HỆ THỐNG & TÀI KHOẢN</div>
+          
+          <a href="auth.html" class="nav-item">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>Xác thực & Đăng nhập</span>
+          </a>
+          
+          <a href="auth.html" class="nav-item">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            <span>Đăng xuất</span>
+          </a>
+        </div>
+
+      </nav>
+
+      <!-- Sidebar Footer User Profile -->
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="user-avatar">BV</div>
+          <div class="sidebar-footer-info">
+            <span class="user-name">BV Đa Khoa TW</span>
+            <span class="user-role">Mã CS: 01929 | Kế toán BHYT</span>
+          </div>
+        </div>
+        <button type="button" class="sidebar-collapse-btn" onclick="toggleSidebar()" title="Thu gọn / Mở rộng menu">
+          <i class="fa-solid fa-bars-staggered" id="collapseIcon"></i>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- =========================================================
+         MAIN CONTENT AREA (FULL WIDTH)
+    ========================================================= -->
+    <div class="app-main">
+      
+      <!-- Topbar Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <div class="toggle-sidebar-trigger" onclick="toggleSidebar()">
+            <i class="fa-solid fa-indent"></i>
+          </div>
+          <div class="header-breadcrumb">
+            <a href="index.html"><i class="fa-solid fa-house mr-1"></i>Trang chủ</a>
+            <i class="fa-solid fa-chevron-right text-xs"></i>
+            <span class="current">Nhập Dữ Liệu Excel 6 Mẫu Danh Mục Dùng Chung BHYT</span>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Notification Bell -->
+          <a href="ho-so.html" class="header-action-btn" title="Xem hồ sơ xuất toán">
+            <i class="fa-regular fa-bell text-lg"></i>
+            <span class="badge-count">18</span>
+          </a>
+
+          <!-- Quick Action Buttons -->
+          <button type="button" class="ant-btn ant-btn-default ant-btn-sm" onclick="downloadAllZip()">
+            <i class="fa-solid fa-file-zipper text-blue-600"></i> Bộ file mẫu (ZIP)
+          </button>
+          <a href="ho-so.html" class="ant-btn ant-btn-primary ant-btn-sm">
+            <span>Vào Hồ Sơ BHYT</span> <i class="fa-solid fa-arrow-right text-xs"></i>
+          </a>
+        </div>
+      </header>
+
+      <!-- Main Application Container -->
+      <main class="app-content full-width">
+        
+        <!-- =========================================================
+             DEDICATED INTERACTIVE PERIOD SELECTOR TOOLBAR (HÀNG KỲ DỮ LIỆU)
+        ========================================================= -->
+        <div class="ant-card p-3 mb-4 bg-white border border-blue-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="flex items-center gap-3 w-full sm:w-auto">
+            <div class="flex items-center gap-2 text-xs font-bold text-gray-800">
+              <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                <i class="fa-regular fa-calendar-check text-sm"></i>
+              </div>
+              <span class="tracking-wide">KỲ DỮ LIỆU TIẾP NHẬN:</span>
+            </div>
+            
+            <div class="flex items-center gap-2 flex-1 sm:flex-initial">
+              <div class="relative">
+                <select id="periodSelector" class="ant-input text-xs font-bold text-blue-900 bg-blue-50/70 border-blue-200 py-1.5 pl-3 pr-8 rounded cursor-pointer hover:border-blue-400 focus:border-blue-500 focus:bg-white transition-all shadow-inner" onchange="handlePeriodChange(this.value)">
+                  <option value="Tháng 01/2026">Tháng 01/2026</option>
+                  <option value="Tháng 02/2026" selected>Tháng 02/2026 (Kỳ hiện hành)</option>
+                  <option value="Tháng 03/2026">Tháng 03/2026</option>
+                  <option value="Tháng 04/2026">Tháng 04/2026</option>
+                  <option value="Tháng 05/2026">Tháng 05/2026</option>
+                  <option value="Tháng 06/2026">Tháng 06/2026</option>
+                  <option value="Quý I / 2026">Quý I / 2026</option>
+                  <option value="Quý II / 2026">Quý II / 2026</option>
+                  <option value="Năm 2026">Cả Năm 2026</option>
+                </select>
+              </div>
+
+              <button type="button" class="ant-btn ant-btn-default ant-btn-sm text-xs font-medium" onclick="resetToCurrentPeriod()">
+                <i class="fa-solid fa-rotate-left mr-1 text-gray-500"></i> Hiện hành
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 text-xs w-full sm:w-auto justify-between sm:justify-end">
+            <div class="flex items-center gap-2 px-3 py-1 rounded bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Kỳ đang chọn: <strong id="currentActivePeriodText" class="text-emerald-900 font-bold">Tháng 02/2026</strong></span>
+            </div>
+            
+            <button type="button" class="ant-btn ant-btn-default ant-btn-sm" onclick="handlePeriodChange(document.getElementById('periodSelector').value)" title="Làm mới dữ liệu kỳ này">
+              <i class="fa-solid fa-arrows-rotate text-blue-600"></i> Làm mới
+            </button>
+          </div>
+        </div>
+
+        <!-- Banner Intro Card -->
+        <div class="ant-card mb-4 p-4 bg-gradient-to-r from-blue-50/70 via-indigo-50/50 to-white border border-blue-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <div class="inline-flex items-center gap-2 px-2.5 py-0.5 bg-blue-100 text-blue-800 rounded text-xs font-semibold mb-1.5">
+              <i class="fa-solid fa-circle-check"></i> Trình đọc & Đối soát 6 Mẫu Danh mục BHYT (Chuẩn Quyết định BYT & BHXH)
+            </div>
+            <h1 class="text-lg font-bold text-gray-900 mb-1">
+              Hệ Thống Nhập Dữ Liệu Excel Danh Mục Dùng Chung BHYT
+            </h1>
+            <p class="text-xs text-gray-600">
+              Tự động đọc file Excel, kiểm tra và đối soát toàn bộ cấu trúc trường dữ liệu theo quy chuẩn Danh mục BHYT, hỗ trợ chuyển đổi XML, mã hóa Base64 và gửi trực tiếp tới API Cổng Giám Định BHYT.
+            </p>
+          </div>
+
+          <!-- Upload Status Meter -->
+          <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-sm min-w-[230px]">
+            <div class="flex items-center justify-between text-xs font-medium text-gray-700 mb-1">
+              <span>Tiến độ nạp danh mục:</span>
+              <span class="text-blue-600 font-bold">6 / 6 Mẫu (100%)</span>
+            </div>
+            <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+              <div class="bg-emerald-500 h-2 rounded-full" style="width: 100%;"></div>
+            </div>
+            <div class="text-[11px] text-gray-400 mt-1 flex items-center justify-between">
+              <span>Đã kiểm tra: <strong>6 danh mục</strong></span>
+              <span class="text-green-600 font-medium font-semibold"><i class="fa-solid fa-check mr-1"></i>Hợp lệ</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- =========================================================
+             6 EXCEL TEMPLATES UPLOAD GRID (ANT DESIGN CARDS)
+             MẪU 01/DM ĐẾN MẪU 06/DM THEO QUY CHUẨN DANH MỤC BHYT
+        ========================================================= -->
+        <div class="upload-templates-grid">
+          
+          <!-- I & II. MẪU 01/DM: DANH MỤC BỘ PHẬN CHUYÊN MÔN KBCB BHYT (LOẠI HS: 70) -->
+          <div class="template-card border-blue-400 shadow-sm">
+            <div class="template-card-head bg-blue-50/60">
+              <div class="template-tag-label">
+                <i class="fa-solid fa-hospital text-blue-600 mr-1.5 text-sm"></i>
+                <span class="template-title text-blue-900 font-semibold" title="Bộ Phận Chuyên Môn KBCB (Loại HS 70)">Bộ Phận Chuyên Môn</span>
+              </div>
+              <span class="text-[11px] text-blue-700 font-semibold bg-blue-100/70 px-2 py-0.5 rounded whitespace-nowrap">Loại HS 70</span>
+            </div>
+            <div class="template-card-body">
+              <div class="ant-dropzone uploaded" id="dropzoneBpcm" onclick="triggerFileInput('fileBpcm')">
+                <i class="fa-solid fa-network-wired text-blue-600 dropzone-icon"></i>
+                <div class="dropzone-text">Thả file <strong>Mau01_DM_BPCMKBCB.xlsx</strong></div>
+                <div class="dropzone-subtext">Đối soát 11 trường: MA_KHOA, BAN_KHAM, GIUONG_PD...</div>
+                <input type="file" id="fileBpcm" class="hidden" accept=".xlsx,.xls,.csv" onchange="handleBpcmExcelUpload(this)">
+              </div>
+              
+              <div class="template-file-status success" id="statusBpcm">
+                <div class="flex items-center gap-1.5 truncate">
+                  <i class="fa-solid fa-circle-check text-green-600 text-xs"></i>
+                  <span class="font-medium truncate" id="bpcmFileNameText">Mau01_DM_BPCMKBCB.xlsx</span>
+                </div>
+                <span class="text-xs text-green-700 font-semibold whitespace-nowrap ml-2" id="bpcmRowCountText">11/11 trường (3 dòng)</span>
+              </div>
+
+              <div class="template-card-footer">
+                <button type="button" class="ant-btn ant-btn-default ant-btn-sm flex-1" onclick="window.dmBpcmEngine.downloadSampleExcel()" title="Tải file Excel mẫu">
+                  <i class="fa-solid fa-download text-gray-500"></i> Tải mẫu
+                </button>
+                <button type="button" class="ant-btn ant-btn-default ant-btn-sm flex-1" onclick="openBpcmInspectModal()" title="Kiểm tra đối soát trường">
+                  <i class="fa-solid fa-list-check text-blue-600"></i> Kiểm tra
+                </button>
+                <button type="button" class="ant-btn ant-btn-primary ant-btn-sm flex-1" onclick="openBpcmExportModal()" title="Xuất dữ liệu XML 70">
+                  <i class="fa-solid fa-file-code"></i> Xuất XML
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- III. MẪU 02/DM: NHÂN LỰC THỰC HIỆN KHÁM BỆNH, CHỮA BỆNH BẢO HIỂM Y TẾ -->
+          <div class="template-card">
+            <div class="template-card-head">
+              <div class="template-tag-label">
+                <i class="fa-solid fa-user-doctor text-blue-600 mr-1.5 text-sm"></i>
+                <span class="template-title font-semibold" title="Nhân Lực Thực Hiện KBCB BHYT">Nhân Lực KBCB BHYT</span>
+              </div>
+              <span class="text-[11px] text-blue-700 font-semibold bg-blue-100/70 px-2 py-0.5 rounded whitespace-nowrap">Loại HS 71</span>
+            </div>
+            <div class="template-card-body">
+              <div class="ant-dropzone uploaded" onclick="triggerFileInput('file2')">
+                <i class="fa-solid fa-user-doctor text-blue-600 dropzone-icon"></i>
+                <div class="dropzone-text">Thả file <strong>Mau02_DM_NhanLucKBCB.xlsx</strong></div>
+                <div class="dropzone-subtext">Đối soát mã CCHN, văn bằng, phạm vi chuyên môn...</div>
+                <input type="file" id="file2" class="hidden" onchange="handleGenericFile(2, this)">
+              </div>
+              
+              <div class="template-file-status success">
+                <div class="flex items-center gap-1.5 truncate">
+                  <i class="fa-solid fa-circle-check text-green-600 text-xs"></i>
+                  <span class="font-medium truncate">Mau02_DM_NhanLucKBCB.xlsx</span>
+                </div>
+                <span class="text-xs text-gray-600 font-semibold whitespace-nowrap ml-2">158 nhân sự</span>
+              </div>
+
+              <div class="template-card-footer">
+                <button type="button" class="ant-btn ant-btn-default ant-btn-sm flex-1" onclick="downloadTemplate(2)">
+                  <i class="fa-solid fa-download text-gray-500"></i> Tải file mẫu
+                </button>
+                <button type="button" class="ant-btn ant-btn-primary ant-btn-sm flex-1" onclick="checkFieldsGeneric(2)">
+                  <i class="fa-solid fa-check"></i> Kiểm tra trường
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- IV. MẪU 03/DM: DANH MỤC THUỐC, MÁU, CHẾ PHẨM MÁU ÁP DỤNG TRONG THANH TOÁN BẢO HIỂM Y TẾ -->
+          <div class="template-card">
+            <div class="template-card-head">
+              <div class="template-tag-label">
+                <i class="fa-solid fa-pills text-emerald-600 mr-1.5 text-sm"></i>
+                <span class="template-title font-semibold" title="Danh Mục Thuốc, Máu, Chế Phẩm Máu BHYT">Thuốc, Máu & Chế Phẩm</span>
+              </div>
+              <span class="text-[11px] text-emerald-700 font-semibold bg-emerald-100/70 px-2 py-0.5 rounded whitespace-nowrap">Loại HS 72</span>
+            </div>
+            <div class="template-card-body">
+              <div class="ant-dropzone uploaded" onclick="triggerFileInput('file3')">
+                <i class="fa-solid fa-pills text-green-600 dropzone-icon"></i>
+                <div class="dropzone-text">Thả file <strong>Mau03_DM_ThuocMau.xlsx</strong></div>
+                <div class="dropzone-subtext">Mã hoạt chất, số ĐK/GPNK, đơn giá thanh toán BHYT...</div>
+                <input type="file" id="file3" class="hidden" onchange="handleGenericFile(3, this)">
+              </div>
+              
+              <div class="template-file-status success">
+                <div class="flex items-center gap-1.5 truncate">
+                  <i class="fa-solid fa-circle-check text-green-600 text-xs"></i>
+                  <span class="font-medium truncate">Mau03_DM_ThuocMau.xlsx</span>
+                </div>
+                <span class="text-xs text-gray-600 font-semibold whitespace-nowrap ml-2">2,840 bản ghi</span>
+              </div>
+
+              <div class="template-card-footer">
+                <button type="button" class="ant-btn ant-btn-default ant-btn-sm flex-1" onclick="downloadTemplate(3)">
+                  <i class="fa-solid fa-download text-gray-500"></i> Tải file mẫu
+                </button>
+                <button type="button" class="ant-btn ant-btn-primary ant-btn-sm flex-1" onclick="checkFieldsGeneric(3)">
+                  <i class="fa-solid fa-check"></i> Kiểm tra trường
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- V. MẪU 04/DM: DANH MỤC THIẾT BỊ Y TẾ ÁP DỤNG TRONG THANH TOÁN BẢO HIỂM Y TẾ -->
+          <div class="template-card">
+            <div class="template-card-head">
+              <div class="template-tag-label">
+                <i class="fa-solid fa-microscope text-amber-500 mr-1.5 text-sm"></i>
+                <span class="template-title font-semibold" title="Danh Mục Thiết Bị Y Tế Áp Dụng BHYT">Thiết Bị Y Tế BHYT</span>
+              </div>
+              <span class="text-[11px] text-amber-700 font-semibold bg-amber-100/70 px-2 py-0.5 rounded whitespace-nowrap">Loại HS 73</span>
+            </div>
+            <div class="template-card-body">
+              <div class="ant-dropzone uploaded" onclick="triggerFileInput('file4')">
+                <i class="fa-solid fa-microscope text-amber-500 dropzone-icon"></i>
+                <div class="dropzone-text">Thả file <strong>Mau04_DM_ThietBiYTe.xlsx</strong></div>
+                <div class="dropzone-subtext">Tên TBYT, chủng loại, hãng SX, năm SX, số lưu hành...</div>
+                <input type="file" id="file4" class="hidden" onchange="handleGenericFile(4, this)">
+              </div>
+              
+              <div class="template-file-status success">
+                <div class="flex items-center gap-1.5 truncate">
+                  <i class="fa-solid fa-circle-check text-green-600 text-xs"></i>
+                  <span class="font-medium truncate">Mau04_DM_ThietBiYTe.xlsx</span>
+                </div>
+                <span class="text-xs text-gray-600 font-semibold whitespace-nowrap ml-2">465 thiết bị</span>
+              </div>
+
+              <div class="template-card-footer">
+                <button type="button" class="ant-btn ant-btn-default ant-btn-sm flex-1" onclick="downloadTemplate(4)">
+                  <i class="fa-solid fa-download text-gray-500"></i> Tải file mẫu
+                </button>
+                <button type="button" class="ant-btn ant-btn-primary ant-btn-sm flex-1" onclick="checkFieldsGeneric(4)">
+                  <i class="fa-solid fa-check"></i> Kiểm tra trường
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- VI. MẪU 05/DM: DANH MỤC DỊCH VỤ KHÁM BỆNH, CHỮA BỆNH ÁP DỤNG TRONG THANH TOÁN BẢO HIỂM Y TẾ -->
+          <div class="template-card">
+            <div class="template-card-head">
+              <div class="template-tag-label">
+                <i class="fa-solid fa-notes-medical text-cyan-600 mr-1.5 text-sm"></i>
+                <span class="template-title font-semibold" title="Danh Mục Dịch Vụ Khám Bệnh, Chữa Bệnh BHYT">Dịch Vụ KBCB BHYT</span>
+              </div>
+              <span class="text-[11px] text-cyan-700 font-semibold bg-cyan-100/70 px-2 py-0.5 rounded whitespace-nowrap">Loại HS 74</span>
+            </div>
+            <div class="template-card-body">
+              <div class="ant-dropzone uploaded" onclick="triggerFileInput('file5')">
+                <i class="fa-solid fa-notes-medical text-cyan-600 dropzone-icon"></i>
+                <div class="dropzone-text">Thả file <strong>Mau05_DM_DichVuKCB.xlsx</strong></div>
+                <div class="dropzone-subtext">Mã DVKT, phân loại PTTT, ngày giường & giá BHYT...</div>
+                <input type="file" id="file5" class="hidden" onchange="handleGenericFile(5, this)">
+              </div>
+              
+              <div class="template-file-status success">
+                <div class="flex items-center gap-1.5 truncate">
+                  <i class="fa-solid fa-circle-check text-green-600 text-xs"></i>
+                  <span class="font-medium truncate">Mau05_DM_DichVuKCB.xlsx</span>
+                </div>
+                <span class="text-xs text-gray-600 font-semibold whitespace-nowrap ml-2">3,120 dịch vụ</span>
+              </div>
+
+              <div class="template-card-footer">
+                <button type="button" class="ant-btn ant-btn-default ant-btn-sm flex-1" onclick="downloadTemplate(5)">
+                  <i class="fa-solid fa-download text-gray-500"></i> Tải file mẫu
+                </button>
+                <button type="button" class="ant-btn ant-btn-primary ant-btn-sm flex-1" onclick="checkFieldsGeneric(5)">
+                  <i class="fa-solid fa-check"></i> Kiểm tra trường
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- VII. MẪU 06/DM: DANH MỤC THIẾT BỊ Y TẾ ĐỂ THỰC HIỆN DỊCH VỤ KỸ THUẬT ÁP DỤNG TRONG THANH TOÁN BẢO HIỂM Y TẾ -->
+          <div class="template-card">
+            <div class="template-card-head">
+              <div class="template-tag-label">
+                <i class="fa-solid fa-gears text-red-500 mr-1.5 text-sm"></i>
+                <span class="template-title font-semibold" title="TBYT Để Thực Hiện DVKT Áp Dụng BHYT">TBYT Thực Hiện DVKT</span>
+              </div>
+              <span class="text-[11px] text-red-700 font-semibold bg-red-100/70 px-2 py-0.5 rounded whitespace-nowrap">Loại HS 75</span>
+            </div>
+            <div class="template-card-body">
+              <div class="ant-dropzone uploaded" onclick="triggerFileInput('file6')">
+                <i class="fa-solid fa-gears text-red-500 dropzone-icon"></i>
+                <div class="dropzone-text">Thả file <strong>Mau06_DM_TBYT_ThucHienDVKT.xlsx</strong></div>
+                <div class="dropzone-subtext">Ghép nối định danh thiết bị thực hiện DVKT chuyên môn...</div>
+                <input type="file" id="file6" class="hidden" onchange="handleGenericFile(6, this)">
+              </div>
+              
+              <div class="template-file-status success">
+                <div class="flex items-center gap-1.5 truncate">
+                  <i class="fa-solid fa-circle-check text-green-600 text-xs"></i>
+                  <span class="font-medium truncate">Mau06_DM_TBYT_ThucHienDVKT.xlsx</span>
+                </div>
+                <span class="text-xs text-gray-600 font-semibold whitespace-nowrap ml-2">1,420 ghép nối</span>
+              </div>
+
+<div class="template-card-footer">
+                <button type="button" class="ant-btn ant-btn-default ant-btn-sm flex-1" onclick="downloadTemplate(6)">
+                  <i class="fa-solid fa-download text-gray-500"></i> Tải file mẫu
+                </button>
+                <button type="button" class="ant-btn ant-btn-primary ant-btn-sm flex-1" onclick="checkFieldsGeneric(6)">
+                  <i class="fa-solid fa-check"></i> Kiểm tra trường
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- =========================================================
+             BOTTOM SUMMARY & ACTIONS BAR
+        ========================================================= -->
+        <div class="ant-card p-4 flex flex-col md:flex-row items-center justify-between gap-4 bg-white shadow-sm border border-gray-200">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
+              <i class="fa-solid fa-database"></i>
+            </div>
+            <div>
+              <div class="text-sm font-bold text-gray-900">
+                Tổng số bản ghi danh mục đã nạp: <span class="text-blue-600 font-mono text-base">8,006 dòng</span> từ <span class="text-green-600 font-semibold">6/6 Mẫu Danh Mục BHYT</span>
+              </div>
+              <div class="text-xs text-gray-500">
+                Đã kiểm tra cấu trúc cú pháp, đối soát các trường bắt buộc và sẵn sàng xuất dữ liệu XML / ký số Cổng Giám định.
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" class="ant-btn ant-btn-default" onclick="downloadAllZip()">
+              <i class="fa-solid fa-file-zipper text-blue-600"></i> Tải trọn bộ Mẫu Excel (ZIP)
+            </button>
+            <a href="ho-so.html" class="ant-btn ant-btn-primary">
+              <i class="fa-solid fa-folder-open"></i> Vào Quản lý Hồ Sơ BHYT <i class="fa-solid fa-arrow-right text-xs"></i>
+            </a>
+          </div>
+        </div>
+
+      </main>
+
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MODAL 1: KIỂM TRA ĐỐI SOÁT 11 TRƯỜNG EXCEL BPCM (LOẠI 70)
+  ========================================================= -->
+  <div class="ant-modal-backdrop" id="inspectModal">
+    <div class="ant-modal" style="max-width: 900px;">
+      <div class="ant-modal-header">
+        <div class="ant-modal-title">
+          <i class="fa-solid fa-list-check text-blue-600"></i>
+          <span>Kết Quả Đối Soát 11 Trường Excel DM Bộ Phận Chuyên Môn (Loại HS 70)</span>
+        </div>
+        <button type="button" class="ant-modal-close" onclick="closeModal('inspectModal')">&times;</button>
+      </div>
+
+      <div class="ant-modal-body space-y-4">
+        <!-- Validation Header Status -->
+        <div class="bg-green-50 border border-green-200 rounded p-3 text-xs text-green-900 flex items-center justify-between" id="inspectStatusBanner">
+          <div>
+            <span class="font-bold text-green-800"><i class="fa-solid fa-circle-check mr-1 text-green-600"></i>Hợp lệ:</span>
+            <span>Đã khớp đủ <strong>11/11 trường bắt buộc</strong> theo quy định BYT / BHXH Việt Nam.</span>
+          </div>
+          <span class="font-mono text-gray-600" id="inspectRowCount">Tổng: 3 dòng dữ liệu</span>
+        </div>
+
+        <!-- 11 Fields Validation Matrix Grid -->
+        <div>
+          <div class="text-xs font-bold text-gray-800 mb-2">Đối soát danh mục trường thông tin:</div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-xs" id="fieldsMatrixGrid">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Data Preview Table -->
+        <div>
+          <div class="text-xs font-bold text-gray-800 mb-2">Bảng dữ liệu đọc được từ file Excel:</div>
+          <div class="overflow-x-auto border border-gray-200 rounded max-h-60 overflow-y-auto">
+            <table class="ant-table text-xs">
+              <thead>
+                <tr>
+                  <th>STT</th>
+                  <th>MA_KHOA</th>
+                  <th>TEN_KHOA</th>
+                  <th class="text-center">BAN_KHAM</th>
+                  <th class="text-center">GIUONG_PD</th>
+                  <th class="text-center">GIUONG_TK</th>
+                  <th class="text-center">GIUONG_HSTC</th>
+                  <th class="text-center">GIUONG_HSCC</th>
+                  <th>TU_NGAY</th>
+                  <th>DEN_NGAY</th>
+                  <th>MA_CSKCB</th>
+                </tr>
+              </thead>
+              <tbody id="inspectTableBody">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="ant-modal-footer">
+        <button type="button" class="ant-btn ant-btn-default" onclick="closeModal('inspectModal')">Đóng</button>
+        <button type="button" class="ant-btn ant-btn-primary" onclick="closeModal('inspectModal'); openBpcmExportModal();">
+          <i class="fa-solid fa-file-code"></i> Tiếp tục Xuất XML
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MODAL 2: XUẤT XML, CHUỖI BASE64 VÀ GỬI CỔNG BHXH GATEWAY
+  ========================================================= -->
+  <div class="ant-modal-backdrop" id="exportModal">
+    <div class="ant-modal" style="max-width: 800px;">
+      <div class="ant-modal-header">
+        <div class="ant-modal-title">
+          <i class="fa-solid fa-file-code text-blue-600"></i>
+          <span>Xuất Dữ Liệu XML 70 / Base64 & Gửi Cổng Giám Định BHYT</span>
+        </div>
+        <button type="button" class="ant-modal-close" onclick="closeModal('exportModal')">&times;</button>
+      </div>
+
+      <div class="ant-modal-body space-y-4">
+        <!-- Tabs Header -->
+        <div class="flex border-b border-gray-200 text-xs">
+          <button type="button" id="tabBtnXml" class="px-3 py-1 font-semibold text-blue-600 border-b-2 border-blue-600" onclick="switchExportTab('xml')">
+            <i class="fa-solid fa-code mr-1"></i> XML Tiêu Chuẩn
+          </button>
+          <button type="button" id="tabBtnBase64" class="px-3 py-1 text-gray-500 hover:text-gray-900" onclick="switchExportTab('base64')">
+            <i class="fa-solid fa-shield-halved mr-1"></i> Chuỗi Base64
+          </button>
+          <button type="button" id="tabBtnApi" class="px-3 py-1 text-gray-500 hover:text-gray-900" onclick="switchExportTab('api')">
+            <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Gửi API Trực Tiếp
+          </button>
+        </div>
+
+        <!-- XML Pane -->
+        <div id="paneXml">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs text-gray-600">Nội dung XML theo cấu trúc QĐ BYT:</span>
+            <button class="text-xs text-blue-600 hover:underline" onclick="copyCurrentOutput()"><i class="fa-solid fa-copy"></i> Sao chép XML</button>
+          </div>
+          <pre class="bg-gray-900 text-emerald-400 p-3 rounded font-mono text-[11px] overflow-x-auto max-h-56 select-all" id="xmlOutputText"></pre>
+        </div>
+
+        <!-- Base64 Pane -->
+        <div id="paneBase64" class="hidden">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs text-gray-600">Chuỗi mã hóa UTF-8 Base64 truyền API:</span>
+            <button class="text-xs text-blue-600 hover:underline" onclick="copyCurrentOutput()"><i class="fa-solid fa-copy"></i> Sao chép Base64</button>
+          </div>
+          <textarea class="ant-input w-full font-mono text-[11px] h-32 select-all bg-gray-50" id="base64OutputText" readonly></textarea>
+        </div>
+
+        <!-- API Pane -->
+        <div id="paneApi" class="hidden space-y-3">
+          <div class="p-3 bg-blue-50 border border-blue-200 rounded text-xs space-y-1.5">
+            <div class="font-bold text-blue-900">Endpoint Tiếp Nhận BHXH:</div>
+            <div class="font-mono text-[11px] bg-white p-1.5 border border-blue-100 rounded text-blue-800">
+              POST https://egw.baohiemxahoi.gov.vn/api/DanhMucGW/GuiDanhMuc01_BPCMKBCB
+            </div>
+            <div class="text-[11px] text-gray-600">Header: <code>Authorization: Bearer [TOKEN_CSKCB]</code> | Content-Type: <code>application/json</code></div>
+          </div>
+
+          <div id="apiResultBox" class="hidden p-3 bg-emerald-50 border border-emerald-200 rounded text-xs space-y-1">
+            <div class="font-bold text-emerald-900"><i class="fa-solid fa-circle-check text-green-600 mr-1"></i>Phản hồi từ Cổng Giám định:</div>
+            <pre class="font-mono text-[11px] text-emerald-800 bg-white p-2 rounded border border-emerald-100 max-h-24 overflow-y-auto" id="apiResponseJson"></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="ant-modal-footer">
+        <button type="button" class="ant-btn ant-btn-default" onclick="closeModal('exportModal')">Đóng</button>
+        <button type="button" class="ant-btn ant-btn-default" onclick="window.dmBpcmEngine.downloadXMLFile()">
+          <i class="fa-solid fa-download"></i> Tải file .XML
+        </button>
+        <button type="button" class="ant-btn ant-btn-primary" onclick="executeSendApi()">
+          <i class="fa-solid fa-cloud-arrow-up"></i> Gửi API Ngay
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Modules and Logic -->
+  <script src="danh-muc-bpcm.js"></script>
+  <script>
+    let activeExportTab = 'xml';
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('appSidebar');
+      if (sidebar) sidebar.classList.toggle('collapsed');
+    }
+
+    // Xử lý nạp file Excel BPCM thực tế bằng SheetJS
+    async function handleBpcmExcelUpload(input) {
+      if (!input.files || !input.files[0]) return;
+      const file = input.files[0];
+      
+      try {
+        const res = await window.dmBpcmEngine.importExcelFile(file);
+        
+        // Cập nhật giao diện Dropzone
+        document.getElementById('dropzoneBpcm').classList.add('uploaded');
+        document.getElementById('bpcmFileNameText').innerText = file.name;
+        document.getElementById('bpcmRowCountText').innerText = `${res.validFieldsCount}/11 trường (${res.rowCount} dòng)`;
+        document.getElementById('statusBpcm').classList.remove('hidden');
+
+        alert(`✓ Nạp file thành công!\n- Tên tệp: ${file.name}\n- Số trường khớp: ${res.validFieldsCount}/11 trường chuẩn\n- Số bản ghi: ${res.rowCount} khoa/bàn khám.`);
+      } catch (err) {
+        alert('Lỗi đọc file Excel: ' + err.message);
+      }
+    }
+
+    function triggerFileInput(id) {
+      document.getElementById(id).click();
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.add('open');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    // Mở Modal Đối Soát 11 Trường
+    function openBpcmInspectModal() {
+      const items = window.dmBpcmEngine.items;
+      const lastVal = window.dmBpcmEngine.lastValidation;
+
+      // Render Matrix 11 fields
+      const matrixEl = document.getElementById('fieldsMatrixGrid');
+      matrixEl.innerHTML = '';
+      BPCM_SCHEMA_FIELDS.forEach(f => {
+        const isMatched = lastVal.matchedFields.includes(f.key);
+        const div = document.createElement('div');
+        div.className = isMatched 
+          ? 'p-2 rounded border border-green-200 bg-green-50/80 text-green-800' 
+          : 'p-2 rounded border border-red-200 bg-red-50 text-red-800';
+        div.innerHTML = `
+          <div class="flex items-center justify-between font-mono font-bold">
+            <span>${f.key}</span>
+            <i class="fa-solid ${isMatched ? 'fa-check text-green-600' : 'fa-xmark text-red-500'}"></i>
+          </div>
+          <div class="text-[11px] text-gray-600 truncate">${f.label}</div>
+        `;
+        matrixEl.appendChild(div);
+      });
+
+      // Render Table Rows
+      const tbody = document.getElementById('inspectTableBody');
+      tbody.innerHTML = '';
+      items.forEach(i => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i.stt}</td>
+          <td><span class="font-mono font-bold text-blue-700">${i.maKhoa}</span></td>
+          <td class="font-semibold">${i.tenKhoa}</td>
+          <td class="text-center">${i.banKham}</td>
+          <td class="text-center font-semibold text-blue-600">${i.giuongPd}</td>
+          <td class="text-center font-semibold text-green-600">${i.giuongTk}</td>
+          <td class="text-center text-purple-700">${i.giuongHstc}</td>
+          <td class="text-center text-red-600">${i.giuongHscc}</td>
+          <td class="font-mono">${i.tuNgay}</td>
+          <td class="font-mono">${i.denNgay || '-'}</td>
+          <td class="font-mono">${i.maCskcb}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('inspectRowCount').innerText = `Tổng: ${items.length} dòng dữ liệu`;
+      openModal('inspectModal');
+    }
+
+    // Mở Modal Xuất XML & Gửi API
+    function openBpcmExportModal() {
+      const xml = window.dmBpcmEngine.generateXML(true);
+      const base64 = window.dmBpcmEngine.generateBase64XML();
+
+      document.getElementById('xmlOutputText').innerText = xml;
+      document.getElementById('base64OutputText').innerText = base64;
+      switchExportTab('xml');
+      openModal('exportModal');
+    }
+
+    function switchExportTab(tab) {
+      activeExportTab = tab;
+      document.getElementById('paneXml').classList.toggle('hidden', tab !== 'xml');
+      document.getElementById('paneBase64').classList.toggle('hidden', tab !== 'base64');
+      document.getElementById('paneApi').classList.toggle('hidden', tab !== 'api');
+
+      document.getElementById('tabBtnXml').className = tab === 'xml' ? 'px-3 py-1 font-semibold text-blue-600 border-b-2 border-blue-600' : 'px-3 py-1 text-gray-500 hover:text-gray-900';
+      document.getElementById('tabBtnBase64').className = tab === 'base64' ? 'px-3 py-1 font-semibold text-blue-600 border-b-2 border-blue-600' : 'px-3 py-1 text-gray-500 hover:text-gray-900';
+      document.getElementById('tabBtnApi').className = tab === 'api' ? 'px-3 py-1 font-semibold text-blue-600 border-b-2 border-blue-600' : 'px-3 py-1 text-gray-500 hover:text-gray-900';
+    }
+
+    function copyCurrentOutput() {
+      let text = '';
+      if (activeExportTab === 'xml') text = document.getElementById('xmlOutputText').innerText;
+      else if (activeExportTab === 'base64') text = document.getElementById('base64OutputText').value;
+
+      if (text) {
+        navigator.clipboard.writeText(text).then(() => alert('Đã sao chép nội dung vào bộ nhớ tạm!'));
+      }
+    }
+
+    async function executeSendApi() {
+      const res = await window.dmBpcmEngine.sendToBHYTGateway();
+      const resultBox = document.getElementById('apiResultBox');
+      const resJson = document.getElementById('apiResponseJson');
+      resJson.innerText = JSON.stringify(res, null, 2);
+      resultBox.classList.remove('hidden');
+      alert(`✓ Đã gửi API GuiDanhMuc01_BPCMKBCB thành công!\nMã giao dịch: ${res.maGiaoDich}\nThông điệp: ${res.thongDiep}`);
+    }
+
+    const DM_TEMPLATES_DICT = {
+      1: { code: 'Mẫu 01/DM', name: 'Bộ phận chuyên môn KBCB BHYT (Loại 70)', file: 'Mau01_DM_BPCMKBCB.xlsx' },
+      2: { code: 'Mẫu 02/DM', name: 'Nhân lực thực hiện khám bệnh, chữa bệnh BHYT', file: 'Mau02_DM_NhanLucKBCB.xlsx' },
+      3: { code: 'Mẫu 03/DM', name: 'Danh mục thuốc, máu, chế phẩm máu áp dụng trong thanh toán BHYT', file: 'Mau03_DM_ThuocMau.xlsx' },
+      4: { code: 'Mẫu 04/DM', name: 'Danh mục thiết bị y tế áp dụng trong thanh toán BHYT', file: 'Mau04_DM_ThietBiYTe.xlsx' },
+      5: { code: 'Mẫu 05/DM', name: 'Danh mục dịch vụ khám bệnh, chữa bệnh áp dụng trong thanh toán BHYT', file: 'Mau05_DM_DichVuKCB.xlsx' },
+      6: { code: 'Mẫu 06/DM', name: 'Danh mục thiết bị y tế để thực hiện DVKT áp dụng trong thanh toán BHYT', file: 'Mau06_DM_TBYT_ThucHienDVKT.xlsx' }
+    };
+
+    function handleGenericFile(idx, input) {
+      if (input.files && input.files[0]) {
+        const item = DM_TEMPLATES_DICT[idx] || { code: `Mẫu 0${idx}/DM`, name: 'Danh mục BHYT' };
+        alert(`✓ Đã nạp thành công tệp "${input.files[0].name}" cho ${item.code}: ${item.name}!\nCấu trúc trường dữ liệu hợp lệ.`);
+      }
+    }
+
+    function checkFieldsGeneric(idx) {
+      const item = DM_TEMPLATES_DICT[idx] || { code: `Mẫu 0${idx}/DM`, name: 'Danh mục BHYT' };
+      alert(`✓ Kiểm tra đối soát ${item.code} (${item.name}):\n- Định dạng cột: Hợp lệ 100%\n- Kiểu dữ liệu: Khớp với quy chuẩn ban hành Danh mục BHYT.`);
+    }
+
+    function downloadTemplate(idx) {
+      const item = DM_TEMPLATES_DICT[idx] || { code: `Mẫu 0${idx}/DM`, file: `Mau0${idx}_DM.xlsx` };
+      alert(`Đang tải tệp biểu mẫu Excel chuẩn: ${item.file} (${item.code})...`);
+    }
+
+    function downloadAllZip() {
+      alert('Đang tải trọn bộ 6 file Excel mẫu Danh mục BHYT (Mẫu 01/DM đến Mẫu 06/DM) chuẩn định dạng .ZIP...');
+    }
+
+    // Xử lý thay đổi Kỳ Dữ Liệu
+    function handlePeriodChange(periodValue) {
+      const displayEl = document.getElementById('currentActivePeriodText');
+      if (displayEl) displayEl.innerText = periodValue;
+      
+      // Hiển thị thông báo chuyển kỳ thành công
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-5 right-5 bg-gray-900 text-white text-xs px-4 py-2.5 rounded-lg shadow-xl flex items-center gap-2 z-50 transition-all duration-300 transform translate-y-0 opacity-100';
+      toast.innerHTML = `<i class="fa-solid fa-circle-check text-green-400"></i> Đã chuyển dữ liệu sang <strong>${periodValue}</strong>`;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
+
+    function resetToCurrentPeriod() {
+      const selectEl = document.getElementById('periodSelector');
+      if (selectEl) {
+        selectEl.value = 'Tháng 02/2026';
+        handlePeriodChange('Tháng 02/2026');
+      }
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,673 @@
+import type {
+  DmBpcmItem,
+  DmNhanLucItem,
+  DmThuocItem,
+  DmThietBiItem,
+  DmDichVuItem,
+  DmTbDvktItem,
+  HoSoTongHop,
+  HoSoXuatToan,
+  Doctor,
+  Patient,
+  Appointment,
+  MedicalRecord,
+  Invoice,
+  ClinicStat
+} from '../types';
+
+// ============================================================
+// 1. DANH MỤC 01/DM: BỘ PHẬN CHUYÊN MÔN (LOẠI 70)
+// ============================================================
+export const initialBpcmData: DmBpcmItem[] = [
+  {
+    id: 'bpcm-1',
+    stt: 1,
+    maKhoa: 'K01',
+    tenKhoa: 'Khoa Khám Bệnh Đa Khoa',
+    banKham: 8,
+    giuongPd: 0,
+    giuongTk: 0,
+    giuongHstc: 0,
+    giuongHscc: 0,
+    tuNgay: '20260101',
+    denNgay: '',
+    maCskcb: '01929',
+    isValid: true,
+    errors: []
+  },
+  {
+    id: 'bpcm-2',
+    stt: 2,
+    maKhoa: 'K02',
+    tenKhoa: 'Khoa Hồi Sức Cấp Cứu - Chống Độc',
+    banKham: 2,
+    giuongPd: 25,
+    giuongTk: 28,
+    giuongHstc: 10,
+    giuongHscc: 15,
+    tuNgay: '20260101',
+    denNgay: '',
+    maCskcb: '01929',
+    isValid: true,
+    errors: []
+  },
+  {
+    id: 'bpcm-3',
+    stt: 3,
+    maKhoa: 'K0809',
+    tenKhoa: 'Khoa Nội Tiết - Dị Ứng Miễn Dịch',
+    banKham: 4,
+    giuongPd: 40,
+    giuongTk: 45,
+    giuongHstc: 0,
+    giuongHscc: 0,
+    tuNgay: '20260101',
+    denNgay: '',
+    maCskcb: '01929',
+    isValid: true,
+    errors: []
+  },
+  {
+    id: 'bpcm-4',
+    stt: 4,
+    maKhoa: 'K02.D35',
+    tenKhoa: 'Đơn nguyên Thận Nhân Tạo (Thuộc K.Hồi Sức)',
+    banKham: 2,
+    giuongPd: 15,
+    giuongTk: 15,
+    giuongHstc: 5,
+    giuongHscc: 0,
+    tuNgay: '20260101',
+    denNgay: '',
+    maCskcb: '01929',
+    isValid: true,
+    errors: []
+  },
+  {
+    id: 'bpcm-5',
+    stt: 5,
+    maKhoa: 'K05',
+    tenKhoa: 'Khoa Nhi & Sơ Sinh',
+    banKham: 3,
+    giuongPd: 35,
+    giuongTk: 35,
+    giuongHstc: 4,
+    giuongHscc: 6,
+    tuNgay: '20260101',
+    denNgay: '',
+    maCskcb: '01929',
+    isValid: true,
+    errors: []
+  },
+  {
+    id: 'bpcm-6',
+    stt: 6,
+    maKhoa: 'K12',
+    tenKhoa: 'Khoa Chẩn Đoán Hình Ảnh & Thăm Dò Chức Năng',
+    banKham: 4,
+    giuongPd: 0,
+    giuongTk: 0,
+    giuongHstc: 0,
+    giuongHscc: 0,
+    tuNgay: '20260101',
+    denNgay: '',
+    maCskcb: '01929',
+    isValid: true,
+    errors: []
+  }
+];
+
+// ============================================================
+// 2. DANH MỤC 02/DM: NHÂN LỰC THỰC HIỆN KCB BHYT (LOẠI 71)
+// ============================================================
+export const initialNhanLucData: DmNhanLucItem[] = [
+  {
+    id: 'nl-1',
+    stt: 1,
+    maNhanVien: 'BS01929_001',
+    hoTen: 'BS. CKII. Nguyễn Văn An',
+    soCchn: '001234/BYT-CCHN',
+    phamViChuyenMon: 'Nội Tim Mạch, Cấp cứu Hồi sức',
+    maKhoa: 'K02',
+    tenKhoa: 'Khoa Hồi Sức Cấp Cứu - Chống Độc',
+    viTri: 'Trưởng khoa / Bác sĩ điều trị chính',
+    thoiGianLamViec: 'Toàn thời gian',
+    tuNgay: '20260101',
+    denNgay: '',
+    maCskcb: '01929'
+  },
+  {
+    id: 'nl-2',
+    stt: 2,
+    maNhanVien: 'BS01929_002',
+    hoTen: 'ThS. BS. Trần Thị Mai',
+    soCchn: '004589/HCM-CCHN',
+    phamViChuyenMon: 'Nội Tổng Hợp, Tiêu hóa',
+    maKhoa: 'K01',
+    tenKhoa: 'Khoa Khám Bệnh Đa Khoa',
+    viTri: 'Bác sĩ khám bệnh ngoại trú',
+    thoiGianLamViec: 'Toàn thời gian',
+    tuNgay: '20260101',
+    denNgay: '',
+    maCskcb: '01929'
+  },
+  {
+    id: 'nl-3',
+    stt: 3,
+    maNhanVien: 'BS01929_003',
+    hoTen: 'BS. CKI. Lê Hoàng Minh',
+    soCchn: '009876/HN-CCHN',
+    phamViChuyenMon: 'Nhi khoa Tổng quát & Cấp cứu Nhi',
+    maKhoa: 'K05',
+    tenKhoa: 'Khoa Nhi & Sơ Sinh',
+    viTri: 'Bác sĩ điều trị',
+    thoiGianLamViec: 'Toàn thời gian',
+    tuNgay: '20260101',
+    denNgay: '',
+    maCskcb: '01929'
+  }
+];
+
+// ============================================================
+// 3. DANH MỤC 03/DM: THUỐC, MÁU & CHẾ PHẨM MÁU BHYT (LOẠI 10)
+// ============================================================
+export const initialThuocData: DmThuocItem[] = [
+  {
+    id: 'th-1',
+    stt: 1,
+    maThuocBhyt: '40.123',
+    tenHoatChat: 'Amlodipine',
+    tenThuoc: 'Amlodipine 5mg Hasan',
+    hamLuong: '5mg',
+    duongDung: 'Uống',
+    dangBaoChe: 'Viên nén',
+    donViTinh: 'Viên',
+    donGia: 3200,
+    tyLeThanhToan: 100,
+    soDangKy: 'VD-24512-16',
+    maCskcb: '01929'
+  },
+  {
+    id: 'th-2',
+    stt: 2,
+    maThuocBhyt: '40.450',
+    tenHoatChat: 'Atorvastatin',
+    tenThuoc: 'Lipitor 10mg',
+    hamLuong: '10mg',
+    duongDung: 'Uống',
+    dangBaoChe: 'Viên nén bao phim',
+    donViTinh: 'Viên',
+    donGia: 7800,
+    tyLeThanhToan: 100,
+    soDangKy: 'VN-18920-15',
+    maCskcb: '01929'
+  },
+  {
+    id: 'th-3',
+    stt: 3,
+    maThuocBhyt: '52.012',
+    tenHoatChat: 'Esomeprazole',
+    tenThuoc: 'Nexium Mups 40mg',
+    hamLuong: '40mg',
+    duongDung: 'Uống',
+    dangBaoChe: 'Viên nén kháng acid',
+    donViTinh: 'Viên',
+    donGia: 14500,
+    tyLeThanhToan: 80,
+    soDangKy: 'VN-21004-18',
+    maCskcb: '01929'
+  }
+];
+
+// ============================================================
+// 4. DANH MỤC 04/DM: THIẾT BỊ Y TẾ ÁP DỤNG THANH TOÁN BHYT (LOẠI 72)
+// ============================================================
+export const initialThietBiData: DmThietBiItem[] = [
+  {
+    id: 'tb-1',
+    stt: 1,
+    maTbyt: 'TBYT-01929-01',
+    tenTbyt: 'Hệ thống Máy chụp X-quang Kỹ thuật số DR',
+    hangSx: 'Siemens Healthcare',
+    nuocSx: 'Đức',
+    namSx: 2024,
+    soLuuHanh: '2200192/BYT-TB',
+    khoaSuDung: 'Khoa Chẩn Đoán Hình Ảnh',
+    tinhTrang: 'Đang hoạt động',
+    maCskcb: '01929'
+  },
+  {
+    id: 'tb-2',
+    stt: 2,
+    maTbyt: 'TBYT-01929-02',
+    tenTbyt: 'Máy siêu âm Doppler màu 4D chuyên Tim - Mạch máu',
+    hangSx: 'GE Healthcare',
+    nuocSx: 'Mỹ',
+    namSx: 2025,
+    soLuuHanh: '2300588/BYT-TB',
+    khoaSuDung: 'Khoa Khám Bệnh Đa Khoa',
+    tinhTrang: 'Đang hoạt động',
+    maCskcb: '01929'
+  }
+];
+
+// ============================================================
+// 5. DANH MỤC 05/DM: DỊCH VỤ KỸ THUẬT KCB BHYT (LOẠI 12)
+// ============================================================
+export const initialDichVuData: DmDichVuItem[] = [
+  {
+    id: 'dv-1',
+    stt: 1,
+    maDichVu: '01.0022.0001',
+    tenDichVu: 'Khám bệnh chuyên khoa Tim mạch',
+    loaiDv: 'Khám bệnh',
+    giaBhyt: 42100,
+    giaVienPhi: 180000,
+    khoaThucHien: 'Khoa Khám Bệnh Đa Khoa',
+    maCskcb: '01929'
+  },
+  {
+    id: 'dv-2',
+    stt: 2,
+    maDichVu: '03.0015.0112',
+    tenDichVu: 'Điện tâm đồ (ECG 12 chuyển đạo tiêu chuẩn)',
+    loaiDv: 'Thăm dò chức năng',
+    giaBhyt: 52000,
+    giaVienPhi: 120000,
+    khoaThucHien: 'Khoa Chẩn Đoán Hình Ảnh',
+    maCskcb: '01929'
+  },
+  {
+    id: 'dv-3',
+    stt: 3,
+    maDichVu: '04.0090.0450',
+    tenDichVu: 'Định lượng Glucose máu bằng máy tự động',
+    loaiDv: 'Xét nghiệm',
+    giaBhyt: 24500,
+    giaVienPhi: 65000,
+    khoaThucHien: 'Khoa Xét Nghiệm',
+    maCskcb: '01929'
+  }
+];
+
+// ============================================================
+// 6. DANH MỤC 06/DM: THIẾT BỊ THỰC HIỆN DVKT (LOẠI 73)
+// ============================================================
+export const initialTbDvktData: DmTbDvktItem[] = [
+  {
+    id: 'tbdv-1',
+    stt: 1,
+    maDvkt: '03.0015.0112',
+    tenDvkt: 'Điện tâm đồ (ECG 12 chuyển đạo tiêu chuẩn)',
+    maTbyt: 'TBYT-01929-03',
+    tenTbyt: 'Máy đo điện tim 12 cần Nihon Kohden Cardimax',
+    dinhMucTieuHao: '1 cuộn giấy / 100 lượt',
+    maCskcb: '01929'
+  }
+];
+
+// ============================================================
+// 7. BỘ HỒ SƠ 1: HỒ SƠ TỔNG HỢP CHI PHÍ KCB BHYT (MẪU 01/BH - XML 130)
+// ============================================================
+export const initialHoSoTongHopData: HoSoTongHop[] = [
+  {
+    id: 'hs-th-01',
+    maLk: 'LK0192920260908001',
+    maBenhNhan: 'BN-2026-001',
+    hoTen: 'Nguyễn Đình Trọng',
+    ngaySinh: '1988-05-14',
+    gioiTinh: 'Nam',
+    soTheBhyt: 'DN4791234567890',
+    maDkbd: '01929',
+    mucHuong: 80,
+    loaiKcb: 'Ngoại trú',
+    khoaKcb: 'Khoa Khám Bệnh Đa Khoa',
+    bacSiKcb: 'BS. CKII. Nguyễn Văn An',
+    maBenhIcd: 'I10',
+    chanDoan: 'Tăng huyết áp nguyên phát giai đoạn 2 - Rối loạn lipid máu',
+    ngayVao: '2026-09-08 08:15',
+    ngayRa: '2026-09-08 10:45',
+    tongChiPhi: 845000,
+    tienBhytThanhToan: 676000,
+    tienNguoiBenhTra: 169000,
+    tienNguonKhac: 0,
+    trangThai: 'da_gui_cong',
+    ngayGuiCong: '2026-09-08 11:30',
+    maGiaoDichBhxh: 'GD_01929_20260908_99812',
+    chiTiet: {
+      xml1TongHop: {
+        maLk: 'LK0192920260908001',
+        maBn: 'BN-2026-001',
+        hoTen: 'Nguyễn Đình Trọng',
+        ngayVao: '202609080815',
+        ngayRa: '202609081045',
+        ngayQuyetToan: '202609081100',
+        maBenh: 'I10',
+        tenBenh: 'Bệnh tăng huyết áp vô căn (nguyên phát)',
+        maKhoa: 'K01',
+        tongChi: 845000,
+        tienBhyt: 676000,
+        tienBnTra: 169000,
+        tienNguonKhac: 0
+      },
+      xml2Thuoc: [
+        {
+          stt: 1,
+          maThuoc: '40.123',
+          tenThuoc: 'Amlodipine 5mg Hasan',
+          hamLuong: '5mg',
+          donViTinh: 'Viên',
+          soLuong: 30,
+          donGia: 3200,
+          thanhTien: 96000,
+          tienBhyt: 76800,
+          tienBnTra: 19200
+        },
+        {
+          stt: 2,
+          maThuoc: '40.450',
+          tenThuoc: 'Lipitor 10mg',
+          hamLuong: '10mg',
+          donViTinh: 'Viên',
+          soLuong: 30,
+          donGia: 7800,
+          thanhTien: 234000,
+          tienBhyt: 187200,
+          tienBnTra: 46800
+        }
+      ],
+      xml3Dvkt: [
+        {
+          stt: 1,
+          maDichVu: '01.0022.0001',
+          tenDichVu: 'Khám bệnh chuyên khoa Tim mạch',
+          khoaThucHien: 'Khoa Khám Bệnh',
+          soLuong: 1,
+          donGia: 42100,
+          thanhTien: 42100,
+          tienBhyt: 33680,
+          tienBnTra: 8420
+        },
+        {
+          stt: 2,
+          maDichVu: '03.0015.0112',
+          tenDichVu: 'Điện tâm đồ (ECG 12 chuyển đạo tiêu chuẩn)',
+          khoaThucHien: 'Khoa Chẩn Đoán Hình Ảnh',
+          soLuong: 1,
+          donGia: 52000,
+          thanhTien: 52000,
+          tienBhyt: 41600,
+          tienBnTra: 10400
+        }
+      ]
+    }
+  },
+  {
+    id: 'hs-th-02',
+    maLk: 'LK0192920260909002',
+    maBenhNhan: 'BN-2026-002',
+    hoTen: 'Phạm Thị Thùy Dung',
+    ngaySinh: '1995-11-20',
+    gioiTinh: 'Nữ',
+    soTheBhyt: 'GD4799876543210',
+    maDkbd: '01929',
+    mucHuong: 80,
+    loaiKcb: 'Ngoại trú',
+    khoaKcb: 'Khoa Khám Bệnh Đa Khoa',
+    bacSiKcb: 'ThS. BS. Trần Thị Mai',
+    maBenhIcd: 'K29.1',
+    chanDoan: 'Viêm dạ dày cấp tính khác do stress và chế độ ăn',
+    ngayVao: '2026-09-09 08:30',
+    ngayRa: '2026-09-09 10:15',
+    tongChiPhi: 620000,
+    tienBhytThanhToan: 496000,
+    tienNguoiBenhTra: 124000,
+    tienNguonKhac: 0,
+    trangThai: 'hop_le',
+    ngayGuiCong: '2026-09-09 10:30',
+    maGiaoDichBhxh: 'GD_01929_20260909_11029',
+    chiTiet: {
+      xml1TongHop: {
+        maLk: 'LK0192920260909002',
+        maBn: 'BN-2026-002',
+        hoTen: 'Phạm Thị Thùy Dung',
+        ngayVao: '202609090830',
+        ngayRa: '202609091015',
+        ngayQuyetToan: '202609091025',
+        maBenh: 'K29.1',
+        tenBenh: 'Viêm dạ dày cấp tính khác',
+        maKhoa: 'K01',
+        tongChi: 620000,
+        tienBhyt: 496000,
+        tienBnTra: 124000,
+        tienNguonKhac: 0
+      },
+      xml2Thuoc: [
+        {
+          stt: 1,
+          maThuoc: '52.012',
+          tenThuoc: 'Nexium Mups 40mg',
+          hamLuong: '40mg',
+          donViTinh: 'Viên',
+          soLuong: 14,
+          donGia: 14500,
+          thanhTien: 203000,
+          tienBhyt: 162400,
+          tienBnTra: 40600
+        }
+      ],
+      xml3Dvkt: [
+        {
+          stt: 1,
+          maDichVu: '01.0022.0001',
+          tenDichVu: 'Khám bệnh chuyên khoa Tiêu hóa',
+          khoaThucHien: 'Khoa Khám Bệnh',
+          soLuong: 1,
+          donGia: 42100,
+          thanhTien: 42100,
+          tienBhyt: 33680,
+          tienBnTra: 8420
+        }
+      ]
+    }
+  },
+  {
+    id: 'hs-th-03',
+    maLk: 'LK0192920260909003',
+    maBenhNhan: 'BN-2026-003',
+    hoTen: 'Lê Hoàng Khang',
+    ngaySinh: '2018-03-02',
+    gioiTinh: 'Nam',
+    soTheBhyt: 'TE1798889991122',
+    maDkbd: '01929',
+    mucHuong: 100,
+    loaiKcb: 'Cấp cứu',
+    khoaKcb: 'Khoa Nhi & Sơ Sinh',
+    bacSiKcb: 'BS. CKI. Lê Hoàng Minh',
+    maBenhIcd: 'J20.9',
+    chanDoan: 'Viêm phế quản cấp không đặc hiệu kèm co thắt phế quản',
+    ngayVao: '2026-09-09 09:00',
+    ngayRa: '2026-09-09 11:30',
+    tongChiPhi: 530000,
+    tienBhytThanhToan: 530000,
+    tienNguoiBenhTra: 0,
+    tienNguonKhac: 0,
+    trangThai: 'cho_duyet',
+    ngayGuiCong: '',
+    maGiaoDichBhxh: ''
+  },
+  {
+    id: 'hs-th-04',
+    maLk: 'LK0192920260909004',
+    maBenhNhan: 'BN-2026-004',
+    hoTen: 'Võ Thanh Tùng',
+    ngaySinh: '1976-08-19',
+    gioiTinh: 'Nam',
+    soTheBhyt: 'HT4795556667778',
+    maDkbd: '01929',
+    mucHuong: 95,
+    loaiKcb: 'Nội trú',
+    khoaKcb: 'Khoa Hồi Sức Cấp Cứu - Chống Độc',
+    bacSiKcb: 'BS. CKII. Nguyễn Văn An',
+    maBenhIcd: 'I20.0',
+    chanDoan: 'Cơn đau thắt ngực không ổn định - Theo dõi thiếu máu cơ tim',
+    ngayVao: '2026-09-06 14:20',
+    ngayRa: '2026-09-09 08:30',
+    tongChiPhi: 3850000,
+    tienBhytThanhToan: 3657500,
+    tienNguoiBenhTra: 192500,
+    tienNguonKhac: 0,
+    trangThai: 'canh_bao',
+    ngayGuiCong: '2026-09-09 09:00',
+    maGiaoDichBhxh: 'GD_01929_20260909_77412'
+  }
+];
+
+// ============================================================
+// 8. BỘ HỒ SƠ 2: HỒ SƠ ĐIỀU CHỈNH & XỬ LÝ XUẤT TOÁN BHYT (MẪU 09/BH)
+// ============================================================
+export const initialHoSoXuatToanData: HoSoXuatToan[] = [
+  {
+    id: 'xt-01',
+    maLk: 'LK0192920260828005',
+    maBenhNhan: 'BN-2026-004',
+    hoTen: 'Võ Thanh Tùng',
+    soTheBhyt: 'HT4795556667778',
+    khoaDieuTri: 'Khoa Hồi Sức Cấp Cứu - Chống Độc',
+    bacSiDieuTri: 'BS. CKII. Nguyễn Văn An',
+    ngayKcb: '2026-08-28',
+    chanDoan: 'Đau ngực trái không điển hình / Tăng HA',
+    tongChiKcb: 1850000,
+    tienDeNghiThanhToan: 1757500,
+    tienXuatToan: 450000,
+    tienChapNhanLai: 0,
+    maLoiBhxh: 'ERR_TRUNG_LAP_CLS',
+    nhomLoi: 'trung_lap_dich_vu',
+    noiDungLoi: 'Chỉ định trùng lặp Điện tâm đồ (ECG) 2 lần trong cùng một ca khám buổi sáng không có biên bản hội chẩn hoặc diễn biến cấp cứu đột xuất ghi nhận trong bệnh án.',
+    canCuPhapLy: 'Quyết định 3618/QĐ-BHXH mục 3.2 quy định về định mức chỉ định CLS',
+    trangThai: 'cho_xu_ly',
+    noiDungGiaiTrinh: '',
+    taiLieuDinhKem: [],
+    ngayGiaiTrinh: '',
+    nguoiGiaiTrinh: ''
+  },
+  {
+    id: 'xt-02',
+    maLk: 'LK0192920260830012',
+    maBenhNhan: 'BN-2026-015',
+    hoTen: 'Trần Văn Hưng',
+    soTheBhyt: 'DN4793322114455',
+    khoaDieuTri: 'Khoa Khám Bệnh Đa Khoa',
+    bacSiDieuTri: 'ThS. BS. Trần Thị Mai',
+    ngayKcb: '2026-08-30',
+    chanDoan: 'Rối loạn tiêu hóa / Trào ngược dạ dày',
+    tongChiKcb: 920000,
+    tienDeNghiThanhToan: 736000,
+    tienXuatToan: 285000,
+    tienChapNhanLai: 285000,
+    maLoiBhxh: 'ERR_VUOT_TRAN_THUOC',
+    nhomLoi: 'vuot_tran_gia_thuoc',
+    noiDungLoi: 'Thuốc Esomeprazole kê quá liều lượng theo phác đồ ngoại trú chuẩn của BYT.',
+    canCuPhapLy: 'Thông tư 20/2022/TT-BYT về danh mục và tỷ lệ thanh toán thuốc BHYT',
+    trangThai: 'chap_nhan_lai',
+    noiDungGiaiTrinh: 'Bệnh nhân có tiền sử loét hành tá tràng chảy máu tái phát, bác sĩ đã hội chẩn chuyên khoa và kê liều tấn công theo đúng khuyến cáo điều trị đợt cấp.',
+    taiLieuDinhKem: ['Phieu_Hoi_Chan_K29.pdf', 'KetQua_NoiSoi_DaDay.pdf'],
+    ngayGiaiTrinh: '2026-09-02',
+    nguoiGiaiTrinh: 'ThS. BS. Trần Thị Mai',
+    ketQuaGiamDinhLai: 'Cổng BHXH đã duyệt chấp nhận lại 100% số tiền giải trình (285.000 VNĐ) sau khi kiểm tra biên bản nội soi đính kèm.'
+  },
+  {
+    id: 'xt-03',
+    maLk: 'LK0192920260901019',
+    maBenhNhan: 'BN-2026-022',
+    hoTen: 'Lê Thị Thu Thủy',
+    soTheBhyt: 'GD4796677889900',
+    khoaDieuTri: 'Khoa Ngoại Tổng Hợp',
+    bacSiDieuTri: 'BS. CKII. Phạm Thu Hương',
+    ngayKcb: '2026-09-01',
+    chanDoan: 'Viêm amidan mạn tính quá phát độ 3',
+    tongChiKcb: 4200000,
+    tienDeNghiThanhToan: 336000,
+    tienXuatToan: 820000,
+    tienChapNhanLai: 0,
+    maLoiBhxh: 'ERR_THIEU_CHUNG_TU_CLS',
+    nhomLoi: 'thieu_ket_qua_cls',
+    noiDungLoi: 'Thanh toán phẫu thuật cắt amidan bằng Coblator nhưng thiếu kết quả xét nghiệm đông máu cơ bản và phiếu tường trình phẫu thuật trong file XML4.',
+    canCuPhapLy: 'Quy trình kỹ thuật số 15/BYT và Quyết định 130/QĐ-BYT',
+    trangThai: 'da_giai_trinh',
+    noiDungGiaiTrinh: 'Đã bổ sung đầy đủ kết quả xét nghiệm đông máu PT, APTT và file scan phiếu tường trình phẫu thuật có chữ ký phẫu thuật viên chính.',
+    taiLieuDinhKem: ['KetQua_DongMau_BN022.pdf', 'TuongTrinh_PT_Amidan.pdf'],
+    ngayGiaiTrinh: '2026-09-05',
+    nguoiGiaiTrinh: 'BS. CKII. Phạm Thu Hương'
+  },
+  {
+    id: 'xt-04',
+    maLk: 'LK0192920260903033',
+    maBenhNhan: 'BN-2026-041',
+    hoTen: 'Đỗ Mạnh Cường',
+    soTheBhyt: 'DN4791100223344',
+    khoaDieuTri: 'Khoa Khám Bệnh Đa Khoa',
+    bacSiDieuTri: 'BS. CKI. Lê Hoàng Minh',
+    ngayKcb: '2026-09-03',
+    chanDoan: 'Sốt xuất huyết Dengue ngày thứ 2',
+    tongChiKcb: 750000,
+    tienDeNghiThanhToan: 600000,
+    tienXuatToan: 180000,
+    tienChapNhanLai: 0,
+    maLoiBhxh: 'ERR_SAI_THONG_TIN_THE',
+    nhomLoi: 'sai_thong_tin_the',
+    noiDungLoi: 'Thẻ BHYT tra cứu trên cổng tiếp nhận tại thời điểm khám bị báo hết hạn sử dụng (hạn thẻ đến 31/08/2026).',
+    canCuPhapLy: 'Quy định kiểm tra thẻ thời gian thực Cổng BHXH Việt Nam',
+    trangThai: 'cho_xu_ly',
+    noiDungGiaiTrinh: '',
+    taiLieuDinhKem: [],
+    ngayGiaiTrinh: '',
+    nguoiGiaiTrinh: ''
+  }
+];
+
+// Compatibility legacy mocks
+export const initialDoctors: Doctor[] = [
+  {
+    id: 'DOC-01',
+    name: 'BS. CKII. Nguyễn Văn An',
+    specialty: 'Khoa Tim Mạch',
+    avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80',
+    phone: '0903 123 456',
+    email: 'an.nguyen@medicare.vn',
+    experience: '18 năm kinh nghiệm',
+    room: 'P.201 - Tầng 2',
+    status: 'active',
+    rating: 4.9,
+  }
+];
+
+export const initialPatients: Patient[] = [
+  {
+    id: 'BN-2026-001',
+    name: 'Nguyễn Đình Trọng',
+    dob: '1988-05-14',
+    gender: 'Nam',
+    phone: '0918 223 344',
+    email: 'trong.nd@gmail.com',
+    address: '45 Lê Duẩn, P. Bến Nghé, Quận 1, TP.HCM',
+    bloodType: 'O+',
+    insuranceNumber: 'DN4791234567890',
+    allergies: ['Penicillin', 'Hải sản'],
+    lastVisit: '2026-09-08',
+    totalVisits: 5,
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+  }
+];
+
+export const initialAppointments: Appointment[] = [];
+export const initialMedicalRecords: MedicalRecord[] = [];
+export const initialInvoices: Invoice[] = [];
+export const clinicStats: ClinicStat = {
+  totalPatients: 1420,
+  appointmentsToday: 28,
+  activeDoctors: 8,
+  todayRevenue: 24580000,
+  pendingAppointments: 12,
+  completedToday: 14
+};

@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hồ Sơ BHYT (Mẫu 01/BH & Mẫu 09/BH) - Cổng Tiếp Nhận BHYT</title>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            antPrimary: '#1677ff',
+            antSuccess: '#52c41a',
+            antWarning: '#faad14',
+            antError: '#ff4d4f',
+            antDark: '#001529',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Custom Design System Styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-layout">
+    
+    <!-- =========================================================
+         ANT DESIGN SIDEBAR NAVIGATION
+    ========================================================= -->
+    <aside class="app-sidebar" id="appSidebar">
+      
+      <!-- Brand Logo -->
+      <a href="index.html" class="sidebar-brand">
+        <div class="brand-icon-box">
+          <i class="fa-solid fa-hospital-user text-white text-base"></i>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">CỔNG BHYT Y TẾ</span>
+          <span class="brand-subtitle">Hệ thống KCB Bệnh viện</span>
+        </div>
+      </a>
+
+      <!-- Menu Navigation -->
+      <nav class="sidebar-menu">
+        
+        <div class="menu-group">
+          <div class="menu-group-title">QUẢN LÝ DỮ LIỆU EXCEL</div>
+          
+          <a href="index.html" class="nav-item">
+            <i class="fa-solid fa-file-excel"></i>
+            <span>1. Danh mục</span>
+          </a>
+        </div>
+
+
+
+        <div class="menu-group">
+          <div class="menu-group-title">HỒ SƠ BHYT</div>
+          
+          <!-- Menu mục lớn Hồ sơ BHYT -->
+          <div class="nav-item active" style="margin-bottom: 2px;">
+            <i class="fa-solid fa-folder-open"></i>
+            <span>2. Hồ sơ BHYT</span>
+            <span class="nav-badge danger">32 lỗi</span>
+          </div>
+
+          <!-- 2 Bộ Hồ Sơ Con -->
+          <div class="nav-sub-items">
+            <a href="javascript:void(0)" onclick="switchTab('tab-01')" class="nav-sub-item active" id="sub-nav-01">
+              <span><i class="fa-solid fa-file-lines mr-2 text-blue-400"></i>Hồ sơ tổng hợp</span>
+              <span class="text-[11px] text-gray-400">1.250</span>
+            </a>
+
+            <a href="javascript:void(0)" onclick="switchTab('tab-09')" class="nav-sub-item" id="sub-nav-09">
+              <span><i class="fa-solid fa-triangle-exclamation mr-2 text-amber-400"></i>Hồ sơ xuất toán</span>
+              <span class="nav-badge warning" style="padding: 1px 6px; font-size: 11px;">18 chờ</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="menu-group">
+          <div class="menu-group-title">HỆ THỐNG & TÀI KHOẢN</div>
+          
+          <a href="auth.html" class="nav-item">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>Xác thực & Đăng nhập</span>
+          </a>
+          
+          <a href="auth.html" class="nav-item">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            <span>Đăng xuất</span>
+          </a>
+        </div>
+
+      </nav>
+
+      <!-- Sidebar Footer User Profile -->
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="user-avatar">BV</div>
+          <div class="sidebar-footer-info">
+            <span class="user-name">BV Đa Khoa TW</span>
+            <span class="user-role">Mã CS: 01929 | Kế toán BHYT</span>
+          </div>
+        </div>
+        <button type="button" class="sidebar-collapse-btn" onclick="toggleSidebar()" title="Thu gọn / Mở rộng menu">
+          <i class="fa-solid fa-bars-staggered" id="collapseIcon"></i>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- =========================================================
+         MAIN CONTENT AREA (FULL-WIDTH EXPANDED DASHBOARD)
+    ========================================================= -->
+    <div class="app-main">
+      
+      <!-- Topbar Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <div class="toggle-sidebar-trigger" onclick="toggleSidebar()">
+            <i class="fa-solid fa-indent"></i>
+          </div>
+          <div class="header-breadcrumb">
+            <a href="index.html"><i class="fa-solid fa-house mr-1"></i>Trang chủ</a>
+            <i class="fa-solid fa-chevron-right text-xs"></i>
+            <span class="current" id="headerBreadcrumbCurrent">Hồ Sơ BHYT / Hồ Sơ Tổng Hợp (Mẫu 01/BH)</span>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Notification Bell with Popup Action -->
+          <button type="button" class="header-action-btn" onclick="toggleNotificationPopup()" title="Thông báo hồ sơ cần xử lý">
+            <i class="fa-regular fa-bell text-lg"></i>
+            <span class="badge-count">18</span>
+          </button>
+
+          <!-- Quick Action Buttons -->
+          <a href="index.html" class="ant-btn ant-btn-default ant-btn-sm hidden md:inline-flex">
+            <i class="fa-solid fa-upload text-blue-500"></i> Nhập thêm Excel
+          </a>
+          <button type="button" class="ant-btn ant-btn-primary ant-btn-sm" onclick="exportDataExcel()">
+            <i class="fa-solid fa-file-excel"></i> Xuất Báo Cáo
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Application Container (FULL WIDTH) -->
+      <main class="app-content full-width">
+        
+        <!-- =========================================================
+             DEDICATED INTERACTIVE PERIOD SELECTOR TOOLBAR (HÀNG KỲ DỮ LIỆU)
+        ========================================================= -->
+        <div class="ant-card p-3 mb-4 bg-white border border-blue-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="flex items-center gap-3 w-full sm:w-auto">
+            <div class="flex items-center gap-2 text-xs font-bold text-gray-800">
+              <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                <i class="fa-regular fa-calendar-check text-sm"></i>
+              </div>
+              <span class="tracking-wide">KỲ QUYẾT TOÁN BHYT:</span>
+            </div>
+            
+            <div class="flex items-center gap-2 flex-1 sm:flex-initial">
+              <div class="relative">
+                <select id="periodSelectorHoSo" class="ant-input text-xs font-bold text-blue-900 bg-blue-50/70 border-blue-200 py-1.5 pl-3 pr-8 rounded cursor-pointer hover:border-blue-400 focus:border-blue-500 focus:bg-white transition-all shadow-inner" onchange="handlePeriodChange(this.value)">
+                  <option value="Tháng 01/2026">Tháng 01/2026</option>
+                  <option value="Tháng 02/2026" selected>Tháng 02/2026 (Kỳ hiện hành)</option>
+                  <option value="Tháng 03/2026">Tháng 03/2026</option>
+                  <option value="Tháng 04/2026">Tháng 04/2026</option>
+                  <option value="Tháng 05/2026">Tháng 05/2026</option>
+                  <option value="Tháng 06/2026">Tháng 06/2026</option>
+                  <option value="Quý I / 2026">Quý I / 2026</option>
+                  <option value="Quý II / 2026">Quý II / 2026</option>
+                  <option value="Năm 2026">Cả Năm 2026</option>
+                </select>
+              </div>
+
+              <button type="button" class="ant-btn ant-btn-default ant-btn-sm text-xs font-medium" onclick="resetToCurrentPeriod()">
+                <i class="fa-solid fa-rotate-left mr-1 text-gray-500"></i> Hiện hành
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 text-xs w-full sm:w-auto justify-between sm:justify-end">
+            <div class="flex items-center gap-2 px-3 py-1 rounded bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Kỳ đang chọn: <strong id="currentActivePeriodText" class="text-emerald-900 font-bold">Tháng 02/2026</strong></span>
+            </div>
+            
+            <button type="button" class="ant-btn ant-btn-default ant-btn-sm" onclick="handlePeriodChange(document.getElementById('periodSelectorHoSo').value)" title="Làm mới dữ liệu hồ sơ kỳ này">
+              <i class="fa-solid fa-arrows-rotate text-blue-600"></i> Làm mới
+            </button>
+          </div>
+        </div>
+        
+        <!-- Ant Design Tabs Switcher (2 Bộ hồ sơ) -->
+        <div class="ant-tabs-nav">
+          <button class="ant-tab-btn active" id="tab-btn-01" onclick="switchTab('tab-01')">
+            <i class="fa-solid fa-file-lines text-blue-500"></i>
+            <span>Bộ 1: Hồ Sơ Tổng Hợp (Mẫu 01/BH)</span>
+            <span class="ant-tab-badge">1,250 hồ sơ</span>
+          </button>
+          
+          <button class="ant-tab-btn" id="tab-btn-09" onclick="switchTab('tab-09')">
+            <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+            <span>Bộ 2: Hồ Sơ Xuất Toán (Mẫu 09/BH)</span>
+            <span class="ant-tab-badge red">32 hồ sơ lỗi</span>
+          </button>
+        </div>
+
+        <!-- =========================================================
+             TAB 1: MẪU 01/BH - TỔNG HỢP CHI PHÍ KCB BHYT
+        ========================================================= -->
+        <section id="tab-01" class="tab-pane active">
+          
+          <!-- Top KPI Cards -->
+          <div class="stat-cards-grid">
+            <div class="ant-stat-card blue">
+              <div class="stat-header-row">
+                <span class="stat-label-text">Tổng Số Hồ Sơ Đợt Này</span>
+                <div class="stat-icon-wrapper blue"><i class="fa-solid fa-users"></i></div>
+              </div>
+              <div class="stat-value-text">1,250 <span class="text-sm font-normal text-gray-500">Hồ sơ</span></div>
+              <div class="stat-footer-text">
+                <i class="fa-solid fa-circle-check text-green-500"></i> 1,100 Ngoại trú &nbsp;|&nbsp; 150 Nội trú
+              </div>
+            </div>
+
+            <div class="ant-stat-card cyan">
+              <div class="stat-header-row">
+                <span class="stat-label-text">Tổng Chi Phí BV (T_TONGCHI_BV)</span>
+                <div class="stat-icon-wrapper cyan"><i class="fa-solid fa-money-bill-wave"></i></div>
+              </div>
+              <div class="stat-value-text text-cyan-700">1.450.250.000 <span class="text-sm font-normal text-gray-500">đ</span></div>
+              <div class="stat-footer-text">
+                <i class="fa-solid fa-chart-line text-cyan-600"></i> Toàn bộ chi phí KCB thực tế phát sinh
+              </div>
+            </div>
+
+            <div class="ant-stat-card green">
+              <div class="stat-header-row">
+                <span class="stat-label-text">Quỹ BHYT Thanh Toán (T_BHTT)</span>
+                <div class="stat-icon-wrapper green"><i class="fa-solid fa-shield-heart"></i></div>
+              </div>
+              <div class="stat-value-text text-green-700">1.160.200.000 <span class="text-sm font-normal text-gray-500">đ</span></div>
+              <div class="stat-footer-text">
+                <i class="fa-solid fa-percent text-green-600"></i> 80.0% tổng chi phí đề nghị BHXH chi trả
+              </div>
+            </div>
+
+            <div class="ant-stat-card purple">
+              <div class="stat-header-row">
+                <span class="stat-label-text">Người Bệnh Chi Trả (T_BNCCT + T_BNTT)</span>
+                <div class="stat-icon-wrapper purple"><i class="fa-solid fa-wallet"></i></div>
+              </div>
+              <div class="stat-value-text text-purple-700">290.050.000 <span class="text-sm font-normal text-gray-500">đ</span></div>
+              <div class="stat-footer-text">
+                <i class="fa-solid fa-receipt text-purple-600"></i> Đồng chi trả 20%/5% & ngoài danh mục
+              </div>
+            </div>
+          </div>
+
+          <!-- Multi-criteria Filter Bar -->
+          <div class="ant-filter-card">
+            <form class="ant-filter-row" onsubmit="filterTable01(event)">
+              <div class="ant-form-item">
+                <span class="ant-form-label"><i class="fa-regular fa-calendar mr-1"></i>Kỳ KCB:</span>
+                <input type="text" class="ant-input w-40" value="02/2026" readonly>
+              </div>
+
+              <div class="ant-form-item">
+                <span class="ant-form-label">Loại KCB:</span>
+                <select class="ant-select" id="f1-loaiKcb" onchange="filterTable01(event)">
+                  <option value="all">Tất cả loại hình</option>
+                  <option value="1">1 - Ngoại trú</option>
+                  <option value="2">2 - Nội trú</option>
+                  <option value="3">3 - Khám bệnh</option>
+                </select>
+              </div>
+
+              <div class="ant-form-item">
+                <span class="ant-form-label">Trạng thái:</span>
+                <select class="ant-select" id="f1-status" onchange="filterTable01(event)">
+                  <option value="all">Tất cả trạng thái</option>
+                  <option value="waiting">Chờ ký số & gửi Cổng</option>
+                  <option value="sent">Đã gửi cổng BHXH</option>
+                </select>
+              </div>
+
+              <div class="ant-input-search-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" class="ant-input" id="f1-search" placeholder="Nhập tên bệnh nhân, mã BHYT, mã ICD-10..." oninput="filterTable01(event)">
+              </div>
+
+              <button type="submit" class="ant-btn ant-btn-primary">
+                <i class="fa-solid fa-filter"></i> Lọc dữ liệu
+              </button>
+              
+              <button type="button" class="ant-btn ant-btn-default" onclick="resetFilter01()">
+                <i class="fa-solid fa-rotate-left"></i> Làm mới
+              </button>
+
+              <div class="ml-auto flex items-center gap-2">
+                <button type="button" class="ant-btn ant-btn-success" onclick="alert('Đang kết nối Token ký số USB PKI...')">
+                  <i class="fa-solid fa-signature"></i> Ký số & Gửi Cổng BHXH
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Full Width Data Table (Mẫu 01/BH) -->
+          <div class="ant-table-container">
+            
+            <div class="ant-table-header-toolbar">
+              <div class="table-selection-info">
+                <input type="checkbox" id="selectAll01" onchange="toggleSelectAll('table01Body', this)">
+                <label for="selectAll01" class="cursor-pointer font-medium">Chọn tất cả</label>
+                <span id="selectedCount01" class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded ml-2 hidden">Đã chọn 0 hồ sơ</span>
+              </div>
+              <div class="flex items-center gap-3 text-xs text-gray-500">
+                <span>Hiển thị <strong>1 - 10</strong> của <strong>1,250</strong> hồ sơ quyết toán</span>
+                <button class="ant-btn ant-btn-default ant-btn-sm" onclick="exportDataExcel()"><i class="fa-solid fa-download"></i> Tải bảng Excel</button>
+              </div>
+            </div>
+
+            <div class="ant-table-wrapper">
+              <table class="ant-table">
+                <thead>
+                  <tr>
+                    <th style="width: 40px;" class="text-center">#</th>
+                    <th style="width: 50px;">STT</th>
+                    <th>Họ và Tên Bệnh Nhân</th>
+                    <th>Mã Thẻ BHYT</th>
+                    <th>Bệnh Chính (ICD-10)</th>
+                    <th>Ngày Vào - Ra</th>
+                    <th class="text-center">Số Ngày</th>
+                    <th class="text-right">Tổng Chi Phí BV</th>
+                    <th class="text-right">Quỹ BHYT Trả</th>
+                    <th class="text-right">BN Cùng Trả</th>
+                    <th class="text-right">BN Tự Trả</th>
+                    <th class="text-center">Trạng Thái</th>
+                    <th class="text-center">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody id="table01Body">
+                  <!-- Row 1 -->
+                  <tr>
+                    <td class="text-center"><input type="checkbox" class="row-checkbox" onchange="updateSelectedCount('table01Body', 'selectedCount01')"></td>
+                    <td class="text-gray-500">1</td>
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">A</div>
+                        <div>
+                          <div class="font-semibold text-gray-900">Nguyễn Văn An</div>
+                          <div class="text-xs text-gray-400">Nam &bull; 1985 &bull; Ngoại trú</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><span class="font-mono font-medium text-gray-800 bg-gray-100 px-1.5 py-0.5 rounded text-xs">DN4010123912831</span></td>
+                    <td>
+                      <span class="ant-tag processing font-mono">E11</span>
+                      <span class="text-xs text-gray-700 ml-1">Đái tháo đường típ 2</span>
+                    </td>
+                    <td class="text-xs text-gray-600">01/02 - 05/02/2026</td>
+                    <td class="text-center font-semibold">5</td>
+                    <td class="text-right cost-val total">2.500.000 đ</td>
+                    <td class="text-right cost-val bh-pay">2.000.000 đ</td>
+                    <td class="text-right cost-val bn-pay">400.000 đ</td>
+                    <td class="text-right text-xs text-gray-500">100.000 đ</td>
+                    <td class="text-center">
+                      <span class="ant-tag warning"><span class="ant-tag-dot"></span>Chờ ký số</span>
+                    </td>
+                    <td class="text-center">
+                      <button class="ant-btn ant-btn-default ant-btn-sm" onclick="alert('Xem chi tiết bệnh án: Nguyễn Văn An')"><i class="fa-solid fa-file-waveform text-blue-600 mr-1"></i>Chi tiết</button>
+                    </td>
+                  </tr>
+
+                  <!-- Row 2 -->
+                  <tr>
+                    <td class="text-center"><input type="checkbox" class="row-checkbox" onchange="updateSelectedCount('table01Body', 'selectedCount01')"></td>
+                    <td class="text-gray-500">2</td>
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-full bg-pink-100 text-pink-700 flex items-center justify-center font-bold text-xs">B</div>
+                        <div>
+                          <div class="font-semibold text-gray-900">Trần Thị Bích</div>
+                          <div class="text-xs text-gray-400">Nữ &bull; 1990 &bull; Khám bệnh</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><span class="font-mono font-medium text-gray-800 bg-gray-100 px-1.5 py-0.5 rounded text-xs">GD4010822109281</span></td>
+                    <td>
+                      <span class="ant-tag processing font-mono">J00</span>
+                      <span class="text-xs text-gray-700 ml-1">Viêm mũi họng cấp</span>
+                    </td>
+                    <td class="text-xs text-gray-600">02/02 - 02/02/2026</td>
+                    <td class="text-center font-semibold">1</td>
+                    <td class="text-right cost-val total">350.000 đ</td>
+                    <td class="text-right cost-val bh-pay">280.000 đ</td>
+                    <td class="text-right cost-val bn-pay">70.000 đ</td>
+                    <td class="text-right text-xs text-gray-500">0 đ</td>
+                    <td class="text-center">
+                      <span class="ant-tag success"><span class="ant-tag-dot"></span>Đã gửi BHXH</span>
+                    </td>
+                    <td class="text-center">
+                      <button class="ant-btn ant-btn-default ant-btn-sm" onclick="alert('Xem chi tiết bệnh án: Trần Thị Bích')"><i class="fa-solid fa-file-waveform text-blue-600 mr-1"></i>Chi tiết</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Ant Pagination Bar -->
+            <div class="ant-pagination">
+              <span class="text-xs text-gray-500 mr-2">Tổng 1,250 mục</span>
+              <button class="ant-page-item disabled"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+              <button class="ant-page-item active">1</button>
+              <button class="ant-page-item">2</button>
+              <button class="ant-page-item">3</button>
+              <span class="px-1 text-gray-400">...</span>
+              <button class="ant-page-item">125</button>
+              <button class="ant-page-item"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+              <select class="ant-select ml-2 text-xs">
+                <option>10 dòng / trang</option>
+                <option>20 dòng / trang</option>
+                <option>50 dòng / trang</option>
+              </select>
+            </div>
+
+          </div>
+        </section>
+
+
+        <!-- =========================================================
+             TAB 2: MẪU 09/BH - ĐIỀU CHỈNH & XỬ LÝ XUẤT TOÁN BHYT
+        ========================================================= -->
+        <section id="tab-09" class="tab-pane">
+          
+          <!-- Top KPI Cards Mẫu 09 -->
+          <div class="stat-cards-grid">
+            <div class="ant-stat-card red">
+              <div class="stat-header-row">
+                <span class="stat-label-text">Tổng Chi Phí Bị Xuất Toán</span>
+                <div class="stat-icon-wrapper red"><i class="fa-solid fa-ban"></i></div>
+              </div>
+              <div class="stat-value-text text-red-600">145.280.000 <span class="text-sm font-normal text-gray-500">VNĐ</span></div>
+              <div class="stat-footer-text text-red-600">
+                <i class="fa-solid fa-circle-exclamation"></i> 32 hồ sơ bị cổng BHXH cảnh báo từ chối
+              </div>
+            </div>
+
+            <div class="ant-stat-card orange">
+              <div class="stat-header-row">
+                <span class="stat-label-text">Chờ Bác Sĩ / Khoa Giải Trình</span>
+                <div class="stat-icon-wrapper orange"><i class="fa-solid fa-user-doctor"></i></div>
+              </div>
+              <div class="stat-value-text text-amber-600">85.500.000 <span class="text-sm font-normal text-gray-500">VNĐ</span></div>
+              <div class="stat-footer-text">
+                <i class="fa-solid fa-clock text-amber-500"></i> 18 hồ sơ cần bổ sung bệnh án / chẩn đoán
+              </div>
+            </div>
+
+            <div class="ant-stat-card blue">
+              <div class="stat-header-row">
+                <span class="stat-label-text">Đã Chấp Nhận Điều Chỉnh Giảm</span>
+                <div class="stat-icon-wrapper blue"><i class="fa-solid fa-sliders"></i></div>
+              </div>
+              <div class="stat-value-text text-blue-600">39.780.000 <span class="text-sm font-normal text-gray-500">VNĐ</span></div>
+              <div class="stat-footer-text">
+                <i class="fa-solid fa-check text-blue-500"></i> 09 hồ sơ cắt giảm do sai sót thủ tục viện
+              </div>
+            </div>
+
+            <div class="ant-stat-card green">
+              <div class="stat-header-row">
+                <span class="stat-label-text">Đã Gửi Lại Cổng BHXH (GĐ 2)</span>
+                <div class="stat-icon-wrapper green"><i class="fa-solid fa-paper-plane"></i></div>
+              </div>
+              <div class="stat-value-text text-green-600">20.000.000 <span class="text-sm font-normal text-gray-500">VNĐ</span></div>
+              <div class="stat-footer-text">
+                <i class="fa-solid fa-paperclip text-green-500"></i> 05 hồ sơ đã đính kèm văn bản phản hồi
+              </div>
+            </div>
+          </div>
+
+          <!-- Multi-criteria Filter Bar Mẫu 09 -->
+          <div class="ant-filter-card">
+            <form class="ant-filter-row" onsubmit="event.preventDefault();">
+              <div class="ant-form-item">
+                <span class="ant-form-label">Trạng thái xử lý:</span>
+                <select class="ant-select" id="f2-status">
+                  <option>Tất cả trạng thái (32)</option>
+                  <option>Chờ BS giải trình (18)</option>
+                  <option>Đã điều chỉnh giảm (09)</option>
+                  <option>Đã gửi lại Cổng BHXH (05)</option>
+                </select>
+              </div>
+
+              <div class="ant-form-item">
+                <span class="ant-form-label">Khoa / Phòng:</span>
+                <select class="ant-select" id="f2-dept">
+                  <option>Tất cả các khoa lâm sàng</option>
+                  <option>Khoa Nội Tim Mạch</option>
+                  <option>Khoa Ngoại Tổng Hợp</option>
+                  <option>Khoa Cấp Cứu</option>
+                  <option>Khoa Chẩn Đoán Hình Ảnh</option>
+                </select>
+              </div>
+
+              <div class="ant-form-item">
+                <span class="ant-form-label">Nhóm lỗi xuất toán:</span>
+                <select class="ant-select" id="f2-reason">
+                  <option>Tất cả nhóm lỗi</option>
+                  <option>Chỉ định thuốc ngoài ICD</option>
+                  <option>DVKT thiếu biên bản hội chẩn</option>
+                  <option>Vượt số ngày giường quy định</option>
+                </select>
+              </div>
+
+              <div class="ant-input-search-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" class="ant-input" placeholder="Tìm tên BN, mã BHYT hoặc tên BS chỉ định...">
+              </div>
+
+              <button type="submit" class="ant-btn ant-btn-primary">
+                <i class="fa-solid fa-filter"></i> Lọc dữ liệu
+              </button>
+
+              <div class="ml-auto flex items-center gap-2">
+                <button type="button" class="ant-btn ant-btn-default" onclick="exportDataExcel()">
+                  <i class="fa-solid fa-file-export"></i> Export Excel Mẫu 09
+                </button>
+                <button type="button" class="ant-btn ant-btn-primary" onclick="alert('Đã gửi thông báo nhắc việc đến 18 Bác sĩ qua App!')">
+                  <i class="fa-solid fa-bell"></i> Nhắc BS giải trình hàng loạt
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Full Width Table Mẫu 09 -->
+          <div class="ant-table-container">
+            <div class="ant-table-header-toolbar">
+              <div class="table-selection-info">
+                <input type="checkbox" id="selectAll09" onchange="toggleSelectAll('table09Body', this)">
+                <label for="selectAll09" class="cursor-pointer font-medium">Chọn tất cả hồ sơ xuất toán</label>
+                <span id="selectedCount09" class="text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded ml-2 hidden">Đã chọn 0 hồ sơ</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-gray-500">
+                <span>Danh sách hồ sơ cần đối soát và gửi giải trình BHYT</span>
+              </div>
+            </div>
+
+            <div class="ant-table-wrapper">
+              <table class="ant-table">
+                <thead>
+                  <tr>
+                    <th style="width: 40px;" class="text-center">#</th>
+                    <th style="width: 50px;">STT</th>
+                    <th>Bệnh Nhân / Mã BHYT</th>
+                    <th>Bác Sĩ Chỉ Định</th>
+                    <th>Nội Dung Chi Phí Bị Xuất Toán</th>
+                    <th class="text-right">Số Tiền Bị Trừ</th>
+                    <th style="min-width: 260px;">Lý Do Xuất Toán Từ Cổng BHXH</th>
+                    <th style="min-width: 220px;">Trạng Thái & Tiến Độ Giải Trình</th>
+                    <th class="text-center">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody id="table09Body">
+                  
+                  <!-- Row 1: Xuất toán Thuốc (Chờ giải trình) -->
+                  <tr>
+                    <td class="text-center"><input type="checkbox" class="row-checkbox" onchange="updateSelectedCount('table09Body', 'selectedCount09')"></td>
+                    <td class="text-gray-500">1</td>
+                    <td>
+                      <div class="font-semibold text-gray-900">Nguyễn Văn An</div>
+                      <span class="font-mono text-xs text-gray-500">DN4010123912831</span>
+                    </td>
+                    <td>
+                      <div class="font-medium text-gray-800"><i class="fa-solid fa-user-doctor text-blue-500 mr-1"></i>BS. Lê Hoàng B</div>
+                      <div class="text-xs text-gray-400">Khoa Nội Tim Mạch</div>
+                    </td>
+                    <td>
+                      <div class="font-semibold text-gray-900">Thuốc: Clopidogrel 75mg</div>
+                      <div class="text-xs text-gray-500">Số lượng: 14 viên &bull; Đơn giá: 20.000 đ</div>
+                    </td>
+                    <td class="text-right cost-val reduced">280.000 đ</td>
+                    <td>
+                      <div class="text-xs text-red-600 bg-red-50 p-2 rounded border border-red-100">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i>Mã ICD-10 chính (I10 - Tăng huyết áp) không nằm trong chỉ định thanh toán BHYT của biệt dược này.
+                      </div>
+                    </td>
+                    <td>
+                      <span class="ant-tag warning"><span class="ant-tag-dot"></span>Chờ BS giải trình</span>
+                      <div class="text-xs text-gray-500 mt-1"><i class="fa-regular fa-clock mr-1"></i>Đã gửi thông báo cho Bác sĩ</div>
+                    </td>
+                    <td class="text-center">
+                      <button class="ant-btn ant-btn-default ant-btn-sm text-amber-600" onclick="openExplainModal('Nguyễn Văn An', 'Clopidogrel 75mg', '280.000 đ', 'BS. Lê Hoàng B')">
+                        <i class="fa-solid fa-pen-to-square mr-1"></i>Giải trình
+                      </button>
+                    </td>
+                  </tr>
+
+                  <!-- Row 2: Xuất toán DVKT (BS đã gửi hồ sơ) -->
+                  <tr>
+                    <td class="text-center"><input type="checkbox" class="row-checkbox" onchange="updateSelectedCount('table09Body', 'selectedCount09')"></td>
+                    <td class="text-gray-500">2</td>
+                    <td>
+                      <div class="font-semibold text-gray-900">Trần Thị Cúc</div>
+                      <span class="font-mono text-xs text-gray-500">GD4010822109281</span>
+                    </td>
+                    <td>
+                      <div class="font-medium text-gray-800"><i class="fa-solid fa-user-doctor text-blue-500 mr-1"></i>BS. Nguyễn Thị D</div>
+                      <div class="text-xs text-gray-400">Khoa Ngoại Tổng Hợp</div>
+                    </td>
+                    <td>
+                      <div class="font-semibold text-gray-900">DVKT: Chụp MRI Cột Sống Thắt Lưng</div>
+                      <div class="text-xs text-gray-500">Mã DVKT: 37.102 &bull; Máy MRI 1.5 Tesla</div>
+                    </td>
+                    <td class="text-right cost-val reduced">2.200.000 đ</td>
+                    <td>
+                      <div class="text-xs text-red-600 bg-red-50 p-2 rounded border border-red-100">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i>Thiếu biên bản hội chẩn chuyên khoa trước khi chỉ định chụp MRI theo Quy trình BHYT.
+                      </div>
+                    </td>
+                    <td>
+                      <span class="ant-tag processing"><span class="ant-tag-dot"></span>BS đã gửi hồ sơ</span>
+                      <div class="text-xs text-green-600 mt-1"><i class="fa-solid fa-file-pdf mr-1"></i>Đã kèm File PDF biên bản hội chẩn</div>
+                    </td>
+                    <td class="text-center">
+                      <button class="ant-btn ant-btn-primary ant-btn-sm" onclick="alert('Đã duyệt hồ sơ giải trình và chuyển vào đợt gửi lại Cổng BHYT!')">
+                        <i class="fa-solid fa-check mr-1"></i>Duyệt gửi
+                      </button>
+                    </td>
+                  </tr>
+
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Ant Pagination Bar Mẫu 09 -->
+            <div class="ant-pagination">
+              <span class="text-xs text-gray-500 mr-2">Tổng 32 hồ sơ bị xuất toán</span>
+              <button class="ant-page-item disabled"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+              <button class="ant-page-item active">1</button>
+              <button class="ant-page-item">2</button>
+              <button class="ant-page-item">3</button>
+              <button class="ant-page-item"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+            </div>
+
+          </div>
+        </section>
+
+      </main>
+
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MODAL: BIỂU MẪU GIẢI TRÌNH XUẤT TOÁN (MẪU 09)
+  ========================================================= -->
+  <div class="ant-modal-backdrop" id="explainModal">
+    <div class="ant-modal">
+      <div class="ant-modal-header">
+        <div class="ant-modal-title">
+          <i class="fa-solid fa-pen-nib text-amber-500"></i>
+          <span>Lập Biên Bản Giải Trình Xuất Toán BHYT</span>
+        </div>
+        <button type="button" class="ant-modal-close" onclick="closeModal('explainModal')">&times;</button>
+      </div>
+      <div class="ant-modal-body">
+        <div class="bg-amber-50 border border-amber-200 rounded p-3 mb-4 text-xs text-amber-800">
+          <p><strong>Bệnh nhân:</strong> <span id="modalPatientName">Nguyễn Văn An</span> &nbsp;|&nbsp; <strong>Mục bị trừ:</strong> <span id="modalItemName">Thuốc Clopidogrel 75mg</span> (<span id="modalAmount" class="font-bold text-red-600">280.000 đ</span>)</p>
+          <p class="mt-1"><strong>Bác sĩ phụ trách:</strong> <span id="modalDoctorName">BS. Lê Hoàng B</span></p>
+        </div>
+
+        <form class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Phương án xử lý:</label>
+            <select class="ant-select w-full">
+              <option>1. Bác sĩ gửi văn bản giải trình lâm sàng & Bổ sung bệnh án phụ</option>
+              <option>2. Bệnh viện chấp nhận điều chỉnh giảm chi phí (Sai sót hành chính)</option>
+              <option>3. Chuyển chi phí sang đối tượng bệnh nhân tự thanh toán</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Nội dung giải trình chi tiết gửi Cổng BHXH:</label>
+            <textarea class="ant-input w-full h-24 p-2 text-xs" placeholder="Nhập căn cứ chuyên môn lâm sàng, phác đồ điều trị của Bộ Y tế hoặc thông tin bệnh án bổ sung..."></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Đính kèm tài liệu chứng minh (Bệnh án / Biên bản hội chẩn PDF):</label>
+            <input type="file" class="text-xs text-gray-600 border border-gray-200 p-1.5 rounded w-full">
+          </div>
+        </form>
+      </div>
+      <div class="ant-modal-footer">
+        <button type="button" class="ant-btn ant-btn-default" onclick="closeModal('explainModal')">Hủy bỏ</button>
+        <button type="button" class="ant-btn ant-btn-primary" onclick="alert('Đã lưu nội dung giải trình thành công!'); closeModal('explainModal');">
+          <i class="fa-solid fa-paper-plane"></i> Lưu & Chờ Duyệt Gửi
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Interactions -->
+  <script>
+    // Tab switching logic
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.ant-tab-btn').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-sub-item').forEach(el => el.classList.remove('active'));
+      
+      const targetTab = document.getElementById(tabId);
+      if (targetTab) targetTab.classList.add('active');
+
+      const breadcrumbEl = document.getElementById('headerBreadcrumbCurrent');
+
+      if (tabId === 'tab-01') {
+        document.getElementById('tab-btn-01')?.classList.add('active');
+        document.getElementById('sub-nav-01')?.classList.add('active');
+        if (breadcrumbEl) breadcrumbEl.innerText = 'Hồ Sơ BHYT / Hồ Sơ Tổng Hợp (Mẫu 01/BH)';
+      } else {
+        document.getElementById('tab-btn-09')?.classList.add('active');
+        document.getElementById('sub-nav-09')?.classList.add('active');
+        if (breadcrumbEl) breadcrumbEl.innerText = 'Hồ Sơ BHYT / Hồ Sơ Xuất Toán (Mẫu 09/BH)';
+      }
+    }
+
+    // Sidebar collapse toggle
+    function toggleSidebar() {
+      const sidebar = document.getElementById('appSidebar');
+      sidebar.classList.toggle('collapsed');
+    }
+
+    // Modal helpers
+    function openModal(id) {
+      document.getElementById(id)?.classList.add('open');
+    }
+    function closeModal(id) {
+      document.getElementById(id)?.classList.remove('open');
+    }
+
+    // Explain Modal trigger
+    function openExplainModal(patient, item, cost, doctor) {
+      document.getElementById('modalPatientName').innerText = patient;
+      document.getElementById('modalItemName').innerText = item;
+      document.getElementById('modalAmount').innerText = cost;
+      document.getElementById('modalDoctorName').innerText = doctor;
+      openModal('explainModal');
+    }
+
+    // Select all checkboxes helper
+    function toggleSelectAll(tbodyId, masterCheckbox) {
+      const tbody = document.getElementById(tbodyId);
+      if (!tbody) return;
+      const checkboxes = tbody.querySelectorAll('.row-checkbox');
+      checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
+      
+      const countElId = tbodyId === 'table01Body' ? 'selectedCount01' : 'selectedCount09';
+      updateSelectedCount(tbodyId, countElId);
+    }
+
+    function updateSelectedCount(tbodyId, countElId) {
+      const tbody = document.getElementById(tbodyId);
+      if (!tbody) return;
+      const checkedBoxes = tbody.querySelectorAll('.row-checkbox:checked');
+      const countEl = document.getElementById(countElId);
+      if (countEl) {
+        if (checkedBoxes.length > 0) {
+          countEl.classList.remove('hidden');
+          countEl.innerText = `Đã chọn ${checkedBoxes.length} hồ sơ`;
+        } else {
+          countEl.classList.add('hidden');
+        }
+      }
+    }
+
+    // Filter simulation
+    function filterTable01(e) {
+      if (e) e.preventDefault();
+      const keyword = document.getElementById('f1-search').value.toLowerCase();
+      const rows = document.querySelectorAll('#table01Body tr');
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(keyword) ? '' : 'none';
+      });
+    }
+
+    function resetFilter01() {
+      document.getElementById('f1-search').value = '';
+      document.getElementById('f1-loaiKcb').value = 'all';
+      document.getElementById('f1-status').value = 'all';
+      filterTable01();
+    }
+
+    function toggleNotificationPopup() {
+      alert('Thông báo BHYT:\n• 18 hồ sơ cần Bác sĩ bổ sung giải trình lâm sàng.\n• 09 hồ sơ đã được Kế toán duyệt điều chỉnh giảm chi phí.');
+    }
+
+    function exportDataExcel() {
+      alert('Đang trích xuất dữ liệu sang định dạng Excel (.xlsx)...');
+    }
+
+    // Xử lý thay đổi Kỳ Dữ Liệu Hồ Sơ BHYT
+    function handlePeriodChange(periodValue) {
+      const displayEl = document.getElementById('currentActivePeriodText');
+      if (displayEl) displayEl.innerText = periodValue;
+      
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-5 right-5 bg-gray-900 text-white text-xs px-4 py-2.5 rounded-lg shadow-xl flex items-center gap-2 z-50 transition-all duration-300 transform translate-y-0 opacity-100';
+      toast.innerHTML = `<i class="fa-solid fa-circle-check text-green-400"></i> Đã chuyển kỳ quyết toán sang <strong>${periodValue}</strong>`;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
+
+    function resetToCurrentPeriod() {
+      const selectEl = document.getElementById('periodSelectorHoSo');
+      if (selectEl) {
+        selectEl.value = 'Tháng 02/2026';
+        handlePeriodChange('Tháng 02/2026');
+      }
+    }
+  </script>
+
+</body>
+</html>
