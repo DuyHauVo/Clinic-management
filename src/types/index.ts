@@ -60,18 +60,9 @@ export type { DmThuocItem, ParseThuocExcelResult, SendThuocGatewayResult } from 
 // 04/DM: Danh mục thiết bị y tế (Loại 11 - GuiDanhMuc04_DMVTYT)
 export type { DmThietBiItem } from '../utils/types/thietBiTypes';
 
-// 05/DM: Dịch vụ kỹ thuật KCB BHYT (Loại 12)
-export interface DmDichVuItem {
-  id: string;
-  stt: number;
-  maDichVu: string;
-  tenDichVu: string;
-  loaiDv: 'Khám bệnh' | 'Xét nghiệm' | 'Chẩn đoán hình ảnh' | 'Phẫu thuật - Thủ thuật' | 'Thăm dò chức năng';
-  giaBhyt: number;
-  giaVienPhi: number;
-  khoaThucHien: string;
-  maCskcb: string;
-}
+// 05/DM: Dịch vụ kỹ thuật KCB BHYT (Loại 12 - GuiDanhMuc05_DVKT)
+export type { DmDichVuItem, DmThuocPxItem, ParseDichVuExcelResult, SendDichVuGatewayResult } from '../utils/types/dichVuTypes';
+
 
 // 06/DM: Thiết bị thực hiện DVKT (Loại 73)
 export interface DmTbDvktItem {

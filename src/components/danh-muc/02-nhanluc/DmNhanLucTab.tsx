@@ -21,8 +21,11 @@ import { NhanLucEditModal } from './components/NhanLucEditModal';
 import { SchemaMappingModal } from '../common/SchemaMappingModal';
 import { SchemaMappingCard } from '../common/SchemaMappingCard';
 
+import { useClipboard } from '../../../hooks';
+
 export const DmNhanLucTab: React.FC = () => {
   const toast = useToast();
+  const { isCopied: isNhanLucCopied, copy: handleNhanLucCopyText } = useClipboard();
   const [nhanLucItems, setNhanLucItems] = useState<DmNhanLucItem[]>(initialNhanLucData);
   const [searchNhanLuc, setSearchNhanLuc] = useState('');
   const [isLoadingNhanLucFile, setIsLoadingNhanLucFile] = useState(false);
@@ -31,7 +34,6 @@ export const DmNhanLucTab: React.FC = () => {
   // Modal State for Mẫu 02/DM
   const [isNhanLucXmlModalOpen, setIsNhanLucXmlModalOpen] = useState(false);
   const [nhanLucXmlExportTab, setNhanLucXmlExportTab] = useState<'xml' | 'base64' | 'api'>('xml');
-  const [isNhanLucCopied, setIsNhanLucCopied] = useState(false);
   const [isNhanLucSendingApi, setIsNhanLucSendingApi] = useState(false);
   const [nhanLucApiResponse, setNhanLucApiResponse] = useState<any>(null);
 
@@ -127,13 +129,6 @@ export const DmNhanLucTab: React.FC = () => {
     const xml = generateNhanLucXml(nhanLucItems);
     downloadNhanLucXmlFile(xml);
     toast.success('Đã tải xuống file XML Mẫu 02/DM chuẩn Loại hồ sơ 71', 'Xuất File Thành Công');
-  };
-
-  const handleNhanLucCopyText = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setIsNhanLucCopied(true);
-    toast.success('Đã sao chép vào bộ nhớ đệm!', 'Sao Chép');
-    setTimeout(() => setIsNhanLucCopied(false), 2000);
   };
 
   const handleNhanLucSendBhxhApi = async () => {

@@ -1,17 +1,17 @@
-import React from 'react';
-import { 
+import React from "react";
+import {
   Database,
   FileText,
   ShieldAlert,
   LogOut,
   Stethoscope,
   Building2,
-  ChevronRight
-} from 'lucide-react';
-import { useToast } from '../context/ToastContext';
+  ChevronRight,
+} from "lucide-react";
+import { useToast } from "../context/ToastContext";
 
-export type MainTabType = 'danh-muc' | 'ho-so';
-export type HoSoTabType = '01_tonghop' | '09_xuattoan';
+export type MainTabType = "danh-muc" | "ho-so";
+export type HoSoTabType = "01_tonghop" | "09_xuattoan";
 
 interface SidebarProps {
   activeTab: MainTabType;
@@ -20,11 +20,11 @@ interface SidebarProps {
   pendingXuattoanCount?: number;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ 
+export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   hoSoTab,
   onNavigate,
-  pendingXuattoanCount = 3
+  pendingXuattoanCount = 3,
 }) => {
   const toast = useToast();
 
@@ -37,9 +37,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
         <div className="min-w-0">
           <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-1.5 leading-tight">
-            MediCare Pro <span className="text-[10px] bg-blue-500/20 text-blue-400 font-semibold px-1.5 py-0.5 rounded border border-blue-500/30">BHYT</span>
+            OurMed Hospital{" "}
+            <span className="text-[10px] bg-blue-500/20 text-blue-400 font-semibold px-1.5 py-0.5 rounded border border-blue-500/30">
+              BHYT
+            </span>
           </h2>
-          <span className="text-[11px] text-slate-400 block truncate font-medium">Hệ Thống KCB & Giám Định</span>
+          <span className="text-[11px] text-slate-400 block truncate font-medium">
+            Hệ Thống KCB & Giám Định
+          </span>
         </div>
       </div>
 
@@ -47,7 +52,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <nav className="p-4 flex-1 flex flex-col gap-2 overflow-y-auto">
         <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 py-1 flex items-center justify-between">
           <span>PHÂN HỆ NGHIỆP VỤ</span>
-          <span className="text-[10px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded font-mono">QĐ 130</span>
+          <span className="text-[10px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded font-mono">
+            QĐ 130
+          </span>
         </div>
 
         {/* ============================================================
@@ -55,32 +62,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ============================================================ */}
         <button
           type="button"
-          onClick={() => onNavigate('danh-muc')}
+          onClick={() => onNavigate("danh-muc")}
           className={`w-full text-left p-3 rounded-xl flex items-center gap-3 transition-all duration-200 group relative ${
-            activeTab === 'danh-muc'
-              ? 'bg-[#1677ff] text-white font-semibold shadow-lg shadow-blue-600/30 ring-1 ring-blue-400/40'
-              : 'hover:bg-slate-800/70 text-slate-300 hover:text-white bg-slate-900/30 border border-slate-800/60'
+            activeTab === "danh-muc"
+              ? "bg-[#1677ff] text-white font-semibold shadow-lg shadow-blue-600/30 ring-1 ring-blue-400/40"
+              : "hover:bg-slate-800/70 text-slate-300 hover:text-white bg-slate-900/30 border border-slate-800/60"
           }`}
         >
-          <div className={`p-2.5 rounded-lg transition-colors flex-shrink-0 ${
-            activeTab === 'danh-muc' ? 'bg-white/20 text-white' : 'bg-slate-800 text-blue-400 group-hover:bg-slate-700'
-          }`}>
+          <div
+            className={`p-2.5 rounded-lg transition-colors flex-shrink-0 ${
+              activeTab === "danh-muc"
+                ? "bg-white/20 text-white"
+                : "bg-slate-800 text-blue-400 group-hover:bg-slate-700"
+            }`}
+          >
             <Database size={18} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-xs font-bold flex items-center justify-between">
-              <span>1. Danh Mục KCB</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${
-                activeTab === 'danh-muc' ? 'bg-white/20 text-white' : 'bg-blue-950 text-blue-300 border border-blue-800/50'
-              }`}>
+            <div className="text-xs font-bold flex items-center justify-between gap-1">
+              <span className="truncate">1. Danh Mục KCB</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap flex-shrink-0 ${
+                  activeTab === "danh-muc"
+                    ? "bg-white/20 text-white"
+                    : "bg-blue-950 text-blue-300 border border-blue-800/50"
+                }`}
+              >
                 6 Biểu Mẫu
               </span>
             </div>
-            <span className={`text-[11px] block truncate mt-0.5 ${activeTab === 'danh-muc' ? 'text-blue-100' : 'text-slate-400'}`}>
+            <span
+              className={`text-[11px] block truncate mt-0.5 ${activeTab === "danh-muc" ? "text-blue-100" : "text-slate-400"}`}
+            >
               BPCM, Thuốc, TBYT, DVKT...
             </span>
           </div>
-          {activeTab === 'danh-muc' && <ChevronRight size={15} className="text-white flex-shrink-0" />}
+          {activeTab === "danh-muc" && (
+            <ChevronRight size={15} className="text-white flex-shrink-0" />
+          )}
         </button>
 
         {/* ============================================================
@@ -94,69 +113,93 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Bộ 1: Bảng Tổng Hợp KCB (01/BH) */}
           <button
             type="button"
-            onClick={() => onNavigate('ho-so', '01_tonghop')}
+            onClick={() => onNavigate("ho-so", "01_tonghop")}
             className={`w-full text-left p-2.5 rounded-xl flex items-center gap-3 transition-all duration-200 group relative ${
-              activeTab === 'ho-so' && hoSoTab === '01_tonghop'
-                ? 'bg-[#1677ff] text-white font-semibold shadow-lg shadow-blue-600/30 ring-1 ring-blue-400/40'
-                : 'hover:bg-slate-800/70 text-slate-300 hover:text-white bg-slate-900/30 border border-slate-800/60'
+              activeTab === "ho-so" && hoSoTab === "01_tonghop"
+                ? "bg-[#1677ff] text-white font-semibold shadow-lg shadow-blue-600/30 ring-1 ring-blue-400/40"
+                : "hover:bg-slate-800/70 text-slate-300 hover:text-white bg-slate-900/30 border border-slate-800/60"
             }`}
           >
-            <div className={`p-2 rounded-lg transition-colors flex-shrink-0 ${
-              activeTab === 'ho-so' && hoSoTab === '01_tonghop' ? 'bg-white/20 text-white' : 'bg-slate-800 text-cyan-400 group-hover:bg-slate-700'
-            }`}>
+            <div
+              className={`p-2 rounded-lg transition-colors flex-shrink-0 ${
+                activeTab === "ho-so" && hoSoTab === "01_tonghop"
+                  ? "bg-white/20 text-white"
+                  : "bg-slate-800 text-cyan-400 group-hover:bg-slate-700"
+              }`}
+            >
               <FileText size={16} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-bold flex items-center justify-between">
-                <span>Bộ 1: Bảng Tổng Hợp</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${
-                  activeTab === 'ho-so' && hoSoTab === '01_tonghop' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'
-                }`}>
+              <div className="text-xs font-bold flex items-center justify-between gap-1">
+                <span className="truncate">Bộ 1: Bảng Tổng Hợp</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap flex-shrink-0 ${
+                    activeTab === "ho-so" && hoSoTab === "01_tonghop"
+                      ? "bg-white/20 text-white"
+                      : "bg-slate-800 text-slate-300"
+                  }`}
+                >
                   01/BH
                 </span>
               </div>
-              <span className={`text-[11px] block truncate mt-0.5 ${activeTab === 'ho-so' && hoSoTab === '01_tonghop' ? 'text-blue-100' : 'text-slate-400'}`}>
+              <span
+                className={`text-[11px] block truncate mt-0.5 ${activeTab === "ho-so" && hoSoTab === "01_tonghop" ? "text-blue-100" : "text-slate-400"}`}
+              >
                 Chi phí KCB & XML 130
               </span>
             </div>
-            {activeTab === 'ho-so' && hoSoTab === '01_tonghop' && <ChevronRight size={14} className="text-white flex-shrink-0" />}
+            {activeTab === "ho-so" && hoSoTab === "01_tonghop" && (
+              <ChevronRight size={14} className="text-white flex-shrink-0" />
+            )}
           </button>
 
           {/* Bộ 2: Xử Lý Xuất Toán (09/BH) */}
           <button
             type="button"
-            onClick={() => onNavigate('ho-so', '09_xuattoan')}
+            onClick={() => onNavigate("ho-so", "09_xuattoan")}
             className={`w-full text-left p-2.5 rounded-xl flex items-center gap-3 transition-all duration-200 group relative ${
-              activeTab === 'ho-so' && hoSoTab === '09_xuattoan'
-                ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white font-semibold shadow-lg shadow-amber-600/30 ring-1 ring-amber-400/40'
-                : 'hover:bg-slate-800/70 text-slate-300 hover:text-white bg-slate-900/30 border border-slate-800/60'
+              activeTab === "ho-so" && hoSoTab === "09_xuattoan"
+                ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white font-semibold shadow-lg shadow-amber-600/30 ring-1 ring-amber-400/40"
+                : "hover:bg-slate-800/70 text-slate-300 hover:text-white bg-slate-900/30 border border-slate-800/60"
             }`}
           >
-            <div className={`p-2 rounded-lg transition-colors flex-shrink-0 ${
-              activeTab === 'ho-so' && hoSoTab === '09_xuattoan' ? 'bg-white/20 text-white' : 'bg-slate-800 text-amber-400 group-hover:bg-slate-700'
-            }`}>
+            <div
+              className={`p-2 rounded-lg transition-colors flex-shrink-0 ${
+                activeTab === "ho-so" && hoSoTab === "09_xuattoan"
+                  ? "bg-white/20 text-white"
+                  : "bg-slate-800 text-amber-400 group-hover:bg-slate-700"
+              }`}
+            >
               <ShieldAlert size={16} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-bold flex items-center justify-between">
-                <span>Bộ 2: Xử Lý Xuất Toán</span>
+              <div className="text-xs font-bold flex items-center justify-between gap-1">
+                <span className="truncate">Bộ 2: Xử Lý Xuất Toán</span>
                 {pendingXuattoanCount > 0 ? (
-                  <span className="text-[10px] bg-rose-500 text-white font-bold px-1.5 py-0.2 rounded-full animate-pulse">
+                  <span className="text-[10px] bg-rose-500 text-white font-bold px-1.5 py-0.5 rounded-full animate-pulse whitespace-nowrap flex-shrink-0">
                     {pendingXuattoanCount}
                   </span>
                 ) : (
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${
-                    activeTab === 'ho-so' && hoSoTab === '09_xuattoan' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'
-                  }`}>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap flex-shrink-0 ${
+                      activeTab === "ho-so" && hoSoTab === "09_xuattoan"
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
                     09/BH
                   </span>
                 )}
               </div>
-              <span className={`text-[11px] block truncate mt-0.5 ${activeTab === 'ho-so' && hoSoTab === '09_xuattoan' ? 'text-amber-100' : 'text-slate-400'}`}>
+              <span
+                className={`text-[11px] block truncate mt-0.5 ${activeTab === "ho-so" && hoSoTab === "09_xuattoan" ? "text-amber-100" : "text-slate-400"}`}
+              >
                 Giải trình & thu hồi
               </span>
             </div>
-            {activeTab === 'ho-so' && hoSoTab === '09_xuattoan' && <ChevronRight size={14} className="text-white flex-shrink-0" />}
+            {activeTab === "ho-so" && hoSoTab === "09_xuattoan" && (
+              <ChevronRight size={14} className="text-white flex-shrink-0" />
+            )}
           </button>
         </div>
 
@@ -172,12 +215,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </span>
             </div>
             <div className="text-[11px] text-slate-400 leading-snug">
-              BV Đa Khoa MediCare TW
+              Bệnh Viện OurMed Hospital
             </div>
             <div className="flex items-center justify-between text-[11px] text-slate-400">
               <span>Trạng thái Cổng:</span>
               <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Sẵn sàng
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>{" "}
+                Sẵn sàng
               </span>
             </div>
           </div>
@@ -192,22 +236,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className="w-9 h-9 rounded-xl object-cover border border-slate-700"
         />
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-bold text-white truncate">BS. CKII. Nguyễn Văn An</div>
-          <div className="text-[10px] text-slate-400 truncate">Giám Đốc Chuyên Môn BHYT</div>
+          <div className="text-xs font-bold text-white truncate">
+            Ban Chuyên Viên CNTT
+          </div>
         </div>
-        <button 
+        <button
           type="button"
           title="Đăng xuất"
           onClick={() => {
             toast.showConfirm({
-              title: 'Đăng Xuất Hệ Thống',
-              content: 'Bạn có chắc chắn muốn kết thúc phiên làm việc hiện tại?',
-              okText: 'Đăng Xuất',
-              cancelText: 'Ở Lại',
+              title: "Đăng Xuất Hệ Thống",
+              content:
+                "Bạn có chắc chắn muốn kết thúc phiên làm việc hiện tại?",
+              okText: "Đăng Xuất",
+              cancelText: "Ở Lại",
               danger: true,
               onOk: () => {
-                toast.success('Đã đăng xuất khỏi phiên làm việc an toàn.', 'Đăng Xuất Thành Công');
-              }
+                toast.success(
+                  "Đã đăng xuất khỏi phiên làm việc an toàn.",
+                  "Đăng Xuất Thành Công",
+                );
+              },
             });
           }}
           className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
@@ -218,5 +267,3 @@ export const Sidebar: React.FC<SidebarProps> = ({
     </aside>
   );
 };
-
-

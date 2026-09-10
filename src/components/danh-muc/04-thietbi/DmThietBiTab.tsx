@@ -22,8 +22,11 @@ import { ThietBiEditModal } from './components/ThietBiEditModal';
 import { SchemaMappingModal } from '../common/SchemaMappingModal';
 import { SchemaMappingCard } from '../common/SchemaMappingCard';
 
+import { useClipboard } from '../../../hooks';
+
 export const DmThietBiTab: React.FC = () => {
   const toast = useToast();
+  const { isCopied, copy: handleCopyText } = useClipboard();
   const [thietBiItems, setThietBiItems] = useState<DmThietBiItem[]>(initialThietBiData);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoadingFile, setIsLoadingFile] = useState(false);
@@ -32,7 +35,6 @@ export const DmThietBiTab: React.FC = () => {
   // Modal State for Mẫu 04/DM
   const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
   const [xmlExportTab, setXmlExportTab] = useState<'xml' | 'base64' | 'api'>('xml');
-  const [isCopied, setIsCopied] = useState(false);
   const [isSendingApi, setIsSendingApi] = useState(false);
   const [apiResponse, setApiResponse] = useState<SendThietBiGatewayResult | null>(null);
 
@@ -136,13 +138,6 @@ export const DmThietBiTab: React.FC = () => {
   const handleExportXml = () => {
     downloadThietBiXmlFile(xmlContent, `DanhMuc04_DMVTYT_${Date.now()}.xml`);
     toast.success('Đã tải xuống tệp XML Mẫu 04/DM chuẩn Bộ Y tế & BHXH Việt Nam', 'Xuất File Thành Công');
-  };
-
-  const handleCopyText = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setIsCopied(true);
-    toast.success('Đã sao chép nội dung vào khay nhớ tạm', 'Đã Sao Chép');
-    setTimeout(() => setIsCopied(false), 2000);
   };
 
   const handleSendBhxhApi = async () => {
