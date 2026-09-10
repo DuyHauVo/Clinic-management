@@ -140,42 +140,63 @@ export const SchemaMappingModal: React.FC<SchemaMappingModalProps> = ({
         </div>
 
         {/* Table comparison */}
-        <div className="p-6 overflow-y-auto flex-1">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200 sticky top-0 z-10">
+        <div className="overflow-y-auto flex-1 relative">
+          <table className="w-full text-left text-xs border-separate border-spacing-0">
+            <thead className="sticky top-0 z-20 shadow-xs">
               <tr>
-                <th className="py-2.5 px-3 text-center w-12">STT</th>
-                <th className="py-2.5 px-3 min-w-[140px]">MÃ TRƯỜNG XML</th>
-                <th className="py-2.5 px-3 min-w-[180px]">TÊN TRƯỜNG CHUẨN BHXH</th>
-                <th className="py-2.5 px-3 text-center min-w-[90px]">BẮT BUỘC</th>
-                <th className="py-2.5 px-3 text-center min-w-[110px]">KIỂU DỮ LIỆU</th>
-                <th className="py-2.5 px-3 min-w-[180px]">CỘT TÌM THẤY TRONG EXCEL</th>
-                <th className="py-2.5 px-3 text-center min-w-[120px]">TRẠNG THÁI</th>
+                <th className="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] py-3 px-3.5 text-center w-12 border-b border-slate-200">
+                  STT
+                </th>
+                <th className="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] py-3 px-3.5 min-w-[140px] border-b border-slate-200">
+                  MÃ TRƯỜNG XML
+                </th>
+                <th className="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] py-3 px-3.5 min-w-[180px] border-b border-slate-200">
+                  TÊN TRƯỜNG CHUẨN BHXH
+                </th>
+                <th className="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] py-3 px-3.5 text-center min-w-[90px] border-b border-slate-200">
+                  BẮT BUỘC
+                </th>
+                <th className="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] py-3 px-3.5 text-center min-w-[110px] border-b border-slate-200">
+                  KIỂU DỮ LIỆU
+                </th>
+                <th className="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] py-3 px-3.5 min-w-[180px] border-b border-slate-200">
+                  CỘT TÌM THẤY TRONG EXCEL
+                </th>
+                <th className="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] py-3 px-3.5 text-center min-w-[120px] border-b border-slate-200">
+                  TRẠNG THÁI
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {filteredFields.map((field, idx) => {
                 const isMatched = matchedSet.has(field.key);
                 const excelColName = matchedColumnsMap[field.key] || (isMatched ? field.key : '');
 
                 return (
-                  <tr key={field.key} className={`hover:bg-blue-50/30 transition-colors ${!isMatched && field.required ? 'bg-amber-50/30' : ''}`}>
-                    <td className="py-3 px-3 text-center font-bold text-slate-400">
+                  <tr
+                    key={field.key}
+                    className={`transition-colors border-b border-slate-100 ${
+                      !isMatched && field.required
+                        ? 'bg-amber-50/40 hover:bg-amber-50/70'
+                        : 'bg-white hover:bg-blue-50/40'
+                    }`}
+                  >
+                    <td className="py-3 px-3.5 text-center font-bold text-slate-400 border-b border-slate-100">
                       {idx + 1}
                     </td>
 
-                    <td className="py-3 px-3 font-mono font-bold text-[#1677ff]">
+                    <td className="py-3 px-3.5 font-mono font-bold text-[#1677ff] border-b border-slate-100">
                       {field.key}
                     </td>
 
-                    <td className="py-3 px-3">
+                    <td className="py-3 px-3.5 border-b border-slate-100">
                       <div className="font-bold text-slate-900">{field.label}</div>
                       {field.desc && (
                         <div className="text-[11px] text-slate-400 mt-0.5">{field.desc}</div>
                       )}
                     </td>
 
-                    <td className="py-3 px-3 text-center">
+                    <td className="py-3 px-3.5 text-center border-b border-slate-100">
                       {field.required ? (
                         <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-rose-50 text-rose-700 border border-rose-200">
                           Bắt buộc
@@ -187,13 +208,13 @@ export const SchemaMappingModal: React.FC<SchemaMappingModalProps> = ({
                       )}
                     </td>
 
-                    <td className="py-3 px-3 text-center font-mono text-[11px] text-slate-600">
+                    <td className="py-3 px-3.5 text-center font-mono text-[11px] text-slate-600 border-b border-slate-100">
                       <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700">
                         {field.type}
                       </span>
                     </td>
 
-                    <td className="py-3 px-3">
+                    <td className="py-3 px-3.5 border-b border-slate-100">
                       {isMatched ? (
                         <div className="flex items-center gap-1.5">
                           <span className="font-mono text-emerald-800 font-bold bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
@@ -207,7 +228,7 @@ export const SchemaMappingModal: React.FC<SchemaMappingModalProps> = ({
                       )}
                     </td>
 
-                    <td className="py-3 px-3 text-center">
+                    <td className="py-3 px-3.5 text-center border-b border-slate-100">
                       {isMatched ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <Check size={12} />

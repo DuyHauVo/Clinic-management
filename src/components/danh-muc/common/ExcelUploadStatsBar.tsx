@@ -3,6 +3,8 @@ import { FileSpreadsheet, Check } from 'lucide-react';
 
 export type ThemeColor = 'cyan' | 'indigo' | 'emerald' | 'blue' | 'purple' | 'amber';
 
+export type ExcelSheetInfo = string | { name: string; rowCount?: number };
+
 export interface ExcelUploadStatsBarProps {
   selectedSheet: string;
   totalRows: number;
@@ -10,7 +12,7 @@ export interface ExcelUploadStatsBarProps {
   matchedColumnsCount: number;
   totalColumnsCount: number;
   fileName?: string;
-  availableSheets?: string[];
+  availableSheets?: ExcelSheetInfo[];
   themeColor?: ThemeColor;
   onOpenSchemaModal?: () => void;
   onSwitchSheet?: (sheetName: string) => void;
@@ -57,13 +59,13 @@ const themeStyles: Record<
     sheetActiveBg: 'bg-emerald-600',
   },
   blue: {
-    btnHoverText: 'hover:text-blue-700',
+    btnHoverText: 'hover:text-[#1677ff]',
     btnBg: 'bg-blue-50 hover:bg-blue-100',
     btnBorder: 'border-blue-200',
-    textStrong: 'text-blue-700',
-    badgeBg: 'bg-blue-600',
-    iconColor: 'text-blue-600',
-    sheetActiveBg: 'bg-blue-600',
+    textStrong: 'text-[#1677ff]',
+    badgeBg: 'bg-[#1677ff]',
+    iconColor: 'text-[#1677ff]',
+    sheetActiveBg: 'bg-[#1677ff]',
   },
   purple: {
     btnHoverText: 'hover:text-purple-700',
@@ -153,24 +155,39 @@ export const ExcelUploadStatsBar: React.FC<ExcelUploadStatsBarProps> = ({
         <div className="flex items-center gap-2 pt-2 border-t border-slate-200/80">
           <span className="text-xs font-semibold text-slate-600 flex items-center gap-1">
             <FileSpreadsheet size={13} className={currentTheme.iconColor} />
-            Các Sheet trong file:
+            Các Sheet trong file ({availableSheets.length} sheets):
           </span>
           <div className="flex flex-wrap gap-1.5">
-            {availableSheets.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => onSwitchSheet(s)}
-                className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-all ${
-                  s === selectedSheet
-                    ? `${currentTheme.sheetActiveBg} text-white shadow-xs font-bold`
-                    : 'bg-white hover:bg-slate-200 text-slate-700 border border-slate-200'
-                }`}
-              >
-                {s}
-                {s === selectedSheet && <Check size={11} className="inline ml-1" />}
-              </button>
-            ))}
+            {availableSheets.map((item) => {
+              const name = typeof item === 'string' ? item : item.name;
+              const rowCount = typeof item === 'object' ? item.rowCount : undefined;
+              const isSelected = name === selectedSheet;
+
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => onSwitchSheet(name)}
+                  className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1.5 border ${
+                    isSelected
+                      ? `${currentTheme.sheetActiveBg} text-white shadow-xs font-bold border-transparent`
+                      : 'bg-white hover:bg-slate-200 text-slate-700 border-slate-200'
+                  }`}
+                >
+                  <span>{name}</span>
+                  {rowCount !== undefined && (
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                        isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                      }`}
+                    >
+                      {rowCount} dòng
+                    </span>
+                  )}
+                  {isSelected && <Check size={11} className="inline ml-0.5" />}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

@@ -1,15 +1,7 @@
 import React, { useRef } from "react";
-import {
-  Upload,
-  Download,
-  Sparkles,
-  Trash2,
-  FileCode,
-  Send,
-  Plus,
-} from "lucide-react";
+import { Upload } from "lucide-react";
 import type { ParseThietBiExcelResult } from "../services/thietBiService";
-import { ExcelUploadStatsBar } from "../../common";
+import { ExcelUploadStatsBar, DanhMucActionToolbar } from "../../common";
 
 interface ThietBiDropzoneProps {
   isLoadingFile: boolean;
@@ -108,73 +100,25 @@ export const ThietBiDropzone: React.FC<ThietBiDropzoneProps> = ({
         )}
       </div>
 
-      {/* Action Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={onDownloadTemplate}
-            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
-            title="Tải tệp Excel mẫu chứa 26 cột chuẩn theo quy định Bộ Y tế & BHXH Việt Nam"
-          >
-            <Download size={14} className="text-slate-500" />
-            <span>Tải Tệp Excel Mẫu Chuẩn</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onLoadSample}
-            className="px-3 py-2 bg-cyan-50 hover:bg-cyan-100 text-cyan-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 border border-cyan-200/60"
-            title="Nạp dữ liệu mẫu gồm 5 thiết bị / vật tư y tế chuẩn"
-          >
-            <Sparkles size={14} className="text-cyan-600" />
-            <span>Nạp Dữ Liệu Mẫu</span>
-          </button>
-
-          {itemsCount > 0 && (
-            <button
-              type="button"
-              onClick={onClearData}
-              className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 border border-rose-200/60"
-              title="Xóa danh sách thiết bị hiện tại"
-            >
-              <Trash2 size={14} />
-              <span>Xóa Hết ({itemsCount})</span>
-            </button>
-          )}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={onOpenXmlModal}
-            className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5"
-            title="Xem mã XML hoặc chuỗi Base64 ký số theo cấu trúc quy định"
-          >
-            <FileCode size={14} className="text-cyan-400" />
-            <span>Xem Cấu Trúc XML (Loại HS 11)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onOpenApiTab}
-            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5"
-            title="Gửi dữ liệu danh mục lên Cổng tiếp nhận Giám định BHYT (Sandbox)"
-          >
-            <Send size={14} />
-            <span>Gửi Cổng BHXH (API)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onAddNew}
-            className="px-3.5 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5"
-          >
-            <Plus size={14} />
-            <span>Thêm Mới Thiết Bị</span>
-          </button>
-        </div>
-      </div>
+      {/* Action Toolbar (Shared Component) */}
+      <DanhMucActionToolbar
+        itemsCount={itemsCount}
+        templateLabel="Tải Tệp Excel Mẫu Chuẩn"
+        templateTooltip="Tải tệp Excel mẫu chứa 26 cột chuẩn theo quy định Bộ Y tế & BHXH Việt Nam"
+        sampleTooltip="Nạp dữ liệu mẫu gồm 5 thiết bị / vật tư y tế chuẩn"
+        xmlLabel="Xem Cấu Trúc XML (Loại HS 11)"
+        xmlTooltip="Xem mã XML hoặc chuỗi Base64 ký số theo cấu trúc quy định"
+        apiLabel="Gửi Cổng BHXH (API)"
+        apiTooltip="Gửi dữ liệu danh mục lên Cổng tiếp nhận Giám định BHYT (Sandbox)"
+        addNewLabel="Thêm Mới Thiết Bị"
+        themeColor="cyan"
+        onDownloadTemplate={onDownloadTemplate}
+        onLoadSample={onLoadSample}
+        onClearData={onClearData}
+        onOpenXmlModal={onOpenXmlModal}
+        onOpenApiTab={onOpenApiTab}
+        onAddNew={onAddNew}
+      />
     </div>
   );
 };
