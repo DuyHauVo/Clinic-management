@@ -21,8 +21,11 @@ import { BpcmEditModal } from './components/BpcmEditModal';
 import { SchemaMappingModal } from '../common/SchemaMappingModal';
 import { SchemaMappingCard } from '../common/SchemaMappingCard';
 
+import { useClipboard } from '../../../hooks';
+
 export const DmBpcmTab: React.FC = () => {
   const toast = useToast();
+  const { isCopied, copy: handleCopyText } = useClipboard();
   const [bpcmItems, setBpcmItems] = useState<DmBpcmItem[]>(initialBpcmData);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoadingFile, setIsLoadingFile] = useState(false);
@@ -31,7 +34,6 @@ export const DmBpcmTab: React.FC = () => {
   // Modal States
   const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
   const [xmlExportTab, setXmlExportTab] = useState<'xml' | 'base64' | 'api'>('xml');
-  const [isCopied, setIsCopied] = useState(false);
   const [isSendingApi, setIsSendingApi] = useState(false);
   const [apiResponse, setApiResponse] = useState<any>(null);
 
@@ -117,13 +119,6 @@ export const DmBpcmTab: React.FC = () => {
     const xml = generateBpcmXml(bpcmItems);
     downloadXmlFile(xml, 'DanhMuc01_BPCMKBCB_01929.xml');
     toast.success('Đã tải xuống file XML Mẫu 01/DM chuẩn Loại hồ sơ 70', 'Xuất File Thành Công');
-  };
-
-  const handleCopyText = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setIsCopied(true);
-    toast.success('Đã sao chép vào bộ nhớ đệm!', 'Sao Chép');
-    setTimeout(() => setIsCopied(false), 2000);
   };
 
   const handleSendBhxhApi = async () => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Search, Activity, Edit2, Trash2, Atom, Plus } from 'lucide-react';
 import type { DmDichVuItem } from '../../../../types';
 
 interface DichVuTableProps {
@@ -9,6 +9,7 @@ interface DichVuTableProps {
   onAddNew: () => void;
   onEdit: (item: DmDichVuItem) => void;
   onDelete: (item: DmDichVuItem) => void;
+  onManageThuocPx: (item: DmDichVuItem) => void;
 }
 
 export const DichVuTable: React.FC<DichVuTableProps> = ({
@@ -17,7 +18,8 @@ export const DichVuTable: React.FC<DichVuTableProps> = ({
   onSearchChange,
   onAddNew,
   onEdit,
-  onDelete
+  onDelete,
+  onManageThuocPx
 }) => {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
@@ -28,10 +30,10 @@ export const DichVuTable: React.FC<DichVuTableProps> = ({
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm theo mã dịch vụ, tên kỹ thuật, phân loại, khoa thực hiện..."
+              placeholder="Tìm kiếm theo mã DV, tên DVKT, quy trình, quyết định..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all font-medium"
+              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition-all font-medium"
             />
           </div>
           {searchTerm && (
@@ -45,78 +47,124 @@ export const DichVuTable: React.FC<DichVuTableProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-slate-500">
+            Hiển thị <strong className="text-slate-900 font-bold">{items.length}</strong> dịch vụ
+          </span>
           <button
             type="button"
             onClick={onAddNew}
-            className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md shadow-teal-600/20 flex items-center gap-1.5 transition-colors"
+            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
           >
-            <Plus size={15} />
-            <span>Thêm Dịch Vụ Mới</span>
+            <Plus size={14} />
+            <span>Thêm DVKT</span>
           </button>
         </div>
       </div>
 
-      {/* Responsive Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs text-slate-700">
-          <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[11px] border-b border-slate-200">
+      {/* Responsive Table with horizontal scroll */}
+      <div className="overflow-x-auto max-h-[600px] relative">
+        <table className="w-full text-left text-xs text-slate-700 border-collapse min-w-[1800px]">
+          <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200 sticky top-0 z-20 shadow-2xs">
             <tr>
-              <th className="py-3 px-4 text-center w-12">STT</th>
-              <th className="py-3 px-4">MÃ DỊCH VỤ (BYT)</th>
-              <th className="py-3 px-4">TÊN DỊCH VỤ KỸ THUẬT</th>
-              <th className="py-3 px-4">PHÂN LOẠI</th>
-              <th className="py-3 px-4 text-right">GIÁ BHYT</th>
-              <th className="py-3 px-4 text-right">GIÁ VIỆN PHÍ</th>
-              <th className="py-3 px-4">KHOA THỰC HIỆN</th>
-              <th className="py-3 px-4 text-center w-24">THAO TÁC</th>
+              <th className="py-3 px-2 text-center w-[52px] min-w-[52px] max-w-[52px] sticky left-0 bg-slate-100 z-30">
+                STT
+              </th>
+              <th className="py-3 px-3 min-w-[140px] sticky left-[52px] bg-slate-100 z-30 border-r border-slate-200/80 shadow-[4px_0_8px_-3px_rgba(0,0,0,0.08)]">
+                MÃ DỊCH VỤ
+              </th>
+              <th className="py-3 px-3 min-w-[240px]">TÊN DỊCH VỤ (QĐ 3176)</th>
+              <th className="py-3 px-3 min-w-[200px]">TÊN DVKT THEO GIÁ</th>
+              <th className="py-3 px-3 text-right min-w-[120px]">ĐƠN GIÁ (VNĐ)</th>
+              <th className="py-3 px-3 text-right min-w-[130px]">GIÁ TT BHYT</th>
+              <th className="py-3 px-3 text-center min-w-[110px]">THUỐC PX</th>
+              <th className="py-3 px-3 min-w-[140px]">QUY TRÌNH</th>
+              <th className="py-3 px-3 min-w-[140px]">QĐ DVKT</th>
+              <th className="py-3 px-3 min-w-[140px]">QĐ PHÊ DUYỆT GIÁ</th>
+              <th className="py-3 px-3 min-w-[100px]">MÃ CSKCB</th>
+              <th className="py-3 px-3 min-w-[110px]">TỪ NGÀY</th>
+              <th className="py-3 px-3 min-w-[110px]">ĐẾN NGÀY</th>
+              <th className="py-3 px-3 text-center min-w-[100px] sticky right-0 bg-slate-100 z-30 border-l border-slate-200/80 shadow-[-4px_0_8px_-3px_rgba(0,0,0,0.08)]">
+                THAO TÁC
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {items.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-8 text-center text-slate-400">
-                  Không tìm thấy dịch vụ phù hợp
+                <td colSpan={14} className="py-12 text-center text-slate-400">
+                  <Activity size={32} className="mx-auto mb-2 text-slate-300" />
+                  <p className="font-bold text-sm text-slate-600">Chưa có dữ liệu Danh mục Dịch Vụ KBCB</p>
+                  <p className="text-xs text-slate-400 mt-1">Vui lòng nạp file Excel hoặc bấm "Thêm DVKT" mới</p>
                 </td>
               </tr>
             ) : (
-              items.map((dv) => (
-                <tr key={dv.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="py-3 px-4 text-center font-bold text-slate-400">{dv.stt}</td>
-                  <td className="py-3 px-4 font-mono font-bold text-[#1677ff]">{dv.maDichVu}</td>
-                  <td className="py-3 px-4 font-bold text-slate-900">{dv.tenDichVu}</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">
-                      {dv.loaiDv}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-right font-bold text-emerald-700">
-                    {dv.giaBhyt.toLocaleString('vi-VN')} đ
-                  </td>
-                  <td className="py-3 px-4 text-right font-bold text-blue-700">
-                    {dv.giaVienPhi.toLocaleString('vi-VN')} đ
-                  </td>
-                  <td className="py-3 px-4 text-slate-600">{dv.khoaThucHien}</td>
-                  <td className="py-3 px-4 text-center">
-                    <div className="flex items-center justify-center gap-1">
+              items.map((item, idx) => {
+                const hasThuocPx = item.dsThuocPx && item.dsThuocPx.length > 0;
+                return (
+                  <tr key={item.id || item.maDichVu || idx} className="hover:bg-emerald-50/30 transition-colors group">
+                    <td className="py-3 px-2 text-center font-bold text-slate-400 sticky left-0 bg-white group-hover:bg-slate-50 z-10 w-[52px] min-w-[52px] max-w-[52px]">
+                      {item.stt || idx + 1}
+                    </td>
+                    <td className="py-3 px-3 font-mono font-bold text-emerald-700 sticky left-[52px] bg-white group-hover:bg-slate-50 z-10 border-r border-slate-200/80 shadow-[4px_0_8px_-3px_rgba(0,0,0,0.08)] min-w-[140px]">
+                      {item.maDichVu}
+                    </td>
+                    <td className="py-3 px-3 font-bold text-slate-900 max-w-[260px] truncate" title={item.tenDichVu}>
+                      {item.tenDichVu}
+                    </td>
+                    <td className="py-3 px-3 text-slate-700 max-w-[220px] truncate" title={item.tenDvktGia || ''}>
+                      {item.tenDvktGia || '-'}
+                    </td>
+                    <td className="py-3 px-3 text-right font-mono font-semibold text-slate-900">
+                      {item.donGia != null ? item.donGia.toLocaleString('vi-VN') : '-'}
+                    </td>
+                    <td className="py-3 px-3 text-right font-mono font-bold text-emerald-600">
+                      {item.giaThanhToan != null ? item.giaThanhToan.toLocaleString('vi-VN') : '-'}
+                    </td>
+                    <td className="py-3 px-3 text-center">
                       <button
                         type="button"
-                        onClick={() => onEdit(dv)}
-                        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-[#1677ff]"
+                        onClick={() => onManageThuocPx(item)}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors ${
+                          hasThuocPx
+                            ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                        }`}
+                        title="Quản lý danh sách thuốc phóng xạ đi kèm"
                       >
-                        <Edit2 size={13} />
+                        <Atom size={12} className={hasThuocPx ? 'text-amber-600' : ''} />
+                        <span>{hasThuocPx ? `${item.dsThuocPx?.length} Thuốc PX` : 'Thêm PX'}</span>
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => onDelete(dv)}
-                        className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                    </td>
+                    <td className="py-3 px-3 font-mono text-slate-600">{item.quyTrinh || '-'}</td>
+                    <td className="py-3 px-3 font-mono text-slate-500">{item.qdDvkt || '-'}</td>
+                    <td className="py-3 px-3 font-mono text-slate-500">{item.qdPdGia || '-'}</td>
+                    <td className="py-3 px-3 font-mono text-slate-600">{item.maCskcb}</td>
+                    <td className="py-3 px-3 font-mono text-slate-600">{item.tuNgay}</td>
+                    <td className="py-3 px-3 font-mono text-slate-400">{item.denNgay || '-'}</td>
+                    <td className="py-3 px-3 text-center sticky right-0 bg-white group-hover:bg-slate-50 z-10 border-l border-slate-200/80 shadow-[-4px_0_8px_-3px_rgba(0,0,0,0.08)] min-w-[100px]">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => onEdit(item)}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Chỉnh sửa dịch vụ"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDelete(item)}
+                          className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                          title="Xóa dịch vụ"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

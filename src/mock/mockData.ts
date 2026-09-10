@@ -467,43 +467,121 @@ export const initialThietBiData: DmThietBiItem[] = [
 ];
 
 // ============================================================
-// 5. DANH MỤC 05/DM: DỊCH VỤ KỸ THUẬT KCB BHYT (LOẠI 12)
+// ============================================================
+// 5. DANH MỤC 05/DM: DỊCH VỤ KỸ THUẬT KCB BHYT (LOẠI 12 - GuiDanhMuc05_DVKT)
 // ============================================================
 export const initialDichVuData: DmDichVuItem[] = [
   {
     id: 'dv-1',
     stt: 1,
-    maDichVu: '01.0022.0001',
-    tenDichVu: 'Khám bệnh chuyên khoa Tim mạch',
-    loaiDv: 'Khám bệnh',
-    giaBhyt: 42100,
-    giaVienPhi: 180000,
-    khoaThucHien: 'Khoa Khám Bệnh Đa Khoa',
-    maCskcb: '01929'
+    maDichVu: '01.0001.0001',
+    tenDichVu: 'Khám bệnh chuyên khoa Nội',
+    tenDvktGia: 'Khám bệnh chuyên khoa Nội [khám thường]',
+    donGia: 42100,
+    quyTrinh: '20240115_123/QĐ-BV',
+    qdDvkt: '20240201_456/QĐ-SYT',
+    qdPdGia: '20240301_789/QĐ-UBND',
+    ghiChu: 'Áp dụng theo mức giá hạng II',
+    giaThanhToan: 42100,
+    tuNgay: '20260101',
+    denNgay: '',
+    maCskcb: '01929',
+    dsThuocPx: [],
+    isValid: true,
+    errors: []
   },
   {
     id: 'dv-2',
     stt: 2,
-    maDichVu: '03.0015.0112',
-    tenDichVu: 'Điện tâm đồ (ECG 12 chuyển đạo tiêu chuẩn)',
-    loaiDv: 'Thăm dò chức năng',
-    giaBhyt: 52000,
-    giaVienPhi: 120000,
-    khoaThucHien: 'Khoa Chẩn Đoán Hình Ảnh',
-    maCskcb: '01929'
+    maDichVu: '03.0012.0005',
+    tenDichVu: 'Siêu âm Doppler tim, van tim',
+    tenDvktGia: 'Siêu âm Doppler tim, van tim qua thành ngực',
+    donGia: 247000,
+    quyTrinh: '20240115_123/QĐ-BV',
+    qdDvkt: '20240201_456/QĐ-SYT',
+    qdPdGia: '20240301_789/QĐ-UBND',
+    ghiChu: 'Siêu âm màu 4D chuyên sâu',
+    giaThanhToan: 247000,
+    tuNgay: '20260101',
+    denNgay: '',
+    maCskcb: '01929',
+    dsThuocPx: [],
+    isValid: true,
+    errors: []
   },
   {
     id: 'dv-3',
     stt: 3,
+    maDichVu: '04.0045.0008',
+    tenDichVu: 'Chụp X-quang ngực thẳng',
+    tenDvktGia: 'Chụp X-quang ngực thẳng kỹ thuật số (1 tư thế)',
+    donGia: 75000,
+    quyTrinh: '20240115_123/QĐ-BV',
+    qdDvkt: '20240201_456/QĐ-SYT',
+    qdPdGia: '20240301_789/QĐ-UBND',
+    ghiChu: 'Chụp kỹ thuật số CR/DR',
+    giaThanhToan: 75000,
+    tuNgay: '20260101',
+    denNgay: '',
+    maCskcb: '01929',
+    dsThuocPx: [],
+    isValid: true,
+    errors: []
+  },
+  {
+    id: 'dv-4',
+    stt: 4,
     maDichVu: '04.0090.0450',
-    tenDichVu: 'Định lượng Glucose máu bằng máy tự động',
-    loaiDv: 'Xét nghiệm',
-    giaBhyt: 24500,
-    giaVienPhi: 65000,
-    khoaThucHien: 'Khoa Xét Nghiệm',
-    maCskcb: '01929'
+    tenDichVu: 'Định lượng Glucose máu',
+    tenDvktGia: 'Định lượng Glucose [Máu]',
+    donGia: 24500,
+    quyTrinh: '20240115_123/QĐ-BV',
+    qdDvkt: '20240201_456/QĐ-SYT',
+    qdPdGia: '20240301_789/QĐ-UBND',
+    ghiChu: 'Xét nghiệm sinh hóa máu tự động',
+    giaThanhToan: 24500,
+    tuNgay: '20260101',
+    denNgay: '',
+    maCskcb: '01929',
+    dsThuocPx: [],
+    isValid: true,
+    errors: []
+  },
+  {
+    id: 'dv-5',
+    stt: 5,
+    maDichVu: '06.0120.0010',
+    tenDichVu: 'Xạ hình tưới máu cơ tim bằng SPECT',
+    tenDvktGia: 'Xạ hình tưới máu cơ tim bằng SPECT (gắng sức hoặc nghỉ)',
+    donGia: 1850000,
+    quyTrinh: '20240115_123/QĐ-BV',
+    qdDvkt: '20240201_456/QĐ-SYT',
+    qdPdGia: '20240301_789/QĐ-UBND',
+    ghiChu: 'Bao gồm thuốc phóng xạ 99mTc-Sestamibi (MIBI)',
+    giaThanhToan: 2450000,
+    tuNgay: '20260101',
+    denNgay: '',
+    maCskcb: '01929',
+    dsThuocPx: [
+      {
+        id: 'px-1',
+        stt: 1,
+        maThuoc: 'PX.01.001',
+        tenThuoc: 'Technetium-99m Sestamibi (99mTc-MIBI)',
+        soDangKy: 'VN-PX-0012-23',
+        donViTinh: 'Liều (mCi)',
+        ttThau: '01/2026/QĐ-SYT;G1;N1',
+        donGiaThuoc: 600000,
+        lieuBqPx: 20,
+        tlThucTeBqPx: 20,
+        thanhTienThuoc: 600000
+      }
+    ],
+    isValid: true,
+    errors: []
   }
 ];
+
 
 // ============================================================
 // 6. DANH MỤC 06/DM: THIẾT BỊ THỰC HIỆN DVKT (LOẠI 73)

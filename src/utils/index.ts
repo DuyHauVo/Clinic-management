@@ -5,3 +5,4 @@ export * from './bpcmXmlEngine';
 export * from './nhanlucXmlEngine';
 export * from './thuocXmlEngine';
 export * from './thietBiXmlEngine';
+export * from './dichVuXmlEngine';
