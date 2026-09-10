@@ -23,6 +23,9 @@ export function normalizeHeaderKey(str: string): string {
 export interface SharedSchemaField {
   key: string;
   label: string;
+  type?: string;
+  required?: boolean;
+  desc?: string;
   aliases: string[];
 }
 
@@ -167,21 +170,42 @@ export function readExcelFile(file: File): Promise<XLSX.WorkBook> {
  * Chọn sheet khớp schema nhiều nhất: với mỗi dòng (tối đa maxScanRows),
  * đếm số schema key DUY NHẬT được nhận diện (dùng Set để một ô không đếm đè).
  */
+/**
+ * Chọn sheet khớp schema nhiều nhất: với mỗi dòng (tối đa maxScanRows),
+ * đếm số schema key DUY NHẤT được nhận diện (dùng Set để một ô không đếm đè)
+ * kết hợp điểm thưởng nếu tên sheet chứa từ khóa đặc thù của danh mục.
+ */
 export function findBestSheetName(
   workbook: XLSX.WorkBook,
   matchSchemaKey: SchemaKeyMatcher,
-  maxScanRows = 10,
+  maxScanRows = 15,
+  sheetNameKeywords?: string[],
 ): string {
   let highestScore = -1;
   let bestSheet = workbook.SheetNames[0];
 
   for (const sName of workbook.SheetNames) {
     const ws = workbook.Sheets[sName];
+    const normSheetName = normalizeHeaderKey(sName);
+
+    let nameBonus = 0;
+    if (sheetNameKeywords) {
+      for (const kw of sheetNameKeywords) {
+        if (normSheetName.includes(normalizeHeaderKey(kw))) {
+          nameBonus += 5;
+          break;
+        }
+      }
+    }
+
     const rows: unknown[][] = XLSX.utils.sheet_to_json(ws, {
       header: 1,
       defval: "",
     });
-    if (!rows || rows.length === 0) continue;
+
+    if (!rows || rows.length === 0) {
+      continue;
+    }
 
     for (let r = 0; r < Math.min(rows.length, maxScanRows); r++) {
       const row = rows[r];
@@ -191,8 +215,9 @@ export function findBestSheetName(
         const matched = matchSchemaKey(String(cell ?? ""));
         if (matched) matchedKeysInRow.add(matched);
       });
-      if (matchedKeysInRow.size > highestScore) {
-        highestScore = matchedKeysInRow.size;
+      const totalScore = matchedKeysInRow.size + nameBonus;
+      if (totalScore > highestScore) {
+        highestScore = totalScore;
         bestSheet = sName;
       }
     }
@@ -334,8 +359,18 @@ export function xmlToBase64(xmlString: string): string {
 }
 
 // ============================================================
-// 5. DOWNLOAD & GATEWAY
+// 9. TIỆN ÍCH CLIPBOARD DÙNG CHUNG
 // ============================================================
+
+export async function copyTextToClipboard(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (err) {
+    console.error("Failed to copy text: ", err);
+    return false;
+  }
+}
 
 /**
  * Tải file XML xuống máy người dùng.

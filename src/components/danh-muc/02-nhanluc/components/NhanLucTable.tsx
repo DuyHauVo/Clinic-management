@@ -76,11 +76,15 @@ export const NhanLucTable: React.FC<NhanLucTableProps> = ({
       {/* Responsive Table */}
       <div className="overflow-x-auto max-h-[600px] relative">
         <table className="w-full text-left text-xs text-slate-700 border-collapse min-w-[1700px]">
-          <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200 sticky top-0 z-10 shadow-2xs">
+          <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200 sticky top-0 z-20 shadow-2xs">
             <tr>
-              <th className="py-3 px-3 text-center w-12 sticky left-0 bg-slate-100 z-20">STT</th>
-              <th className="py-3 px-3 min-w-[180px] sticky left-12 bg-slate-100 z-20">Họ Và Tên</th>
-              <th className="py-3 px-3 min-w-[120px]">Số Định Danh / CCCD</th>
+              <th className="py-3 px-2 text-center w-[52px] min-w-[52px] max-w-[52px] sticky left-0 bg-slate-100 z-30">
+                STT
+              </th>
+              <th className="py-3 px-3 min-w-[200px] sticky left-[52px] bg-slate-100 z-30 border-r border-slate-200/80 shadow-[4px_0_8px_-3px_rgba(0,0,0,0.08)]">
+                Họ Và Tên
+              </th>
+              <th className="py-3 px-3 min-w-[130px]">Số Định Danh / CCCD</th>
               <th className="py-3 px-3 text-center min-w-[80px]">Giới Tính</th>
               <th className="py-3 px-3 min-w-[130px]">Chức Danh NN</th>
               <th className="py-3 px-3 min-w-[140px]">Vị Trí Chuyên Môn</th>
@@ -97,7 +101,9 @@ export const NhanLucTable: React.FC<NhanLucTableProps> = ({
               <th className="py-3 px-3 min-w-[90px]">Từ Ngày</th>
               <th className="py-3 px-3 min-w-[90px]">Đến Ngày</th>
               <th className="py-3 px-3 min-w-[80px]">Mã CSKCB</th>
-              <th className="py-3 px-3 text-center min-w-[100px] sticky right-0 bg-slate-100 z-20">Thao Tác</th>
+              <th className="py-3 px-3 text-center min-w-[90px] sticky right-0 bg-slate-100 z-30 border-l border-slate-200/80 shadow-[-4px_0_8px_-3px_rgba(0,0,0,0.08)]">
+                Thao Tác
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -112,10 +118,10 @@ export const NhanLucTable: React.FC<NhanLucTableProps> = ({
             ) : (
               items.map((item, idx) => (
                 <tr key={item.id || item.soDinhDanh || idx} className="hover:bg-indigo-50/30 transition-colors group">
-                  <td className="py-3 px-3 text-center font-bold text-slate-400 sticky left-0 bg-white group-hover:bg-slate-50 z-10">
+                  <td className="py-3 px-2 text-center font-bold text-slate-400 w-[52px] min-w-[52px] max-w-[52px] sticky left-0 bg-white group-hover:bg-slate-50 z-10">
                     {item.stt || idx + 1}
                   </td>
-                  <td className="py-3 px-3 font-bold text-slate-900 sticky left-12 bg-white group-hover:bg-slate-50 z-10 whitespace-nowrap">
+                  <td className="py-3 px-3 font-bold text-slate-900 whitespace-nowrap sticky left-[52px] bg-white group-hover:bg-slate-50 z-10 border-r border-slate-200/80 shadow-[4px_0_8px_-3px_rgba(0,0,0,0.08)]">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
                         {item.hoTen.charAt(0)}
@@ -174,7 +180,7 @@ export const NhanLucTable: React.FC<NhanLucTableProps> = ({
                   <td className="py-3 px-3 font-mono text-slate-600 font-bold">{item.tuNgay}</td>
                   <td className="py-3 px-3 font-mono text-slate-400">{item.denNgay || '-'}</td>
                   <td className="py-3 px-3 font-mono text-slate-500">{item.maCskcb}</td>
-                  <td className="py-3 px-3 text-center sticky right-0 bg-white group-hover:bg-slate-50 z-10 shadow-xs">
+                  <td className="py-3 px-3 text-center sticky right-0 bg-white group-hover:bg-slate-50 z-10 border-l border-slate-200/80 shadow-[-4px_0_8px_-3px_rgba(0,0,0,0.08)]">
                     <div className="flex items-center justify-center gap-1.5">
                       <button
                         type="button"
