@@ -1,0 +1,1 @@
+export { DmThuocTab } from './DmThuocTab';

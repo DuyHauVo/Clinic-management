@@ -4,10 +4,15 @@ import { Navbar } from './components/Navbar';
 import { DanhMucPage } from './pages/DanhMucPage';
 import { HoSoPage } from './pages/HoSoPage';
 import { ToastProvider } from './context/ToastContext';
+import { initialHoSoXuatToanData } from './mock/mockData';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<MainTabType>('ho-so');
   const [hoSoTab, setHoSoTab] = useState<HoSoTabType>('01_tonghop');
+
+  const pendingXuattoanCount = initialHoSoXuatToanData.filter(
+    (x) => x.trangThai === 'cho_xu_ly'
+  ).length;
 
   const handleNavigate = (tab: MainTabType, subTab?: HoSoTabType) => {
     setActiveTab(tab);
@@ -24,7 +29,7 @@ export const App: React.FC = () => {
           activeTab={activeTab}
           hoSoTab={hoSoTab}
           onNavigate={handleNavigate}
-          pendingXuattoanCount={3}
+          pendingXuattoanCount={pendingXuattoanCount}
         />
 
         {/* Main Content Area */}
@@ -33,17 +38,17 @@ export const App: React.FC = () => {
 
           <main className="flex-1 p-6 md:p-8 max-w-[1600px] w-full mx-auto">
             {/* 1. DANH MỤC KCB BHYT (6 BIỂU MẪU) */}
-            {activeTab === 'danh-muc' && (
+            <div className={activeTab === 'danh-muc' ? 'block' : 'hidden'}>
               <DanhMucPage />
-            )}
+            </div>
 
             {/* 2. HỒ SƠ KCB BHYT (01/BH TỔNG HỢP & 09/BH XUẤT TOÁN) */}
-            {activeTab === 'ho-so' && (
+            <div className={activeTab === 'ho-so' ? 'block' : 'hidden'}>
               <HoSoPage
                 activeTab={hoSoTab}
                 onTabChange={setHoSoTab}
               />
-            )}
+            </div>
           </main>
         </div>
       </div>
