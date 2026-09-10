@@ -53,9 +53,9 @@ export const BpcmTable: React.FC<BpcmTableProps> = ({
       </div>
 
       {/* Responsive Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs text-slate-700">
-          <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[11px] border-b border-slate-200">
+      <div className="overflow-x-auto max-h-[600px] relative">
+        <table className="w-full text-left text-xs text-slate-700 border-collapse">
+          <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200 sticky top-0 z-10 shadow-2xs">
             <tr>
               <th className="py-3 px-4 text-center w-12">STT</th>
               <th className="py-3 px-4">MÃ KHOA</th>

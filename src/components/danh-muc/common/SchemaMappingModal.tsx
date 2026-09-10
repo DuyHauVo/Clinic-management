@@ -11,9 +11,10 @@ import {
 export interface SchemaFieldDef {
   key: string;
   label: string;
-  type: string;
-  required: boolean;
+  type?: string;
+  required?: boolean;
   desc?: string;
+  description?: string;
   aliases?: string[];
 }
 

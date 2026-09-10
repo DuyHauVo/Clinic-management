@@ -1,41 +1,99 @@
-import React, { useState } from 'react';
-import { Pill, DollarSign, ShieldCheck, FileCode } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
 import type { DmThuocItem } from '../../../types';
+import {
+  THUOC_SCHEMA_FIELDS,
+  parseThuocExcelFile,
+  parseThuocWorksheet,
+  generateThuocXml,
+  xmlToBase64,
+  downloadThuocXmlFile,
+  downloadThuocExcelTemplate,
+  sendThuocToBhxhGateway,
+  type ParseThuocExcelResult,
+  type SendThuocGatewayResult
+} from './services/thuocService';
 import { initialThuocData } from '../../../mock/mockData';
 import { useToast } from '../../../context/ToastContext';
+import { ThuocStatsCards } from './components/ThuocStatsCards';
+import { ThuocDropzone } from './components/ThuocDropzone';
 import { ThuocTable } from './components/ThuocTable';
 import { ThuocEditModal } from './components/ThuocEditModal';
+import { DanhMucXmlModal, SchemaMappingModal, SchemaMappingCard } from '../common';
 
 export const DmThuocTab: React.FC = () => {
   const toast = useToast();
   const [thuocItems, setThuocItems] = useState<DmThuocItem[]>(initialThuocData);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoadingFile, setIsLoadingFile] = useState(false);
+  const [fileUploadStats, setFileUploadStats] = useState<ParseThuocExcelResult | null>(null);
+
+  // Modal States
+  const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
+  const [xmlExportTab, setXmlExportTab] = useState<'xml' | 'base64' | 'api'>('xml');
+  const [isSendingApi, setIsSendingApi] = useState(false);
+  const [apiResponse, setApiResponse] = useState<SendThuocGatewayResult | null>(null);
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<DmThuocItem | null>(null);
 
-  const filteredItems = thuocItems.filter((i) => {
-    const q = searchTerm.toLowerCase();
-    return (
-      i.tenThuoc.toLowerCase().includes(q) ||
-      i.tenHoatChat.toLowerCase().includes(q) ||
-      i.maThuocBhyt.toLowerCase().includes(q) ||
-      (i.soDangKy && i.soDangKy.toLowerCase().includes(q))
-    );
-  });
+  const [isSchemaModalOpen, setIsSchemaModalOpen] = useState(false);
 
-  const handleDelete = (item: DmThuocItem) => {
-    if (confirm(`Bạn có chắc muốn xóa thuốc "${item.tenThuoc}" (${item.maThuocBhyt})?`)) {
-      setThuocItems(thuocItems.filter((i) => i.id !== item.id));
-      toast.info(`Đã xóa thuốc: ${item.tenThuoc}`, 'Đã Xóa');
+  // File Upload Handler
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsLoadingFile(true);
+    try {
+      const result = await parseThuocExcelFile(file, undefined, '01929');
+      setThuocItems(result.items);
+      setFileUploadStats(result);
+      toast.success(
+        `Đã nạp thành công ${result.items.length} mặt hàng thuốc (${result.matchedFields.length}/37 trường chuẩn)\nSheet: "${result.selectedSheet}"`,
+        'Nạp File Excel Thuốc Thành Công'
+      );
+    } catch (err: any) {
+      toast.error(err.message || 'Lỗi đọc tệp Excel Thuốc!', 'Lỗi Đọc File');
+    } finally {
+      setIsLoadingFile(false);
+      e.target.value = '';
     }
   };
 
-  const handleSave = (item: DmThuocItem) => {
+  const handleSwitchSheet = (sheetName: string) => {
+    if (!fileUploadStats?.workbook) return;
+    try {
+      const result = parseThuocWorksheet(fileUploadStats.workbook, sheetName, fileUploadStats.fileName, '01929');
+      setThuocItems(result.items);
+      setFileUploadStats(result);
+      toast.info(`Đã chuyển sang Sheet "${sheetName}" (${result.items.length} mặt hàng)`, 'Chuyển Sheet Dữ Liệu');
+    } catch (err: any) {
+      toast.error(`Lỗi khi chuyển sang sheet "${sheetName}": ${err.message}`, 'Lỗi Đọc Sheet');
+    }
+  };
+
+  const handleLoadSampleData = () => {
+    setThuocItems(initialThuocData);
+    setFileUploadStats(null);
+    toast.success('Đã nạp dữ liệu danh mục thuốc mẫu chuẩn 37 trường', 'Nạp Dữ Liệu Mẫu');
+  };
+
+  const handleClearData = () => {
+    setThuocItems([]);
+    setFileUploadStats(null);
+    toast.info('Đã làm trống bảng danh mục thuốc', 'Đã Dọn Dẹp');
+  };
+
+  const handleSaveItem = (item: DmThuocItem) => {
     if (editingItem) {
       setThuocItems(thuocItems.map((i) => (i.id === editingItem.id ? item : i)));
       toast.success(`Đã cập nhật thuốc: ${item.tenThuoc}`, 'Cập Nhật Thành Công');
     } else {
-      const newItem = { ...item, id: `th-${Date.now()}`, stt: thuocItems.length + 1 };
+      const newItem: DmThuocItem = {
+        ...item,
+        id: `thuoc-user-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        stt: thuocItems.length + 1
+      };
       setThuocItems([...thuocItems, newItem]);
       toast.success(`Đã thêm thuốc mới: ${item.tenThuoc}`, 'Thêm Thành Công');
     }
@@ -43,78 +101,149 @@ export const DmThuocTab: React.FC = () => {
     setEditingItem(null);
   };
 
+  const handleDeleteItem = (item: DmThuocItem) => {
+    if (confirm(`Bạn có chắc chắn muốn xóa thuốc "${item.tenThuoc}" (${item.maThuoc})?`)) {
+      const updated = thuocItems
+        .filter((i) => i.id !== item.id)
+        .map((i, idx) => ({ ...i, stt: idx + 1 }));
+      setThuocItems(updated);
+      toast.info(`Đã xóa: ${item.tenThuoc}`, 'Đã Xóa');
+    }
+  };
+
+  const handleExportXml = () => {
+    if (thuocItems.length === 0) {
+      toast.warning('Chưa có dữ liệu thuốc để xuất XML!', 'Dữ Liệu Trống');
+      return;
+    }
+    const xml = generateThuocXml(thuocItems);
+    downloadThuocXmlFile(xml, 'DanhMuc03_DMTHUOC_01929.xml');
+    toast.success('Đã tải xuống file XML Mẫu 03/DM chuẩn Loại hồ sơ 10', 'Xuất File Thành Công');
+  };
+
+  const handleSendBhxhApi = async () => {
+    if (thuocItems.length === 0) {
+      toast.warning('Chưa có dữ liệu thuốc để gửi cổng BHXH!', 'Dữ Liệu Trống');
+      return;
+    }
+    setIsSendingApi(true);
+    try {
+      const res = await sendThuocToBhxhGateway(thuocItems, '01929', '01');
+      setApiResponse(res);
+      toast.success(`[Sandbox] Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`, 'Gửi API Thành Công (Mô phỏng)');
+    } catch (err: any) {
+      toast.error(err.message || 'Lỗi kết nối Cổng BHXH', 'Gửi Thất Bại');
+    } finally {
+      setIsSendingApi(false);
+    }
+  };
+
+  const filteredItems = thuocItems.filter((i) => {
+    const q = searchTerm.toLowerCase();
+    return (
+      i.tenThuoc.toLowerCase().includes(q) ||
+      (i.tenHoatChat && i.tenHoatChat.toLowerCase().includes(q)) ||
+      i.maThuoc.toLowerCase().includes(q) ||
+      i.soDangKy.toLowerCase().includes(q) ||
+      (i.nhaThau && i.nhaThau.toLowerCase().includes(q))
+    );
+  });
+
+  const currentXml = useMemo(() => (thuocItems.length > 0 ? generateThuocXml(thuocItems) : ''), [thuocItems]);
+  const currentBase64 = useMemo(() => (currentXml ? xmlToBase64(currentXml) : ''), [currentXml]);
+
   return (
     <div className="space-y-6">
-      {/* Top 4 KPI Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold flex-shrink-0">
-            <Pill size={24} />
-          </div>
-          <div>
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Tổng Danh Mục Thuốc</span>
-            <div className="text-2xl font-black text-slate-900 tracking-tight">{thuocItems.length} hoạt chất / thuốc</div>
-          </div>
-        </div>
+      <ThuocStatsCards items={thuocItems} />
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#1677ff] flex items-center justify-center font-bold flex-shrink-0">
-            <DollarSign size={24} />
-          </div>
-          <div>
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Thanh Toán BHYT 100%</span>
-            <div className="text-2xl font-black text-[#1677ff] tracking-tight">
-              {thuocItems.filter((i) => i.tyLeThanhToan === 100).length} thuốc
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold flex-shrink-0">
-            <ShieldCheck size={24} />
-          </div>
-          <div>
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Thanh Toán Tỷ Lệ (80%)</span>
-            <div className="text-2xl font-black text-amber-600 tracking-tight">
-              {thuocItems.filter((i) => i.tyLeThanhToan < 100).length} thuốc
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold flex-shrink-0">
-            <FileCode size={24} />
-          </div>
-          <div>
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Quy Định Hồ Sơ</span>
-            <div className="text-2xl font-black text-indigo-600 tracking-tight">Loại HS 10</div>
-          </div>
-        </div>
-      </div>
-
-      <ThuocTable
-        items={filteredItems}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
+      <ThuocDropzone
+        isLoadingFile={isLoadingFile}
+        fileUploadStats={fileUploadStats}
+        itemsCount={thuocItems.length}
+        onFileUpload={handleFileUpload}
+        onSwitchSheet={handleSwitchSheet}
+        onDownloadTemplate={downloadThuocExcelTemplate}
+        onLoadSample={handleLoadSampleData}
+        onClearData={handleClearData}
+        onOpenXmlModal={() => setIsXmlModalOpen(true)}
+        onOpenApiTab={() => {
+          setIsXmlModalOpen(true);
+          setXmlExportTab('api');
+        }}
+        onOpenSchemaModal={() => setIsSchemaModalOpen(true)}
         onAddNew={() => {
           setEditingItem(null);
           setIsEditModalOpen(true);
         }}
+      />
+
+      {/* Schema Mapping & Column Comparison Card */}
+      <SchemaMappingCard
+        title="Đối Soát Khớp Cột Chuẩn Mẫu 03/DM (Thuốc, Máu & Chế Phẩm Máu)"
+        loaiHsBadge="Loại HS 10 - 37 Trường"
+        schemaFields={THUOC_SCHEMA_FIELDS}
+        matchedKeys={fileUploadStats?.matchedFields || THUOC_SCHEMA_FIELDS.map((f) => f.key)}
+        matchedColumnsMap={fileUploadStats?.matchedColumnsMap || {}}
+        sheetName={fileUploadStats?.selectedSheet}
+        fileName={fileUploadStats?.fileName}
+        totalRows={fileUploadStats?.totalRows}
+        defaultExpanded={!!fileUploadStats}
+      />
+
+      <ThuocTable
+        items={filteredItems}
+        searchTerm={searchTerm}
+        totalCount={thuocItems.length}
+        onSearchChange={setSearchTerm}
         onEdit={(item) => {
           setEditingItem(item);
           setIsEditModalOpen(true);
         }}
-        onDelete={handleDelete}
+        onDelete={handleDeleteItem}
+      />
+
+      <DanhMucXmlModal
+        isOpen={isXmlModalOpen}
+        onClose={() => setIsXmlModalOpen(false)}
+        title="Cấu Trúc XML & Chuỗi Base64 Ký Số Mẫu 03/DM"
+        loaiHsBadge="Loại HS 10 - GuiDanhMuc03_DMTHUOC"
+        itemsCount={thuocItems.length}
+        itemLabel="mặt hàng thuốc / chế phẩm máu"
+        xmlContent={currentXml}
+        base64Content={currentBase64}
+        apiEndpoint="https://egw.baohiemxahoi.gov.vn/api/DanhMucGW/GuiDanhMuc03_DMTHUOC"
+        loaiHsCode="10"
+        tab={xmlExportTab}
+        onTabChange={setXmlExportTab}
+        onExportXml={handleExportXml}
+        onSendApi={handleSendBhxhApi}
+        isSendingApi={isSendingApi}
+        apiResponse={apiResponse}
       />
 
       <ThuocEditModal
+        key={editingItem?.id ?? 'new-thuoc-item'}
         isOpen={isEditModalOpen}
         onClose={() => {
           setIsEditModalOpen(false);
           setEditingItem(null);
         }}
-        onSave={handleSave}
+        onSave={handleSaveItem}
         initialData={editingItem}
+      />
+
+      {/* Reusable Schema Inspector Modal */}
+      <SchemaMappingModal
+        isOpen={isSchemaModalOpen}
+        onClose={() => setIsSchemaModalOpen(false)}
+        title="Mẫu 03/DM: Danh Mục Thuốc, Máu & Chế Phẩm Máu BHYT"
+        loaiHsBadge="Loại HS 10 - 37 Trường"
+        schemaFields={THUOC_SCHEMA_FIELDS}
+        matchedKeys={fileUploadStats?.matchedFields || THUOC_SCHEMA_FIELDS.map((f) => f.key)}
+        matchedColumnsMap={fileUploadStats?.matchedColumnsMap || {}}
+        sheetName={fileUploadStats?.selectedSheet}
+        fileName={fileUploadStats?.fileName}
+        totalRows={fileUploadStats?.totalRows}
       />
     </div>
   );

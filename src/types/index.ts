@@ -55,22 +55,7 @@ export interface DmNhanLucItem {
 }
 
 
-// 03/DM: Thuốc & Chế phẩm máu (Loại 10)
-export interface DmThuocItem {
-  id: string;
-  stt: number;
-  maThuocBhyt: string;
-  tenHoatChat: string;
-  tenThuoc: string;
-  hamLuong: string;
-  duongDung: string;
-  dangBaoChe: string;
-  donViTinh: string;
-  donGia: number;
-  tyLeThanhToan: number;
-  soDangKy: string;
-  maCskcb: string;
-}
+export type { DmThuocItem, ParseThuocExcelResult, SendThuocGatewayResult } from '../utils/types/thuocTypes';
 
 // 04/DM: Thiết bị y tế (Loại 72)
 export interface DmThietBiItem {
