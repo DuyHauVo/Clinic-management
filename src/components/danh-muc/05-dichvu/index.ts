@@ -1,0 +1,1 @@
+export { DmDichVuTab } from './DmDichVuTab';

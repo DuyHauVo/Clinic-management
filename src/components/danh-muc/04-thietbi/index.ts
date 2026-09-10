@@ -1,0 +1,1 @@
+export { DmThietBiTab } from './DmThietBiTab';
