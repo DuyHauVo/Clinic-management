@@ -59,9 +59,10 @@ export const DanhMucPage: React.FC = () => {
     {
       id: '04_thietbi',
       label: 'Mẫu 04/DM: Thiết Bị Y Tế',
-      sub: 'Trang thiết bị y tế thanh toán BHYT (Loại 72)',
-      badge: 'Loại 72',
-      icon: Cpu
+      sub: 'Trang thiết bị y tế thanh toán BHYT (Loại 11)',
+      badge: 'Loại 11',
+      icon: Cpu,
+      featured: true
     },
     {
       id: '05_dichvu',
