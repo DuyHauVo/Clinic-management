@@ -167,7 +167,7 @@ export const SchemaMappingCard: React.FC<SchemaMappingCardProps> = ({
             </div>
           </div>
 
-          {/* Compact Chip Boxes Grid (5-6 cols on wide screen, 3-4 on medium) */}
+          {/* Connected Flow Boxes / Chip Cards Grid (6 cols on xl, 5 cols on lg) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
             {filteredFields.map((field, index) => {
               const isMatched = matchedSet.has(field.key);
@@ -181,16 +181,16 @@ export const SchemaMappingCard: React.FC<SchemaMappingCardProps> = ({
               let statusIcon = null;
 
               if (isMatched) {
-                cardBg = 'bg-white hover:bg-emerald-50/50';
-                borderClass = 'border-emerald-300 ring-1 ring-emerald-400/20';
+                cardBg = 'bg-white hover:bg-emerald-50/40';
+                borderClass = 'border-emerald-300 shadow-2xs ring-1 ring-emerald-400/20';
                 badgeBg = 'bg-emerald-50 text-emerald-800 border-emerald-200';
-                statusText = excelCol && excelCol !== field.key ? `Khớp: "${excelCol}"` : 'Đã khớp cột';
+                statusText = excelCol && excelCol !== field.key ? `Khớp: "${excelCol}"` : 'Đã khớp chuẩn';
                 statusIcon = <Check size={10} className="text-emerald-600 flex-shrink-0" />;
               } else if (isRequired) {
-                cardBg = 'bg-rose-50/50 hover:bg-rose-50/90';
-                borderClass = 'border-rose-300 ring-1 ring-rose-400/20';
-                badgeBg = 'bg-rose-100/80 text-rose-800 border-rose-200';
-                statusText = 'Thiếu trường';
+                cardBg = 'bg-rose-50/40 hover:bg-rose-50/80';
+                borderClass = 'border-rose-300 shadow-2xs ring-1 ring-rose-400/20';
+                badgeBg = 'bg-rose-100/70 text-rose-800 border-rose-200';
+                statusText = 'Thiếu bắt buộc';
                 statusIcon = <X size={10} className="text-rose-600 flex-shrink-0" />;
               } else {
                 cardBg = 'bg-white/70 hover:bg-slate-100/60 opacity-75';
@@ -203,22 +203,22 @@ export const SchemaMappingCard: React.FC<SchemaMappingCardProps> = ({
               return (
                 <div
                   key={field.key}
-                  className={`p-2 rounded-lg border ${borderClass} ${cardBg} transition-all duration-150 flex flex-col justify-between gap-1.5`}
+                  className={`p-2 rounded-xl border ${borderClass} ${cardBg} transition-all duration-150 flex flex-col justify-between gap-1 relative group`}
                   title={`${field.key}: ${field.label}${field.desc ? ` (${field.desc})` : ''}`}
                 >
-                  {/* Key & Required Badge */}
+                  {/* Top Bar: Key & Required Tag */}
                   <div className="flex items-center justify-between gap-1">
                     <div className="flex items-center gap-1 min-w-0">
-                      <span className="text-[9px] font-bold text-slate-400 font-mono">
+                      <span className="text-[9px] font-bold text-slate-400 font-mono flex-shrink-0">
                         #{index + 1}
                       </span>
-                      <span className="font-mono font-black text-[11px] text-slate-900 truncate">
+                      <span className="font-mono font-black text-[10.5px] text-slate-900 group-hover:text-[#1677ff] transition-colors truncate" title={field.key}>
                         {field.key}
                       </span>
                     </div>
 
                     {isRequired ? (
-                      <span className="text-[8px] font-extrabold px-1 py-0.2 rounded bg-rose-50 text-rose-700 border border-rose-200 uppercase flex-shrink-0">
+                      <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-rose-50 text-rose-700 border border-rose-200 uppercase flex-shrink-0">
                         Bắt buộc
                       </span>
                     ) : (
@@ -228,16 +228,16 @@ export const SchemaMappingCard: React.FC<SchemaMappingCardProps> = ({
                     )}
                   </div>
 
-                  {/* Label */}
-                  <div className="min-w-0">
-                    <div className="text-[10.5px] font-bold text-slate-800 truncate leading-tight">
+                  {/* Label & Description */}
+                  <div className="flex flex-col justify-center min-w-0">
+                    <h4 className="text-[10.5px] font-bold text-slate-800 leading-tight truncate" title={field.label}>
                       {field.label}
-                    </div>
+                    </h4>
                   </div>
 
-                  {/* Compact Status Pill */}
-                  <div className="pt-1 border-t border-slate-100">
-                    <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-[9px] font-semibold truncate ${badgeBg}`}>
+                  {/* Bottom Status Pill */}
+                  <div className={`pt-1 mt-0.5 border-t ${isMatched ? 'border-emerald-100' : isRequired ? 'border-rose-200' : 'border-slate-100'}`}>
+                    <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[9px] font-medium truncate ${badgeBg}`}>
                       {statusIcon}
                       <span className="truncate" title={statusText}>
                         {statusText}

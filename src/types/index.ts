@@ -57,20 +57,8 @@ export interface DmNhanLucItem {
 
 export type { DmThuocItem, ParseThuocExcelResult, SendThuocGatewayResult } from '../utils/types/thuocTypes';
 
-// 04/DM: Thiết bị y tế (Loại 72)
-export interface DmThietBiItem {
-  id: string;
-  stt: number;
-  maTbyt: string;
-  tenTbyt: string;
-  hangSx: string;
-  nuocSx: string;
-  namSx: number;
-  soLuuHanh: string;
-  khoaSuDung: string;
-  tinhTrang: 'Đang hoạt động' | 'Bảo trì' | 'Ngừng sử dụng';
-  maCskcb: string;
-}
+// 04/DM: Danh mục thiết bị y tế (Loại 11 - GuiDanhMuc04_DMVTYT)
+export type { DmThietBiItem } from '../utils/types/thietBiTypes';
 
 // 05/DM: Dịch vụ kỹ thuật KCB BHYT (Loại 12)
 export interface DmDichVuItem {
