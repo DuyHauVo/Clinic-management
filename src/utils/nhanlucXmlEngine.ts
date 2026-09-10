@@ -13,6 +13,7 @@ import {
   parseYmdDate,
   formatToYmdString,
   readExcelFile,
+  findBestSheetName,
   detectHeaderRow,
   escapeXml,
   generateUUID,
@@ -237,9 +238,10 @@ export async function parseNhanLucExcelFile(
     const workbook = await readExcelFile(file);
     const allSheets = workbook.SheetNames;
 
-    const targetSheetName = selectedSheetName && allSheets.includes(selectedSheetName)
-      ? selectedSheetName
-      : allSheets[0];
+    const targetSheetName =
+      selectedSheetName && allSheets.includes(selectedSheetName)
+        ? selectedSheetName
+        : findBestSheetName(workbook, matchNhanLucSchemaKey, 15, ['02', 'NHANLUC', 'CANBO', 'BACSI', 'NHAN_LUC']);
 
     const ws = workbook.Sheets[targetSheetName];
     return parseNhanLucWorksheet(ws, targetSheetName, allSheets, file.name, workbook);
