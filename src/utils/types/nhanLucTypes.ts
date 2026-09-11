@@ -10,6 +10,15 @@ export interface NhanLucSchemaField {
   aliases: string[];
 }
 
+export interface NhanLucValidationInput {
+  maKhoa?: string;
+  tenKhoa?: string;
+  hoTen?: string;
+  soDinhDanh?: string;
+  chucDanhNn?: string;
+  tuNgay?: string;
+}
+
 export interface ParseNhanLucExcelResult {
   sheetName: string;
   fileName: string;

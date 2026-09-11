@@ -10,6 +10,15 @@ export interface BpcmSchemaField {
   aliases: string[];
 }
 
+export interface BpcmValidationInput {
+  maKhoa?: string;
+  tenKhoa?: string;
+  tuNgay?: string;
+  rawDenNgay?: unknown;
+  denNgay?: string;
+  maCskcb?: string;
+}
+
 export interface SheetInfo {
   name: string;
   rowCount: number;

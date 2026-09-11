@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileCode, FileSpreadsheet, Send, Copy, Check, Download, AlertTriangle } from 'lucide-react';
 import type { DmTbytThdvItem, SendTbytThdvGatewayResult } from '../../../../types';
+import { useModalBehavior } from '../../../../hooks/useModalBehavior';
 
 interface TbytThdvXmlModalProps {
   isOpen: boolean;
@@ -10,8 +11,8 @@ interface TbytThdvXmlModalProps {
   base64Content: string;
   tab: 'xml' | 'base64' | 'api';
   onTabChange: (tab: 'xml' | 'base64' | 'api') => void;
-  isCopied: boolean;
-  onCopy: (text: string) => void;
+  isKeyCopied: (key: string) => boolean;
+  onCopy: (text: string, message?: string, key?: string) => void;
   onExportXml: () => void;
   onSendApi: () => void;
   isSendingApi: boolean;
@@ -26,18 +27,29 @@ export const TbytThdvXmlModal: React.FC<TbytThdvXmlModalProps> = ({
   base64Content,
   tab,
   onTabChange,
-  isCopied,
+  isKeyCopied,
   onCopy,
   onExportXml,
   onSendApi,
   isSendingApi,
   apiResponse
 }) => {
+  useModalBehavior(isOpen, onClose);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 ant-modal-anim">
-      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200">
+    <div
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 ant-modal-anim"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="xml-modal-title"
+    >
+      <div
+        className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Modal Header */}
         <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
           <div className="flex items-center gap-3">
@@ -46,22 +58,23 @@ export const TbytThdvXmlModal: React.FC<TbytThdvXmlModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-extrabold text-slate-900">
-                  Cấu Trúc XML & Chuỗi Base64 Ký Số Mẫu 06/DM
+                <h3 id="xml-modal-title" className="text-base font-extrabold text-slate-900">
+                  Cấu Trúc XML &amp; Chuỗi Base64 Ký Số Mẫu 06/DM
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
                   Loại HS 72 - GuiDanhMuc06_DMTBYT
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Dữ liệu hiện hành • {items.length} thiết bị y tế thực hiện DVKT (QĐ 3176/QĐ-BYT & NĐ 07/2025/NĐ-CP)
+                Dữ liệu hiện hành • {items.length} thiết bị y tế thực hiện DVKT (QĐ 3176/QĐ-BYT &amp; NĐ 07/2025/NĐ-CP)
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-800 flex items-center justify-center font-bold text-lg"
+            aria-label="Đóng cửa sổ"
+            className="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-800 flex items-center justify-center font-bold text-lg transition-colors"
           >
             &times;
           </button>
@@ -128,11 +141,11 @@ export const TbytThdvXmlModal: React.FC<TbytThdvXmlModalProps> = ({
                     <span>Định dạng XML chuẩn Bộ Y tế &amp; BHXH (Loại HS 72)</span>
                     <button
                       type="button"
-                      onClick={() => onCopy(xmlContent)}
+                      onClick={() => onCopy(xmlContent, 'Đã sao chép mã XML Mẫu 06/DM', 'xml')}
                       className="text-purple-600 font-bold hover:underline flex items-center gap-1"
                     >
-                      {isCopied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
-                      <span>{isCopied ? 'Đã sao chép!' : 'Sao chép XML'}</span>
+                      {isKeyCopied('xml') ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                      <span>{isKeyCopied('xml') ? 'Đã sao chép!' : 'Sao chép XML'}</span>
                     </button>
                   </div>
                   <pre className="p-4 bg-slate-900 text-emerald-400 rounded-xl text-[11px] font-mono overflow-x-auto max-h-[360px] border border-slate-800 leading-relaxed select-all">
@@ -148,11 +161,11 @@ export const TbytThdvXmlModal: React.FC<TbytThdvXmlModalProps> = ({
                     <span>Chuỗi Base64 ký số truyền vào tham số <code className="text-purple-600 font-mono">fileHsBase64</code></span>
                     <button
                       type="button"
-                      onClick={() => onCopy(base64Content)}
+                      onClick={() => onCopy(base64Content, 'Đã sao chép chuỗi Base64 Mẫu 06/DM', 'base64')}
                       className="text-purple-600 font-bold hover:underline flex items-center gap-1"
                     >
-                      {isCopied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
-                      <span>{isCopied ? 'Đã sao chép!' : 'Sao chép Base64'}</span>
+                      {isKeyCopied('base64') ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                      <span>{isKeyCopied('base64') ? 'Đã sao chép!' : 'Sao chép Base64'}</span>
                     </button>
                   </div>
                   <textarea
@@ -206,7 +219,7 @@ export const TbytThdvXmlModal: React.FC<TbytThdvXmlModalProps> = ({
                       type="button"
                       onClick={onSendApi}
                       disabled={isSendingApi}
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md shadow-emerald-600/20 flex items-center gap-2"
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-bold shadow-md shadow-emerald-600/20 flex items-center gap-2 transition-colors"
                     >
                       <Send size={14} />
                       <span>{isSendingApi ? 'Đang gửi...' : 'Bấm Gửi Thử'}</span>
@@ -234,14 +247,15 @@ export const TbytThdvXmlModal: React.FC<TbytThdvXmlModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold"
+              className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-colors"
             >
               Đóng
             </button>
             <button
               type="button"
               onClick={onExportXml}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-purple-600/20"
+              disabled={items.length === 0}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-purple-600/20 transition-colors"
             >
               <Download size={14} />
               <span>Tải File .XML</span>

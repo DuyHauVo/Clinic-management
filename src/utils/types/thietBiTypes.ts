@@ -33,6 +33,17 @@ export interface DmThietBiItem {
   errors?: string[];
 }
 
+export interface ThietBiValidationInput {
+  maVatTu?: string;
+  nhomVatTu?: string;
+  tenVatTu?: string;
+  donViTinh?: string;
+  donGia?: number;
+  donGiaBh?: number;
+  rawTuNgay?: unknown;
+  parsedTuNgay?: string;
+}
+
 export interface ThietBiSchemaField {
   key: string;
   label: string;

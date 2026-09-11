@@ -71,6 +71,13 @@ export type {
   SendTbytThdvGatewayResult
 } from '../utils/types/tbyttHdvTypes';
 
+// MẪU 01/BH: Hồ sơ tổng hợp KCB BHYT (Loại HS 5 - GuiHoSoTongHop01BH)
+export type {
+  Hs01TongHopItem,
+  ParseHs01ExcelResult,
+  SendHs01GatewayResult
+} from '../utils/types/hs01TongHopTypes';
+
 // ==========================================
 // 2. HỒ SƠ 1: HỒ SƠ TỔNG HỢP CHI PHÍ KCB (MẪU 01/BH)
 // ==========================================

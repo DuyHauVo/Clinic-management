@@ -40,6 +40,13 @@ export interface DmDichVuItem {
   errors?: string[];
 }
 
+export interface DichVuValidationInput {
+  maDichVu?: string;
+  tenDichVu?: string;
+  donGia?: number;
+  parsedTuNgay?: string;
+}
+
 export interface DichVuSchemaField {
   key: string;
   label: string;

@@ -23,6 +23,7 @@ import {
   mockSendDanhMucToBhxhGateway,
   type GatewaySendResult,
 } from "./shared";
+import { validateBpcmData } from "./validators";
 
 // Re-export để giữ nguyên API công khai cũ
 export { normalizeHeaderKey, xmlToBase64, downloadXmlFile };
@@ -165,14 +166,14 @@ export function parseWorksheet(
     const rawDenNgay = getValue("DEN_NGAY");
     const maCskcb = String(getValue("MA_CSKCB") ?? "").trim() || defaultMaCskcb;
 
-    const errors: string[] = [];
-    if (!maKhoa) errors.push("Thiếu Mã khoa (MA_KHOA)");
-    if (!tenKhoa) errors.push("Thiếu Tên khoa (TEN_KHOA)");
-    if (!tuNgay || tuNgay.length !== 8)
-      errors.push("Từ ngày (TU_NGAY) phải có đúng 8 số định dạng YYYYMMDD");
-    if (rawDenNgay && (!denNgay || denNgay.length !== 8))
-      errors.push("Đến ngày (DEN_NGAY) nếu có phải đủ 8 số định dạng YYYYMMDD");
-    if (!maCskcb) errors.push("Thiếu Mã CSKCB");
+    const errors = validateBpcmData({
+      maKhoa,
+      tenKhoa,
+      tuNgay,
+      rawDenNgay,
+      denNgay,
+      maCskcb
+    });
 
     const isValid = errors.length === 0;
     if (isValid) validRowsCount++;

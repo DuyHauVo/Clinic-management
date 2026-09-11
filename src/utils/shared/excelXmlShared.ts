@@ -132,6 +132,137 @@ export function parseYmdDate(val: unknown): string {
 }
 
 /**
+ * Kiểm tra chuỗi ngày YYYYMMDD hợp lệ (đúng 8 chữ số và ngày/tháng có thực).
+ */
+export function isValidYmdDate(str?: string | null): boolean {
+  if (!str) return false;
+  const clean = str.trim();
+  if (!/^\d{8}$/.test(clean)) return false;
+  const y = parseInt(clean.slice(0, 4), 10);
+  const m = parseInt(clean.slice(4, 6), 10);
+  const d = parseInt(clean.slice(6, 8), 10);
+  if (y < 1900 || y > 2100) return false;
+  if (m < 1 || m > 12) return false;
+  const daysInMonth = new Date(y, m, 0).getDate();
+  return d >= 1 && d <= daysInMonth;
+}
+
+/**
+ * Kiểm tra chuỗi ngày giờ YYYYMMDDHHmm hợp lệ (đúng 12 chữ số, ngày tháng giờ phút có thực).
+ */
+export function isValidYmdHmDate(str?: string | null): boolean {
+  if (!str) return false;
+  const clean = str.trim();
+  if (!/^\d{12}$/.test(clean)) return false;
+  const y = parseInt(clean.slice(0, 4), 10);
+  const m = parseInt(clean.slice(4, 6), 10);
+  const d = parseInt(clean.slice(6, 8), 10);
+  const h = parseInt(clean.slice(8, 10), 10);
+  const mi = parseInt(clean.slice(10, 12), 10);
+  if (y < 1900 || y > 2100) return false;
+  if (m < 1 || m > 12) return false;
+  const daysInMonth = new Date(y, m, 0).getDate();
+  if (d < 1 || d > daysInMonth) return false;
+  if (h < 0 || h > 23) return false;
+  if (mi < 0 || mi > 59) return false;
+  return true;
+}
+
+/**
+ * Format ngày giờ thành chuỗi 12 ký tự YYYYMMDDHHmm cho hồ sơ KCB.
+ * Hỗ trợ:
+ * - Excel serial date (số thực)
+ * - Chuỗi 12 số YYYYMMDDHHmm
+ * - Chuỗi 8 số YYYYMMDD (chỉ ghép defaultHourMinute nếu caller chỉ định cụ thể, ví dụ '0000' cho ngày sinh)
+ * - Chuỗi có dấu phân cách: dd/mm/yyyy hh:mm hoặc yyyy-mm-dd hh:mm
+ */
+export function parseYmdHmDate(val: unknown, defaultHourMinute?: string): string {
+  if (val === null || val === undefined || val === "") return "";
+  const str = String(val).trim();
+  if (!str) return "";
+
+  // Nếu là Excel serial date (vd: 45350.35)
+  if (
+    !isNaN(Number(str)) &&
+    Number(str) > 20000 &&
+    Number(str) < 60000 &&
+    !str.includes("/") &&
+    !str.includes("-")
+  ) {
+    const num = Number(str);
+    const jsDate = new Date(Math.round((num - 25569) * 86400 * 1000));
+    const y = jsDate.getFullYear();
+    const m = String(jsDate.getMonth() + 1).padStart(2, "0");
+    const d = String(jsDate.getDate()).padStart(2, "0");
+    const h = String(jsDate.getHours()).padStart(2, "0");
+    const mi = String(jsDate.getMinutes()).padStart(2, "0");
+    return `${y}${m}${d}${h}${mi}`;
+  }
+
+  // Chuỗi số liền
+  const digitsOnly = str.replace(/[^0-9]/g, "");
+  if (digitsOnly.length === 12) {
+    return digitsOnly;
+  }
+  if (digitsOnly.length === 8) {
+    return defaultHourMinute !== undefined ? `${digitsOnly}${defaultHourMinute}` : digitsOnly;
+  }
+
+  // Chuỗi có phân cách: dd/mm/yyyy hh:mm hoặc yyyy-mm-dd hh:mm
+  if (str.includes("/") || str.includes("-") || str.includes(".")) {
+    const parts = str.split(/[\sT]+/);
+    const datePart = parts[0] || "";
+    const timePart = parts[1] || "";
+
+    const dParts = datePart.split(/[\/\-.]/).map((p) => p.trim());
+    let y = "",
+      m = "",
+      d = "";
+    if (dParts.length === 3) {
+      if (dParts[0].length === 4) {
+        y = dParts[0];
+        m = dParts[1].padStart(2, "0");
+        d = dParts[2].padStart(2, "0");
+      } else if (dParts[2].length === 4) {
+        d = dParts[0].padStart(2, "0");
+        m = dParts[1].padStart(2, "0");
+        y = dParts[2];
+      }
+    }
+
+    let h = "",
+      mi = "";
+    if (timePart) {
+      const tParts = timePart.split(/[:.]/).map((p) => p.trim());
+      if (tParts.length >= 2) {
+        h = tParts[0].padStart(2, "0");
+        mi = tParts[1].padStart(2, "0");
+      }
+    } else if (defaultHourMinute && defaultHourMinute.length === 4) {
+      h = defaultHourMinute.slice(0, 2);
+      mi = defaultHourMinute.slice(2, 4);
+    }
+
+    if (y && m && d) {
+      if (h && mi) {
+        return `${y}${m}${d}${h}${mi}`;
+      }
+      return `${y}${m}${d}`;
+    }
+  }
+
+  return digitsOnly;
+}
+
+/**
+ * Định dạng số tiền thành chuỗi số thập phân có 2 chữ số (.00) theo chuẩn BHXH XML
+ */
+export function formatCurrencyDecimals(val?: number): string {
+  if (val === undefined || val === null || isNaN(val)) return "0.00";
+  return val.toFixed(2);
+}
+
+/**
  * Tương thích ngược: tên cũ đang được export từ nhanlucXmlEngine.
  */
 export const formatToYmdString = parseYmdDate;
@@ -155,7 +286,6 @@ export function readExcelFile(file: File): Promise<XLSX.WorkBook> {
         }
         resolve(workbook);
       } catch (err: unknown) {
-        // Reject với thông báo thô - caller tự bọc theo ngữ cảnh của từng danh mục
         const msg =
           err instanceof Error ? err.message : "Định dạng tệp không hợp lệ";
         reject(new Error(msg));
@@ -166,10 +296,72 @@ export function readExcelFile(file: File): Promise<XLSX.WorkBook> {
   });
 }
 
+export const DEFAULT_MA_CSKCB = "01929";
+export const DEFAULT_MA_TINH = "01";
+
 /**
- * Chọn sheet khớp schema nhiều nhất: với mỗi dòng (tối đa maxScanRows),
- * đếm số schema key DUY NHẬT được nhận diện (dùng Set để một ô không đếm đè).
+ * Tự động tìm sheet phù hợp nhất dựa trên heuristic:
+ * - So khớp tên sheet với hintKeywords
+ * - So khớp số lượng cột detectHeaderRow >= minMatchCount
+ * - Ưu tiên sheet có dữ liệu và số cột nhận diện cao nhất
  */
+export function pickBestSheetName(
+  workbook: XLSX.WorkBook,
+  matchSchemaKey: SchemaKeyMatcher,
+  hintKeywords: string[] = [],
+  minMatchCount = 2,
+): string {
+  const availableSheets = workbook.SheetNames;
+  if (!availableSheets || availableSheets.length === 0) return "";
+  if (availableSheets.length === 1) return availableSheets[0];
+
+  let bestCandidate = "";
+  let maxCandidateScore = -1;
+
+  for (const s of availableSheets) {
+    const ws = workbook.Sheets[s];
+    if (!ws) continue;
+
+    const rawRows: unknown[][] = XLSX.utils.sheet_to_json(ws, {
+      header: 1,
+      defval: "",
+    });
+    if (!rawRows || rawRows.length <= 1) continue;
+
+    const { headerRowIndex, colMapping } = detectHeaderRow(
+      rawRows,
+      matchSchemaKey,
+      minMatchCount,
+      25,
+      "best",
+    );
+
+    const matchedCount = Object.keys(colMapping).length;
+    if (headerRowIndex !== -1 && matchedCount >= minMatchCount) {
+      const norm = normalizeHeaderKey(s);
+      const isHintMatch = hintKeywords.some((k) =>
+        norm.includes(normalizeHeaderKey(k)),
+      );
+      const dataRowsCount = Math.max(0, rawRows.length - (headerRowIndex + 1));
+      const score =
+        matchedCount * 100 +
+        (isHintMatch ? 50 : 0) +
+        Math.min(dataRowsCount, 100);
+
+      if (score > maxCandidateScore) {
+        maxCandidateScore = score;
+        bestCandidate = s;
+      }
+    }
+  }
+
+  return (
+    bestCandidate ||
+    findBestSheetName(workbook, matchSchemaKey, 15, hintKeywords) ||
+    availableSheets[0]
+  );
+}
+
 /**
  * Chọn sheet khớp schema nhiều nhất: với mỗi dòng (tối đa maxScanRows),
  * đếm số schema key DUY NHẤT được nhận diện (dùng Set để một ô không đếm đè)
@@ -364,11 +556,39 @@ export function xmlToBase64(xmlString: string): string {
 
 export async function copyTextToClipboard(text: string): Promise<boolean> {
   try {
-    await navigator.clipboard.writeText(text);
-    return true;
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    // Fallback for non-HTTPS or legacy context
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    textarea.style.top = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    const successful = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return successful;
   } catch (err) {
-    console.error("Failed to copy text: ", err);
-    return false;
+    try {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      textarea.style.top = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      return successful;
+    } catch {
+      console.error("Failed to copy text: ", err);
+      return false;
+    }
   }
 }
 

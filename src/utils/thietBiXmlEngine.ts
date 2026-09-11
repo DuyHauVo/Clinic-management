@@ -14,6 +14,7 @@ import {
   parseYmdDate,
   readExcelFile,
   findBestSheetName,
+  pickBestSheetName,
   detectHeaderRow,
   escapeXml,
   generateUUID,
@@ -22,6 +23,10 @@ import {
   xmlToBase64,
   downloadXmlFile,
   mockSendDanhMucToBhxhGateway,
+} from "./shared";
+import { validateThietBiData } from "./validators";
+import {
+  DEFAULT_MA_CSKCB,
 } from "./shared/excelXmlShared";
 
 export { xmlToBase64, downloadXmlFile };
@@ -162,16 +167,16 @@ export function parseThietBiWorksheet(
     const tuNgay = parsedTuNgay || todayYmd;
     const denNgay = parseYmdDate(rowObj["DEN_NGAY"]);
 
-    const errors: string[] = [];
-    if (!maVatTu) errors.push("Thiếu mã vật tư / TBYT");
-    if (!nhomVatTu) errors.push("Thiếu tên nhóm vật tư");
-    if (!tenVatTu) errors.push("Thiếu tên thương mại vật tư");
-    if (!donViTinh) errors.push("Thiếu đơn vị tính");
-    if (donGia < 0) errors.push("Đơn giá không được âm");
-    if (donGiaBh < 0) errors.push("Đơn giá BHYT không được âm");
-    if (!rawTuNgay || !parsedTuNgay) {
-      errors.push("Thiếu hoặc sai định dạng ngày bắt đầu áp dụng (TU_NGAY, YYYYMMDD)");
-    }
+    const errors = validateThietBiData({
+      maVatTu,
+      nhomVatTu,
+      tenVatTu,
+      donViTinh,
+      donGia,
+      donGiaBh,
+      rawTuNgay,
+      parsedTuNgay
+    });
 
     const isValid = errors.length === 0;
     if (isValid) validRows++;
@@ -230,63 +235,27 @@ export function parseThietBiWorksheet(
 export async function parseThietBiExcelFile(
   file: File,
   selectedSheetName?: string,
-  defaultMaCskcb = "01929",
+  defaultMaCskcb = DEFAULT_MA_CSKCB,
 ): Promise<ParseThietBiExcelResult> {
   const workbook = await readExcelFile(file);
   const availableSheets = workbook.SheetNames;
 
-  let sheetName = selectedSheetName;
-  if (!sheetName || !availableSheets.includes(sheetName)) {
-    // 1. Kiểm tra các sheet có tên khớp từ khóa và có dữ liệu/cột khớp schema
-    const hintKeywords = [
-      "MAU04",
-      "MAU_04",
-      "04_DM",
-      "DM_TBYT",
-      "TBYT",
-      "VTYT",
-      "THIETBI",
-      "THIET_BI",
-      "VATTU",
-    ];
-    const candidateSheets = availableSheets.filter((s) => {
-      const norm = s
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toUpperCase()
-        .replace(/[^A-Z0-9]/g, "");
-      return hintKeywords.some((k) => norm.includes(k));
-    });
+  const hintKeywords = [
+    "MAU04",
+    "MAU_04",
+    "04_DM",
+    "DM_TBYT",
+    "TBYT",
+    "VTYT",
+    "THIETBI",
+    "THIET_BI",
+    "VATTU",
+  ];
 
-    let bestCandidate = "";
-    for (const s of candidateSheets) {
-      const ws = workbook.Sheets[s];
-      if (ws) {
-        const rawRows: unknown[][] = XLSX.utils.sheet_to_json(ws, {
-          header: 1,
-          defval: "",
-        });
-        if (rawRows && rawRows.length > 1) {
-          const { headerRowIndex, colMapping } = detectHeaderRow(
-            rawRows,
-            matchThietBiSchemaKey,
-            2,
-            25,
-            "best",
-          );
-          if (headerRowIndex !== -1 && Object.keys(colMapping).length >= 2) {
-            bestCandidate = s;
-            break;
-          }
-        }
-      }
-    }
-
-    sheetName =
-      bestCandidate ||
-      findBestSheetName(workbook, matchThietBiSchemaKey) ||
-      availableSheets[0];
-  }
+  const sheetName =
+    selectedSheetName && availableSheets.includes(selectedSheetName)
+      ? selectedSheetName
+      : pickBestSheetName(workbook, matchThietBiSchemaKey, hintKeywords, 2);
 
   const worksheet = workbook.Sheets[sheetName];
   const result = parseThietBiWorksheet(
