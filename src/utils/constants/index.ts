@@ -3,3 +3,4 @@ export * from './nhanLucConstants';
 export * from './thuocConstants';
 export * from './thietBiConstants';
 export * from './dichVuConstants';
+export * from './tbyttHdvConstants';

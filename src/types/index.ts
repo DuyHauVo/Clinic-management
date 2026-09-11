@@ -64,17 +64,12 @@ export type { DmThietBiItem } from '../utils/types/thietBiTypes';
 export type { DmDichVuItem, DmThuocPxItem, ParseDichVuExcelResult, SendDichVuGatewayResult } from '../utils/types/dichVuTypes';
 
 
-// 06/DM: Thiết bị thực hiện DVKT (Loại 73)
-export interface DmTbDvktItem {
-  id: string;
-  stt: number;
-  maDvkt: string;
-  tenDvkt: string;
-  maTbyt: string;
-  tenTbyt: string;
-  dinhMucTieuHao: string;
-  maCskcb: string;
-}
+// 06/DM: Danh mục thiết bị y tế để thực hiện DVKT (Loại HS 72 - GuiDanhMuc06_DMTBYT)
+export type {
+  DmTbytThdvItem,
+  ParseTbytThdvExcelResult,
+  SendTbytThdvGatewayResult
+} from '../utils/types/tbyttHdvTypes';
 
 // ==========================================
 // 2. HỒ SƠ 1: HỒ SƠ TỔNG HỢP CHI PHÍ KCB (MẪU 01/BH)

@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import type { DmDichVuItem, DmThuocPxItem } from '../../../types';
+import React, { useState, useMemo } from "react";
+import type { DmDichVuItem, DmThuocPxItem } from "../../../types";
 import {
   DICHVU_SCHEMA_FIELDS,
   parseDichVuExcelFile,
@@ -10,36 +10,41 @@ import {
   generateDichVuTemplate,
   sendDichVuToBhxhGateway,
   type ParseDichVuExcelResult,
-  type SendDichVuGatewayResult
-} from './services/dichVuService';
-import { initialDichVuData } from '../../../mock/mockData';
-import { useToast } from '../../../context/ToastContext';
+  type SendDichVuGatewayResult,
+} from "./services/dichVuService";
+import { initialDichVuData } from "../../../mock/mockData";
+import { useToast } from "../../../context/ToastContext";
 import {
   DichVuStatsCards,
   DichVuDropzone,
   DichVuTable,
   DichVuEditModal,
   ThuocPxModal,
-  DichVuXmlModal
-} from './components';
-import { SchemaMappingModal } from '../common/SchemaMappingModal';
-import { SchemaMappingCard } from '../common/SchemaMappingCard';
+  DichVuXmlModal,
+} from "./components";
+import { SchemaMappingModal } from "../common/SchemaMappingModal";
+import { SchemaMappingCard } from "../common/SchemaMappingCard";
 
-import { useClipboard } from '../../../hooks';
+import { useClipboard } from "../../../hooks";
 
 export const DmDichVuTab: React.FC = () => {
   const toast = useToast();
   const { isCopied, copy: handleCopyText } = useClipboard();
-  const [dichVuItems, setDichVuItems] = useState<DmDichVuItem[]>(initialDichVuData);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [dichVuItems, setDichVuItems] =
+    useState<DmDichVuItem[]>(initialDichVuData);
+  const [searchTerm, setSearchTerm] = useState("");
   const [isLoadingFile, setIsLoadingFile] = useState(false);
-  const [fileUploadStats, setFileUploadStats] = useState<ParseDichVuExcelResult | null>(null);
+  const [fileUploadStats, setFileUploadStats] =
+    useState<ParseDichVuExcelResult | null>(null);
 
   // Modal State for Mẫu 05/DM
   const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
-  const [xmlExportTab, setXmlExportTab] = useState<'xml' | 'base64' | 'api'>('xml');
+  const [xmlExportTab, setXmlExportTab] = useState<"xml" | "base64" | "api">(
+    "xml",
+  );
   const [isSendingApi, setIsSendingApi] = useState(false);
-  const [apiResponse, setApiResponse] = useState<SendDichVuGatewayResult | null>(null);
+  const [apiResponse, setApiResponse] =
+    useState<SendDichVuGatewayResult | null>(null);
 
   // Edit / Add Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -47,7 +52,8 @@ export const DmDichVuTab: React.FC = () => {
 
   // Thuốc phóng xạ Modal State
   const [isThuocPxModalOpen, setIsThuocPxModalOpen] = useState(false);
-  const [selectedServiceForPx, setSelectedServiceForPx] = useState<DmDichVuItem | null>(null);
+  const [selectedServiceForPx, setSelectedServiceForPx] =
+    useState<DmDichVuItem | null>(null);
 
   // Schema Mapping Inspector Modal State
   const [isSchemaModalOpen, setIsSchemaModalOpen] = useState(false);
@@ -64,13 +70,16 @@ export const DmDichVuTab: React.FC = () => {
       setFileUploadStats(result);
       toast.success(
         `Đã nạp thành công ${result.items.length} dịch vụ kỹ thuật từ file "${file.name}"\nSheet: "${result.selectedSheet}"`,
-        'Nạp File Excel DVKT Thành Công'
+        "Nạp File Excel DVKT Thành Công",
       );
     } catch (err: any) {
-      toast.error(err.message || 'Lỗi đọc tệp Excel Dịch vụ kỹ thuật!', 'Lỗi Đọc File');
+      toast.error(
+        err.message || "Lỗi đọc tệp Excel Dịch vụ kỹ thuật!",
+        "Lỗi Đọc File",
+      );
     } finally {
       setIsLoadingFile(false);
-      e.target.value = '';
+      e.target.value = "";
     }
   };
 
@@ -83,53 +92,71 @@ export const DmDichVuTab: React.FC = () => {
         sheetName,
         fileUploadStats.availableSheets,
         fileUploadStats.fileName,
-        fileUploadStats.workbook
+        fileUploadStats.workbook,
       );
       setDichVuItems(result.items);
       setFileUploadStats(result);
-      toast.info(`Đã chuyển sang Sheet "${sheetName}" (${result.items.length} dịch vụ)`, 'Chuyển Sheet Dữ Liệu');
+      toast.info(
+        `Đã chuyển sang Sheet "${sheetName}" (${result.items.length} dịch vụ)`,
+        "Chuyển Sheet Dữ Liệu",
+      );
     } catch (err: any) {
-      toast.error(`Lỗi khi chuyển sang sheet "${sheetName}": ${err.message}`, 'Lỗi Đọc Sheet');
+      toast.error(
+        `Lỗi khi chuyển sang sheet "${sheetName}": ${err.message}`,
+        "Lỗi Đọc Sheet",
+      );
     }
   };
 
   const handleLoadSampleData = () => {
     setDichVuItems(initialDichVuData);
     setFileUploadStats(null);
-    toast.success('Đã nạp dữ liệu danh mục DVKT mẫu gồm khám, X-quang, siêu âm, xét nghiệm, xạ hình', 'Nạp Dữ Liệu Mẫu');
+    toast.success(
+      "Đã nạp dữ liệu danh mục DVKT mẫu gồm khám, X-quang, siêu âm, xét nghiệm, xạ hình",
+      "Nạp Dữ Liệu Mẫu",
+    );
   };
 
   const handleClearData = () => {
     setDichVuItems([]);
     setFileUploadStats(null);
-    toast.info('Đã làm trống danh mục dịch vụ kỹ thuật', 'Đã Dọn Dẹp');
+    toast.info("Đã làm trống danh mục dịch vụ kỹ thuật", "Đã Dọn Dẹp");
   };
 
   const handleSaveItem = (item: DmDichVuItem) => {
     if (editingItem) {
-      setDichVuItems(dichVuItems.map((i) => (i.id === editingItem.id ? item : i)));
-      toast.success(`Đã cập nhật dịch vụ: ${item.tenDichVu}`, 'Cập Nhật Thành Công');
+      setDichVuItems(
+        dichVuItems.map((i) => (i.id === editingItem.id ? item : i)),
+      );
+      toast.success(
+        `Đã cập nhật dịch vụ: ${item.tenDichVu}`,
+        "Cập Nhật Thành Công",
+      );
     } else {
       const newItem: DmDichVuItem = {
         ...item,
         id: `dv-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        stt: dichVuItems.length + 1
+        stt: dichVuItems.length + 1,
       };
       setDichVuItems([...dichVuItems, newItem]);
-      toast.success(`Đã thêm dịch vụ: ${item.tenDichVu}`, 'Thêm Thành Công');
+      toast.success(`Đã thêm dịch vụ: ${item.tenDichVu}`, "Thêm Thành Công");
     }
     setIsEditModalOpen(false);
     setEditingItem(null);
   };
 
   const handleDeleteItem = (item: DmDichVuItem) => {
-    if (confirm(`Bạn có chắc chắn muốn xóa dịch vụ "${item.tenDichVu}" (${item.maDichVu})?`)) {
+    if (
+      confirm(
+        `Bạn có chắc chắn muốn xóa dịch vụ "${item.tenDichVu}" (${item.maDichVu})?`,
+      )
+    ) {
       setDichVuItems((prev) =>
         prev
           .filter((i) => i.id !== item.id)
-          .map((i, idx) => ({ ...i, stt: idx + 1 }))
+          .map((i, idx) => ({ ...i, stt: idx + 1 })),
       );
-      toast.info(`Đã xóa dịch vụ: ${item.tenDichVu}`, 'Đã Xóa');
+      toast.info(`Đã xóa dịch vụ: ${item.tenDichVu}`, "Đã Xóa");
     }
   };
 
@@ -140,20 +167,26 @@ export const DmDichVuTab: React.FC = () => {
 
   const handleSaveThuocPx = (pxItems: DmThuocPxItem[]) => {
     if (!selectedServiceForPx) return;
-    const totalPx = pxItems.reduce((acc, cur) => acc + (cur.thanhTienThuoc || 0), 0);
+    const totalPx = pxItems.reduce(
+      (acc, cur) => acc + (cur.thanhTienThuoc || 0),
+      0,
+    );
     setDichVuItems((prev) =>
       prev.map((i) => {
         if (i.id === selectedServiceForPx.id) {
           return {
             ...i,
             dsThuocPx: pxItems,
-            giaThanhToan: (i.donGia || 0) + totalPx
+            giaThanhToan: (i.donGia || 0) + totalPx,
           };
         }
         return i;
-      })
+      }),
     );
-    toast.success(`Đã cập nhật thuốc phóng xạ cho dịch vụ: ${selectedServiceForPx.tenDichVu}`, 'Cập Nhật Thuốc PX');
+    toast.success(
+      `Đã cập nhật thuốc phóng xạ cho dịch vụ: ${selectedServiceForPx.tenDichVu}`,
+      "Cập Nhật Thuốc PX",
+    );
   };
 
   // XML & Base64 Generation
@@ -167,7 +200,10 @@ export const DmDichVuTab: React.FC = () => {
 
   const handleExportXml = () => {
     downloadDichVuXmlFile(dichVuItems, `DanhMuc05_DVKT_${Date.now()}.xml`);
-    toast.success('Đã tải xuống tệp XML Mẫu 05/DM chuẩn QĐ 3176/QĐ-BYT & BHXH Việt Nam', 'Xuất File Thành Công');
+    toast.success(
+      "Đã tải xuống tệp XML Mẫu 05/DM chuẩn QĐ 3176/QĐ-BYT & BHXH Việt Nam",
+      "Xuất File Thành Công",
+    );
   };
 
   const handleSendBhxhApi = async () => {
@@ -177,10 +213,10 @@ export const DmDichVuTab: React.FC = () => {
       setApiResponse(res);
       toast.success(
         `Đã gửi thành công ${res.totalRecords} dịch vụ kỹ thuật lên Cổng BHXH (Sandbox)\nMã GD: ${res.maGiaoDich}`,
-        'Gửi Cổng Tiếp Nhận Thành Công'
+        "Gửi Cổng Tiếp Nhận Thành Công",
       );
     } catch (err: any) {
-      toast.error(`Lỗi gửi cổng BHXH: ${err.message}`, 'Lỗi Giao Dịch');
+      toast.error(`Lỗi gửi cổng BHXH: ${err.message}`, "Lỗi Giao Dịch");
     } finally {
       setIsSendingApi(false);
     }
@@ -197,7 +233,7 @@ export const DmDichVuTab: React.FC = () => {
         (i.quyTrinh && i.quyTrinh.toLowerCase().includes(q)) ||
         (i.qdDvkt && i.qdDvkt.toLowerCase().includes(q)) ||
         (i.qdPdGia && i.qdPdGia.toLowerCase().includes(q)) ||
-        (i.ghiChu && i.ghiChu.toLowerCase().includes(q))
+        (i.ghiChu && i.ghiChu.toLowerCase().includes(q)),
     );
   }, [dichVuItems, searchTerm]);
 
@@ -217,11 +253,11 @@ export const DmDichVuTab: React.FC = () => {
         onLoadSample={handleLoadSampleData}
         onClearData={handleClearData}
         onOpenXmlModal={() => {
-          setXmlExportTab('xml');
+          setXmlExportTab("xml");
           setIsXmlModalOpen(true);
         }}
         onOpenApiTab={() => {
-          setXmlExportTab('api');
+          setXmlExportTab("api");
           setIsXmlModalOpen(true);
         }}
         onOpenSchemaModal={() => setIsSchemaModalOpen(true)}
@@ -242,10 +278,12 @@ export const DmDichVuTab: React.FC = () => {
         matchedColumnsMap={
           fileUploadStats
             ? Object.fromEntries(
-                Object.entries(fileUploadStats.detectedHeaders).map(([colIdx, key]) => [
-                  key,
-                  `Cột ${Number(colIdx) + 1} (${key})`
-                ])
+                Object.entries(fileUploadStats.detectedHeaders).map(
+                  ([colIdx, key]) => [
+                    key,
+                    `Cột ${Number(colIdx) + 1} (${key})`,
+                  ],
+                ),
               )
             : {}
         }
@@ -332,10 +370,12 @@ export const DmDichVuTab: React.FC = () => {
         matchedColumnsMap={
           fileUploadStats
             ? Object.fromEntries(
-                Object.entries(fileUploadStats.detectedHeaders).map(([colIdx, key]) => [
-                  key,
-                  `Cột ${Number(colIdx) + 1} (${key})`
-                ])
+                Object.entries(fileUploadStats.detectedHeaders).map(
+                  ([colIdx, key]) => [
+                    key,
+                    `Cột ${Number(colIdx) + 1} (${key})`,
+                  ],
+                ),
               )
             : {}
         }

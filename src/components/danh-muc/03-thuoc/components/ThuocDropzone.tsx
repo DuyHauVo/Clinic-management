@@ -33,6 +33,37 @@ export const ThuocDropzone: React.FC<ThuocDropzoneProps> = ({
   onAddNew
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = React.useState(false);
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isLoadingFile) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (isLoadingFile) return;
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0 && fileInputRef.current) {
+      const dt = new DataTransfer();
+      dt.items.add(files[0]);
+      fileInputRef.current.files = dt.files;
+      const changeEvent = new Event('change', { bubbles: true });
+      fileInputRef.current.dispatchEvent(changeEvent);
+    }
+  };
 
   return (
     <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-4">
@@ -47,7 +78,14 @@ export const ThuocDropzone: React.FC<ThuocDropzoneProps> = ({
         />
         <div
           onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-blue-300 hover:border-[#1677ff] bg-blue-50/50 hover:bg-blue-50 rounded-2xl p-6 text-center cursor-pointer transition-all duration-200 flex flex-col md:flex-row items-center justify-between gap-4"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all duration-200 flex flex-col md:flex-row items-center justify-between gap-4 ${
+            isDragging
+              ? 'border-[#1677ff] bg-blue-100/80 scale-[1.008] shadow-md shadow-blue-500/10'
+              : 'border-blue-300 hover:border-[#1677ff] bg-blue-50/50 hover:bg-blue-50'
+          }`}
         >
           <div className="flex items-center gap-4 text-left">
             <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-[#1677ff] flex-shrink-0 border border-blue-100">

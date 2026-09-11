@@ -178,7 +178,7 @@ export function parseThietBiWorksheet(
     else invalidRows++;
 
     items.push({
-      id: `tb-${r}-${Date.now()}`,
+      id: `tb-${generateUUID()}`,
       stt,
       maVatTu,
       nhomVatTu,

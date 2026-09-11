@@ -150,7 +150,7 @@ export function parseDichVuWorksheet(
     else invalidRows++;
 
     items.push({
-      id: `dv-${r}-${Date.now()}`,
+      id: `dv-${generateUUID()}`,
       stt,
       maDichVu,
       tenDichVu,
