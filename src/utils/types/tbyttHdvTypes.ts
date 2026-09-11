@@ -21,6 +21,12 @@ export interface DmTbytThdvItem {
   errors?: string[];
 }
 
+export interface TbytThdvValidationInput {
+  tenTb?: string;
+  maMay?: string;
+  parsedTuNgay?: string;
+}
+
 export interface TbytThdvSchemaField {
   key: string;
   label: string;

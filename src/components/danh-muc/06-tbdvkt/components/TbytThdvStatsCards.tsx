@@ -1,5 +1,5 @@
 import React from "react";
-import { Cpu, Stethoscope, FileText, ShieldCheck } from "lucide-react";
+import { Cpu, Award, FileText, ShieldAlert, CheckCircle2 } from "lucide-react";
 import type { DmTbytThdvItem } from "../../../../types";
 
 interface TbytThdvStatsCardsProps {
@@ -10,11 +10,13 @@ export const TbytThdvStatsCards: React.FC<TbytThdvStatsCardsProps> = ({
   items,
 }) => {
   const totalCount = items.length;
-  const clsCount = items.filter((i) =>
-    Boolean(i.maMay && i.maMay.trim()),
+  const soLuuHanhCount = items.filter((i) =>
+    Boolean(i.soLuuHanh && i.soLuuHanh.trim()),
   ).length;
   const thueMuonCount = items.filter((i) => Boolean(i.hdTu || i.hdDen)).length;
-  const validCount = items.filter((i) => i.isValid !== false).length;
+  const invalidCount = items.filter(
+    (i) => i.isValid === false || (i.errors && i.errors.length > 0),
+  ).length;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -28,22 +30,22 @@ export const TbytThdvStatsCards: React.FC<TbytThdvStatsCardsProps> = ({
             Tổng Thiết Bị DVKT
           </span>
           <div className="text-2xl font-black text-slate-900 tracking-tight mt-0.5">
-            {totalCount}{" "}
+            {totalCount}
           </div>
         </div>
       </div>
 
-      {/* 2. Thiết bị CLS & Phẫu thuật */}
+      {/* 2. Có Số Lưu Hành (NĐ 07/2025/NĐ-CP) */}
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4 hover:shadow-md transition-shadow">
         <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold flex-shrink-0 border border-emerald-100">
-          <Stethoscope size={24} />
+          <Award size={24} />
         </div>
         <div>
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-            Máy CLS & Phẫu Thủ Thuật
+            Có Số Lưu Hành (NĐ 07)
           </span>
           <div className="text-2xl font-black text-emerald-700 tracking-tight mt-0.5">
-            {clsCount}{" "}
+            {soLuuHanhCount} / {totalCount}
           </div>
         </div>
       </div>
@@ -55,25 +57,35 @@ export const TbytThdvStatsCards: React.FC<TbytThdvStatsCardsProps> = ({
         </div>
         <div>
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-            Thuê / Mượn / Trả Góp
+            Thuê / Mượn / Đặt Máy
           </span>
           <div className="text-2xl font-black text-amber-700 tracking-tight mt-0.5">
-            {thueMuonCount}{" "}
+            {thueMuonCount}
           </div>
         </div>
       </div>
 
-      {/* 4. Hồ Sơ BHYT Chuẩn */}
+      {/* 4. Hồ Sơ Cảnh Báo / Lỗi Cần Xử Lý */}
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4 hover:shadow-md transition-shadow">
-        <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold flex-shrink-0 border border-purple-100">
-          <ShieldCheck size={24} />
+        <div
+          className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold flex-shrink-0 border ${
+            invalidCount > 0
+              ? "bg-rose-50 text-rose-600 border-rose-100"
+              : "bg-purple-50 text-purple-600 border-purple-100"
+          }`}
+        >
+          {invalidCount > 0 ? <ShieldAlert size={24} /> : <CheckCircle2 size={24} />}
         </div>
         <div>
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-            Hồ Sơ BHYT Mẫu 06/DM
+            {invalidCount > 0 ? "Bản Ghi Cần Kiểm Tra" : "Kiểm Tra Tính Hợp Lệ"}
           </span>
-          <div className="text-2xl font-black text-purple-700 tracking-tight mt-0.5">
-            {validCount}/{totalCount}
+          <div
+            className={`text-2xl font-black tracking-tight mt-0.5 ${
+              invalidCount > 0 ? "text-rose-600" : "text-purple-700"
+            }`}
+          >
+            {invalidCount > 0 ? `${invalidCount} lỗi` : "Chuẩn 100%"}
           </div>
         </div>
       </div>

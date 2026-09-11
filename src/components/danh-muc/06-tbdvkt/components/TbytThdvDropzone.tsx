@@ -1,7 +1,7 @@
-import React, { useRef } from 'react';
-import { Upload, CheckCircle2 } from 'lucide-react';
+import React from 'react';
+import { CheckCircle2 } from 'lucide-react';
 import type { ParseTbytThdvExcelResult } from '../services/tbyttHdvService';
-import { ExcelUploadStatsBar, DanhMucActionToolbar } from '../../common';
+import { DanhMucDropzone } from '../../common';
 import { TBYTTHDV_SCHEMA_FIELDS } from '../services/tbyttHdvService';
 
 interface TbytThdvDropzoneProps {
@@ -33,124 +33,47 @@ export const TbytThdvDropzone: React.FC<TbytThdvDropzoneProps> = ({
   onOpenSchemaModal,
   onAddNew
 }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isDragging, setIsDragging] = React.useState(false);
   const totalSchemaFields = TBYTTHDV_SCHEMA_FIELDS.length;
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isLoadingFile) {
-      setIsDragging(true);
-    }
-  };
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    if (isLoadingFile) return;
-
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0 && fileInputRef.current) {
-      const dt = new DataTransfer();
-      dt.items.add(files[0]);
-      fileInputRef.current.files = dt.files;
-      const changeEvent = new Event('change', { bubbles: true });
-      fileInputRef.current.dispatchEvent(changeEvent);
-    }
-  };
-
   return (
-    <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-4">
-      {/* Upload Dropzone */}
-      <div>
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          accept=".xlsx,.xls,.csv"
-          onChange={onFileUpload}
-        />
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all duration-200 flex flex-col md:flex-row items-center justify-between gap-4 ${
-            isDragging
-              ? 'border-purple-600 bg-purple-100/80 scale-[1.008] shadow-md shadow-purple-500/10'
-              : 'border-purple-300 hover:border-purple-500 bg-purple-50/50 hover:bg-purple-50'
-          }`}
-        >
-          <div className="flex items-center gap-4 text-left">
-            <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-purple-600 flex-shrink-0 border border-purple-100">
-              <Upload size={24} />
-            </div>
-            <div>
-              <h4 className="text-base font-bold text-slate-900">
-                {isLoadingFile ? 'Đang đọc và phân tích file Excel TBYT...' : 'Nạp Tệp Excel Danh Mục TBYT Thực Hiện DVKT (Mẫu 06/DM)'}
-              </h4>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Kéo thả hoặc nhấp để chọn file <code className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono text-[11px]">.xlsx</code>, <code className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono text-[11px]">.xls</code>, <code className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono text-[11px]">.csv</code>. Tự động đối soát {totalSchemaFields} trường chuẩn BHXH.
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-500/20 flex items-center gap-2 transition-colors flex-shrink-0"
-            disabled={isLoadingFile}
-          >
-            <Upload size={15} />
-            <span>Chọn Tệp Excel TBYT</span>
-          </button>
-        </div>
-
-        {/* Upload stats feedback & Multi-sheet switcher */}
-        {fileUploadStats && (
-          <ExcelUploadStatsBar
-            selectedSheet={fileUploadStats.selectedSheet}
-            totalRows={fileUploadStats.totalRows}
-            rowUnitLabel="thiết bị y tế"
-            matchedColumnsCount={Object.keys(fileUploadStats.detectedHeaders).length}
-            totalColumnsCount={totalSchemaFields}
-            fileName={fileUploadStats.fileName}
-            availableSheets={fileUploadStats.availableSheets}
-            themeColor="purple"
-            onOpenSchemaModal={onOpenSchemaModal}
-            onSwitchSheet={onSwitchSheet}
-            extraBadge={
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold rounded-lg text-[11px]">
-                <CheckCircle2 size={13} />
-                <span>Sẵn sàng sinh chuỗi XML Loại 72</span>
-              </div>
+    <DanhMucDropzone
+      themeColor="purple"
+      isLoadingFile={isLoadingFile}
+      loadingTitle="Đang đọc và phân tích file Excel TBYT..."
+      title="Nạp Tệp Excel Danh Mục TBYT Thực Hiện DVKT (Mẫu 06/DM)"
+      description={
+        <>Kéo thả hoặc nhấp để chọn file (.xlsx, .xls, .csv). Hỗ trợ chuẩn hóa {totalSchemaFields} cột theo QĐ 3176 &amp; NĐ 07/2025</>
+      }
+      uploadStats={
+        fileUploadStats
+          ? {
+              selectedSheet: fileUploadStats.selectedSheet,
+              totalRows: fileUploadStats.totalRows,
+              rowUnitLabel: 'thiết bị',
+              matchedColumnsCount: Object.keys(fileUploadStats.detectedHeaders).length,
+              totalColumnsCount: totalSchemaFields,
+              fileName: fileUploadStats.fileName,
+              availableSheets: fileUploadStats.availableSheets,
+              extraBadge: (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold rounded-lg text-[11px]">
+                  <CheckCircle2 size={13} />
+                  <span>Sẵn sàng sinh chuỗi XML Loại 72</span>
+                </div>
+              ),
             }
-          />
-        )}
-      </div>
-
-      {/* Quick Actions Toolbar */}
-      <DanhMucActionToolbar
-        itemsCount={itemsCount}
-        addNewLabel="Thêm Thiết Bị Mới"
-        templateLabel="Tải Mẫu Excel TBYT"
-        xmlLabel="Xem XML / Base64"
-        apiLabel="Gửi Cổng BHXH (Loại 72)"
-        themeColor="purple"
-        onAddNew={onAddNew}
-        onDownloadTemplate={onDownloadTemplate}
-        onOpenXmlModal={onOpenXmlModal}
-        onOpenApiTab={onOpenApiTab}
-        onLoadSample={onLoadSample}
-        onClearData={onClearData}
-      />
-    </div>
+          : undefined
+      }
+      itemsCount={itemsCount}
+      onFileUpload={onFileUpload}
+      onSwitchSheet={onSwitchSheet}
+      onOpenSchemaModal={onOpenSchemaModal}
+      onDownloadTemplate={onDownloadTemplate}
+      onLoadSample={onLoadSample}
+      onClearData={onClearData}
+      onOpenXmlModal={onOpenXmlModal}
+      onOpenApiTab={onOpenApiTab}
+      onAddNew={onAddNew}
+      addNewLabel="Thêm Thiết Bị"
+    />
   );
 };

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Cpu, X, Save, Building2, FileText } from 'lucide-react';
 import type { DmTbytThdvItem } from '../../../../types';
 import { useToast } from '../../../../context/ToastContext';
+import { useModalBehavior } from '../../../../hooks/useModalBehavior';
+import { isValidYmdDate } from '../../../../utils/shared/excelXmlShared';
 
 interface TbytThdvEditModalProps {
   isOpen: boolean;
@@ -33,6 +35,8 @@ export const TbytThdvEditModal: React.FC<TbytThdvEditModalProps> = ({
   onSave,
   initialData
 }) => {
+  useModalBehavior(isOpen, onClose);
+
   if (!isOpen) return null;
 
   return (
@@ -72,21 +76,49 @@ const TbytThdvEditModalContent: React.FC<TbytThdvEditModalContentProps> = ({
       toast.warning('Vui lòng nhập Mã máy theo QĐ 3176 (MA_MAY)', 'Thiếu Dữ Liệu');
       return;
     }
-    if (!formData.tuNgay.trim() || formData.tuNgay.trim().length !== 8) {
-      toast.warning('Từ ngày áp dụng (TU_NGAY) phải gồm 8 chữ số (YYYYMMDD)', 'Ngày Không Hợp Lệ');
+    const cleanTuNgay = formData.tuNgay.trim();
+    if (!cleanTuNgay || !isValidYmdDate(cleanTuNgay)) {
+      toast.warning('Từ ngày áp dụng (TU_NGAY) phải là ngày hợp lệ định dạng YYYYMMDD (8 chữ số)', 'Ngày Không Hợp Lệ');
+      return;
+    }
+    if (formData.denNgay?.trim() && !isValidYmdDate(formData.denNgay.trim())) {
+      toast.warning('Đến ngày áp dụng (DEN_NGAY) phải là ngày hợp lệ định dạng YYYYMMDD (8 chữ số)', 'Ngày Không Hợp Lệ');
+      return;
+    }
+    if (formData.hdTu?.trim() && !isValidYmdDate(formData.hdTu.trim())) {
+      toast.warning('Hợp đồng thuê từ (HD_TU) phải là ngày hợp lệ định dạng YYYYMMDD (8 chữ số)', 'Ngày Không Hợp Lệ');
+      return;
+    }
+    if (formData.hdDen?.trim() && !isValidYmdDate(formData.hdDen.trim())) {
+      toast.warning('Hợp đồng thuê đến (HD_DEN) phải là ngày hợp lệ định dạng YYYYMMDD (8 chữ số)', 'Ngày Không Hợp Lệ');
       return;
     }
 
     onSave({
       ...formData,
       tenTb: formData.tenTb.trim(),
-      maMay: formData.maMay.trim()
+      maMay: formData.maMay.trim(),
+      tuNgay: cleanTuNgay,
+      denNgay: formData.denNgay?.trim() || '',
+      hdTu: formData.hdTu?.trim() || '',
+      hdDen: formData.hdDen?.trim() || '',
+      isValid: true,
+      errors: []
     });
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 ant-modal-anim">
-      <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200">
+    <div
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 ant-modal-anim"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edit-modal-title"
+    >
+      <div
+        className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Modal Header */}
         <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
           <div className="flex items-center gap-3">
@@ -95,7 +127,7 @@ const TbytThdvEditModalContent: React.FC<TbytThdvEditModalContentProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-extrabold text-slate-900">
+                <h3 id="edit-modal-title" className="text-base font-extrabold text-slate-900">
                   {initialData ? 'Chỉnh Sửa Thiết Bị Y Tế Thực Hiện DVKT' : 'Thêm Mới Thiết Bị Y Tế Thực Hiện DVKT'}
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
@@ -103,13 +135,14 @@ const TbytThdvEditModalContent: React.FC<TbytThdvEditModalContentProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Khai báo 14 trường thông tin chuẩn phục vụ giám định BHYT theo QĐ 3176/QĐ-BYT & NĐ 07/2025/NĐ-CP
+                Khai báo 14 trường thông tin chuẩn phục vụ giám định BHYT theo QĐ 3176/QĐ-BYT &amp; NĐ 07/2025/NĐ-CP
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
+            aria-label="Đóng cửa sổ"
             className="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-800 flex items-center justify-center transition-colors"
           >
             <X size={18} />

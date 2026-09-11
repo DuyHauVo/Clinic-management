@@ -23,6 +23,7 @@ import {
   downloadXmlFile,
   mockSendDanhMucToBhxhGateway
 } from './shared';
+import { validateNhanLucData } from './validators';
 
 // Re-export để giữ nguyên API công khai cũ
 export { formatToYmdString, xmlToBase64 };
@@ -95,8 +96,6 @@ export function parseNhanLucWorksheet(
       rowObj[key] = row[Number(colIdx)];
     }
 
-    const rowErrors: string[] = [];
-
     // Parse Fields
     const stt = Number(rowObj['STT']) || autoStt;
     const maKhoa = String(rowObj['MA_KHOA'] ?? '').trim();
@@ -159,12 +158,14 @@ export function parseNhanLucWorksheet(
     const maCskcb = String(rowObj['MA_CSKCB'] || '01929').trim();
 
     // Validation
-    if (!maKhoa) rowErrors.push('Thiếu Mã khoa (MA_KHOA)');
-    if (!tenKhoa) rowErrors.push('Thiếu Tên khoa (TEN_KHOA)');
-    if (!hoTen) rowErrors.push('Thiếu Họ và tên (HO_TEN)');
-    if (!soDinhDanh) rowErrors.push('Thiếu Số định danh / CCCD (SO_DINH_DANH)');
-    if (!chucDanhNn) rowErrors.push('Thiếu Chức danh nghề nghiệp (CHUCDANH_NN)');
-    if (!tuNgay || tuNgay.length !== 8) rowErrors.push('Từ ngày (TU_NGAY) phải đủ 8 ký tự YYYYMMDD');
+    const rowErrors = validateNhanLucData({
+      maKhoa,
+      tenKhoa,
+      hoTen,
+      soDinhDanh,
+      chucDanhNn,
+      tuNgay
+    });
 
     items.push({
       id: `nl_${stt}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,

@@ -14,6 +14,7 @@ import {
   parseYmdDate,
   readExcelFile,
   findBestSheetName,
+  pickBestSheetName,
   detectHeaderRow,
   escapeXml,
   generateUUID,
@@ -21,8 +22,10 @@ import {
   buildHsDanhMucDocument,
   xmlToBase64,
   downloadXmlFile,
-  mockSendDanhMucToBhxhGateway
+  mockSendDanhMucToBhxhGateway,
+  DEFAULT_MA_CSKCB,
 } from './shared/excelXmlShared';
+import { validateDichVuData } from './validators';
 
 export { xmlToBase64, downloadXmlFile };
 
@@ -139,11 +142,12 @@ export function parseDichVuWorksheet(
     const maCskcb = String(rowObj['MA_CSKCB'] ?? defaultMaCskcb).trim() || defaultMaCskcb;
 
     // Validation
-    const errors: string[] = [];
-    if (!maDichVu) errors.push('Thiếu mã dịch vụ (MA_DICH_VU)');
-    if (!tenDichVu) errors.push('Thiếu tên dịch vụ (TEN_DICH_VU)');
-    if (donGia < 0) errors.push('Đơn giá không được âm');
-    if (!parsedTuNgay) errors.push('Thiếu hoặc sai định dạng TU_NGAY (đã gán mặc định ngày hiện tại)');
+    const errors = validateDichVuData({
+      maDichVu,
+      tenDichVu,
+      donGia,
+      parsedTuNgay
+    });
 
     const isValid = errors.length === 0;
     if (isValid) validRows++;
@@ -193,43 +197,17 @@ export function parseDichVuWorksheet(
 export async function parseDichVuExcelFile(
   file: File,
   selectedSheetName?: string,
-  defaultMaCskcb = '01929'
+  defaultMaCskcb = DEFAULT_MA_CSKCB
 ): Promise<ParseDichVuExcelResult> {
   const workbook = await readExcelFile(file);
   const availableSheets = workbook.SheetNames;
 
-  let sheetName = selectedSheetName || '';
-  if (!sheetName || !availableSheets.includes(sheetName)) {
-    const hintKeywords = ['05', 'DVKT', 'DICHVU', 'DICH_VU', 'DV', 'KBCB'];
-    let bestCandidate = '';
-    let maxCandidateScore = -1;
+  const hintKeywords = ['05', 'DVKT', 'DICHVU', 'DICH_VU', 'DV', 'KBCB'];
 
-    for (const s of availableSheets) {
-      const ws = workbook.Sheets[s];
-      if (ws) {
-        const rawRows: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-        if (rawRows && rawRows.length > 1) {
-          const { headerRowIndex, colMapping } = detectHeaderRow(rawRows, matchDichVuSchemaKey, 3, 25, 'best');
-          const matchedCount = Object.keys(colMapping).length;
-          if (headerRowIndex !== -1 && matchedCount >= 2) {
-            const norm = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-            const isHintMatch = hintKeywords.some(k => norm.includes(k));
-            
-            // Score = số cột khớp * 100 + bonus tên sheet + số dòng dữ liệu thực
-            const dataRowsCount = Math.max(0, rawRows.length - (headerRowIndex + 1));
-            const score = matchedCount * 100 + (isHintMatch ? 50 : 0) + Math.min(dataRowsCount, 100);
-
-            if (score > maxCandidateScore) {
-              maxCandidateScore = score;
-              bestCandidate = s;
-            }
-          }
-        }
-      }
-    }
-
-    sheetName = bestCandidate || findBestSheetName(workbook, matchDichVuSchemaKey) || availableSheets[0];
-  }
+  const sheetName =
+    selectedSheetName && availableSheets.includes(selectedSheetName)
+      ? selectedSheetName
+      : pickBestSheetName(workbook, matchDichVuSchemaKey, hintKeywords, 2);
 
   const worksheet = workbook.Sheets[sheetName];
   const result = parseDichVuWorksheet(worksheet, sheetName, availableSheets, file.name, workbook, defaultMaCskcb);

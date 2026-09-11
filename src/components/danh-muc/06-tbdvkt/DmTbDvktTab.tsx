@@ -25,9 +25,10 @@ import { useClipboard } from "../../../hooks";
 
 export const DmTbDvktTab: React.FC = () => {
   const toast = useToast();
-  const { isCopied, copy: handleCopyText } = useClipboard();
-  const [tbytItems, setTbytItems] =
-    useState<DmTbytThdvItem[]>(initialTbytThdvData);
+  const { isKeyCopied, copy: handleCopyText } = useClipboard();
+  const [tbytItems, setTbytItems] = useState<DmTbytThdvItem[]>(() => [
+    ...initialTbytThdvData,
+  ]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoadingFile, setIsLoadingFile] = useState(false);
   const [fileUploadStats, setFileUploadStats] =
@@ -57,7 +58,6 @@ export const DmTbDvktTab: React.FC = () => {
     setIsLoadingFile(true);
     try {
       const result = await parseTbytThdvExcelFile(file);
-      console.log("result1", result);
       setTbytItems(result.items);
       setFileUploadStats(result);
       toast.success(
@@ -101,7 +101,7 @@ export const DmTbDvktTab: React.FC = () => {
   };
 
   const handleLoadSampleData = () => {
-    setTbytItems(initialTbytThdvData);
+    setTbytItems([...initialTbytThdvData]);
     setFileUploadStats(null);
     toast.success(
       "Đã nạp dữ liệu danh mục TBYT thực hiện DVKT mẫu theo QĐ 3176/QĐ-BYT",
@@ -117,18 +117,22 @@ export const DmTbDvktTab: React.FC = () => {
 
   const handleSaveItem = (item: DmTbytThdvItem) => {
     if (editingItem) {
-      setTbytItems(tbytItems.map((i) => (i.id === editingItem.id ? item : i)));
+      setTbytItems((prev) =>
+        prev.map((i) => (i.id === editingItem.id ? item : i)),
+      );
       toast.success(
         `Đã cập nhật thiết bị: ${item.tenTb}`,
         "Cập Nhật Thành Công",
       );
     } else {
-      const newItem: DmTbytThdvItem = {
-        ...item,
-        id: `tbdv-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        stt: tbytItems.length + 1,
-      };
-      setTbytItems([...tbytItems, newItem]);
+      setTbytItems((prev) => {
+        const newItem: DmTbytThdvItem = {
+          ...item,
+          id: `tbdv-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          stt: prev.length + 1,
+        };
+        return [...prev, newItem];
+      });
       toast.success(`Đã thêm thiết bị: ${item.tenTb}`, "Thêm Thành Công");
     }
     setIsEditModalOpen(false);
@@ -198,6 +202,22 @@ export const DmTbDvktTab: React.FC = () => {
     );
   }, [tbytItems, searchTerm]);
 
+  const matchedKeys = useMemo(() => {
+    return fileUploadStats
+      ? Object.values(fileUploadStats.detectedHeaders)
+      : TBYTTHDV_SCHEMA_FIELDS.map((f) => f.key);
+  }, [fileUploadStats]);
+
+  const matchedColumnsMap = useMemo(() => {
+    return fileUploadStats
+      ? Object.fromEntries(
+          Object.entries(fileUploadStats.detectedHeaders).map(
+            ([colIdx, key]) => [key, `Cột ${Number(colIdx) + 1} (${key})`],
+          ),
+        )
+      : {};
+  }, [fileUploadStats]);
+
   return (
     <div className="space-y-6">
       {/* 1. Top 4 Metric KPI Cards */}
@@ -231,23 +251,8 @@ export const DmTbDvktTab: React.FC = () => {
       {/* 3. Schema Mapping Inspection Card */}
       <SchemaMappingCard
         schemaFields={TBYTTHDV_SCHEMA_FIELDS}
-        matchedKeys={
-          fileUploadStats
-            ? Object.values(fileUploadStats.detectedHeaders)
-            : TBYTTHDV_SCHEMA_FIELDS.map((f) => f.key)
-        }
-        matchedColumnsMap={
-          fileUploadStats
-            ? Object.fromEntries(
-                Object.entries(fileUploadStats.detectedHeaders).map(
-                  ([colIdx, key]) => [
-                    key,
-                    `Cột ${Number(colIdx) + 1} (${key})`,
-                  ],
-                ),
-              )
-            : {}
-        }
+        matchedKeys={matchedKeys}
+        matchedColumnsMap={matchedColumnsMap}
         sheetName={fileUploadStats?.selectedSheet}
         fileName={fileUploadStats?.fileName}
         totalRows={fileUploadStats?.totalRows}
@@ -292,7 +297,7 @@ export const DmTbDvktTab: React.FC = () => {
         base64Content={base64Content}
         tab={xmlExportTab}
         onTabChange={setXmlExportTab}
-        isCopied={isCopied}
+        isKeyCopied={isKeyCopied}
         onCopy={handleCopyText}
         onExportXml={handleExportXml}
         onSendApi={handleSendBhxhApi}
@@ -307,23 +312,8 @@ export const DmTbDvktTab: React.FC = () => {
         title="Mẫu 06/DM: Danh Mục Thiết Bị Y Tế Thực Hiện Dịch Vụ Kỹ Thuật"
         loaiHsBadge="Loại HS 72 - 14 Trường"
         schemaFields={TBYTTHDV_SCHEMA_FIELDS}
-        matchedKeys={
-          fileUploadStats
-            ? Object.values(fileUploadStats.detectedHeaders)
-            : TBYTTHDV_SCHEMA_FIELDS.map((f) => f.key)
-        }
-        matchedColumnsMap={
-          fileUploadStats
-            ? Object.fromEntries(
-                Object.entries(fileUploadStats.detectedHeaders).map(
-                  ([colIdx, key]) => [
-                    key,
-                    `Cột ${Number(colIdx) + 1} (${key})`,
-                  ],
-                ),
-              )
-            : {}
-        }
+        matchedKeys={matchedKeys}
+        matchedColumnsMap={matchedColumnsMap}
         sheetName={fileUploadStats?.selectedSheet}
         fileName={fileUploadStats?.fileName}
         totalRows={fileUploadStats?.totalRows}

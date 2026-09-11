@@ -49,6 +49,17 @@ export interface DmThuocItem {
   errors?: string[];
 }
 
+export interface ThuocValidationInput {
+  maThuoc?: string;
+  tenThuoc?: string;
+  donViTinh?: string;
+  soDangKy?: string;
+  donGia?: number;
+  tuNgay?: string;
+  rawDenNgay?: unknown;
+  denNgay?: string;
+}
+
 export interface ParseThuocExcelResult {
   fileName: string;
   selectedSheet: string;

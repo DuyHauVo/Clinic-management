@@ -14,6 +14,7 @@ import {
   parseYmdDate,
   readExcelFile,
   findBestSheetName,
+  pickBestSheetName,
   detectHeaderRow,
   escapeXml,
   generateUUID,
@@ -22,7 +23,9 @@ import {
   xmlToBase64,
   downloadXmlFile,
   mockSendDanhMucToBhxhGateway,
+  DEFAULT_MA_CSKCB,
 } from "./shared/excelXmlShared";
+import { validateTbytThdvData } from "./validators";
 
 export { xmlToBase64, downloadXmlFile };
 
@@ -46,7 +49,7 @@ export function parseTbytThdvWorksheet(
   availableSheets: string[],
   fileName: string,
   workbook?: XLSX.WorkBook,
-  defaultMaCskcb = "01929",
+  defaultMaCskcb = DEFAULT_MA_CSKCB,
 ): ParseTbytThdvExcelResult {
   const rawRows: unknown[][] = XLSX.utils.sheet_to_json(worksheet, {
     header: 1,
@@ -130,17 +133,14 @@ export function parseTbytThdvWorksheet(
     const congTySx = String(rowObj["CONGTY_SX"] ?? "").trim() || undefined;
     const nuocSx = String(rowObj["NUOC_SX"] ?? "").trim() || undefined;
 
-    const namSxRaw = rowObj["NAM_SX"];
-    const namSx =
-      namSxRaw !== undefined && namSxRaw !== ""
-        ? parseNumberCell(namSxRaw, 0)
-        : undefined;
+    const parseYear = (val: unknown): number | undefined => {
+      if (val === undefined || val === null || val === "") return undefined;
+      const parsed = parseNumberCell(val, 0);
+      return parsed > 0 ? parsed : undefined;
+    };
 
-    const namSdRaw = rowObj["NAM_SD"];
-    const namSd =
-      namSdRaw !== undefined && namSdRaw !== ""
-        ? parseNumberCell(namSdRaw, 0)
-        : undefined;
+    const namSx = parseYear(rowObj["NAM_SX"]);
+    const namSd = parseYear(rowObj["NAM_SD"]);
 
     const soLuuHanh = String(rowObj["SO_LUU_HANH"] ?? "").trim() || undefined;
     const hdTu = parseYmdDate(rowObj["HD_TU"]);
@@ -156,13 +156,11 @@ export function parseTbytThdvWorksheet(
       String(rowObj["MA_CSKCB"] ?? defaultMaCskcb).trim() || defaultMaCskcb;
 
     // Validation
-    const errors: string[] = [];
-    if (!tenTb) errors.push("Thiếu tên thiết bị y tế (TEN_TB)");
-    if (!maMay) errors.push("Thiếu mã máy theo QĐ 3176 (MA_MAY)");
-    if (!parsedTuNgay)
-      errors.push(
-        "Thiếu hoặc sai định dạng TU_NGAY (đã gán mặc định ngày hiện tại)",
-      );
+    const errors = validateTbytThdvData({
+      tenTb,
+      maMay,
+      parsedTuNgay
+    });
 
     const isValid = errors.length === 0;
     if (isValid) validRows++;
@@ -209,71 +207,25 @@ export function parseTbytThdvWorksheet(
 export async function parseTbytThdvExcelFile(
   file: File,
   selectedSheetName?: string,
-  defaultMaCskcb = "01929",
+  defaultMaCskcb = DEFAULT_MA_CSKCB,
 ): Promise<ParseTbytThdvExcelResult> {
   const workbook = await readExcelFile(file);
   const availableSheets = workbook.SheetNames;
 
-  let sheetName = selectedSheetName || "";
-  if (!sheetName || !availableSheets.includes(sheetName)) {
-    const hintKeywords = [
-      "06",
-      "TBYT",
-      "THIETBI",
-      "THIET_BI",
-      "MAY",
-      "DVKT",
-      "TBYTTHDV",
-    ];
-    let bestCandidate = "";
-    let maxCandidateScore = -1;
+  const hintKeywords = [
+    "06",
+    "TBYT",
+    "THIETBI",
+    "THIET_BI",
+    "MAY",
+    "DVKT",
+    "TBYTTHDV",
+  ];
 
-    for (const s of availableSheets) {
-      const ws = workbook.Sheets[s];
-      if (ws) {
-        const rawRows: unknown[][] = XLSX.utils.sheet_to_json(ws, {
-          header: 1,
-          defval: "",
-        });
-        if (rawRows && rawRows.length > 1) {
-          const { headerRowIndex, colMapping } = detectHeaderRow(
-            rawRows,
-            matchTbytThdvSchemaKey,
-            3,
-            25,
-            "best",
-          );
-          const matchedCount = Object.keys(colMapping).length;
-          if (headerRowIndex !== -1 && matchedCount >= 2) {
-            const norm = s
-              .normalize("NFD")
-              .replace(/[\u0300-\u036f]/g, "")
-              .toUpperCase()
-              .replace(/[^A-Z0-9]/g, "");
-            const isHintMatch = hintKeywords.some((k) => norm.includes(k));
-            const dataRowsCount = Math.max(
-              0,
-              rawRows.length - (headerRowIndex + 1),
-            );
-            const score =
-              matchedCount * 100 +
-              (isHintMatch ? 50 : 0) +
-              Math.min(dataRowsCount, 100);
-
-            if (score > maxCandidateScore) {
-              maxCandidateScore = score;
-              bestCandidate = s;
-            }
-          }
-        }
-      }
-    }
-
-    sheetName =
-      bestCandidate ||
-      findBestSheetName(workbook, matchTbytThdvSchemaKey) ||
-      availableSheets[0];
-  }
+  const sheetName =
+    selectedSheetName && availableSheets.includes(selectedSheetName)
+      ? selectedSheetName
+      : pickBestSheetName(workbook, matchTbytThdvSchemaKey, hintKeywords, 3);
 
   const worksheet = workbook.Sheets[sheetName];
   const result = parseTbytThdvWorksheet(
