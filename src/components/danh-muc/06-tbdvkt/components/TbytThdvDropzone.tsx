@@ -1,13 +1,12 @@
 import React, { useRef } from 'react';
 import { Upload, CheckCircle2 } from 'lucide-react';
-import type { ParseDichVuExcelResult } from '../services/dichVuService';
+import type { ParseTbytThdvExcelResult } from '../services/tbyttHdvService';
 import { ExcelUploadStatsBar, DanhMucActionToolbar } from '../../common';
+import { TBYTTHDV_SCHEMA_FIELDS } from '../services/tbyttHdvService';
 
-import { DICHVU_SCHEMA_FIELDS } from '../services/dichVuService';
-
-interface DichVuDropzoneProps {
+interface TbytThdvDropzoneProps {
   isLoadingFile: boolean;
-  fileUploadStats: ParseDichVuExcelResult | null;
+  fileUploadStats: ParseTbytThdvExcelResult | null;
   itemsCount: number;
   onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSwitchSheet: (sheetName: string) => void;
@@ -20,7 +19,7 @@ interface DichVuDropzoneProps {
   onAddNew: () => void;
 }
 
-export const DichVuDropzone: React.FC<DichVuDropzoneProps> = ({
+export const TbytThdvDropzone: React.FC<TbytThdvDropzoneProps> = ({
   isLoadingFile,
   fileUploadStats,
   itemsCount,
@@ -36,7 +35,7 @@ export const DichVuDropzone: React.FC<DichVuDropzoneProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = React.useState(false);
-  const totalSchemaFields = DICHVU_SCHEMA_FIELDS.length;
+  const totalSchemaFields = TBYTTHDV_SCHEMA_FIELDS.length;
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -86,31 +85,31 @@ export const DichVuDropzone: React.FC<DichVuDropzoneProps> = ({
           onDrop={handleDrop}
           className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all duration-200 flex flex-col md:flex-row items-center justify-between gap-4 ${
             isDragging
-              ? 'border-emerald-600 bg-emerald-100/80 scale-[1.008] shadow-md shadow-emerald-500/10'
-              : 'border-emerald-300 hover:border-emerald-500 bg-emerald-50/50 hover:bg-emerald-50'
+              ? 'border-purple-600 bg-purple-100/80 scale-[1.008] shadow-md shadow-purple-500/10'
+              : 'border-purple-300 hover:border-purple-500 bg-purple-50/50 hover:bg-purple-50'
           }`}
         >
           <div className="flex items-center gap-4 text-left">
-            <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-emerald-600 flex-shrink-0 border border-emerald-100">
+            <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-purple-600 flex-shrink-0 border border-purple-100">
               <Upload size={24} />
             </div>
             <div>
               <h4 className="text-base font-bold text-slate-900">
-                {isLoadingFile ? 'Đang đọc và phân tích file Excel DVKT...' : 'Nạp Tệp Excel Danh Mục Dịch Vụ KBCB (Mẫu 05/DM)'}
+                {isLoadingFile ? 'Đang đọc và phân tích file Excel TBYT...' : 'Nạp Tệp Excel Danh Mục TBYT Thực Hiện DVKT (Mẫu 06/DM)'}
               </h4>
               <p className="text-xs text-slate-500 mt-0.5">
-                Kéo thả hoặc nhấp để chọn file <code className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-mono text-[11px]">.xlsx</code>, <code className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-mono text-[11px]">.xls</code>, <code className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-mono text-[11px]">.csv</code>. Tự động nhận diện {totalSchemaFields} trường chuẩn QĐ 3176/QĐ-BYT.
+                Kéo thả hoặc nhấp để chọn file <code className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono text-[11px]">.xlsx</code>, <code className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono text-[11px]">.xls</code>, <code className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-mono text-[11px]">.csv</code>. Tự động đối soát {totalSchemaFields} trường chuẩn BHXH.
               </p>
             </div>
           </div>
 
           <button
             type="button"
-            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-500/20 flex items-center gap-2 transition-colors flex-shrink-0"
+            className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-500/20 flex items-center gap-2 transition-colors flex-shrink-0"
             disabled={isLoadingFile}
           >
             <Upload size={15} />
-            <span>Chọn Tệp Excel DVKT</span>
+            <span>Chọn Tệp Excel TBYT</span>
           </button>
         </div>
 
@@ -119,18 +118,18 @@ export const DichVuDropzone: React.FC<DichVuDropzoneProps> = ({
           <ExcelUploadStatsBar
             selectedSheet={fileUploadStats.selectedSheet}
             totalRows={fileUploadStats.totalRows}
-            rowUnitLabel="dịch vụ kỹ thuật"
+            rowUnitLabel="thiết bị y tế"
             matchedColumnsCount={Object.keys(fileUploadStats.detectedHeaders).length}
             totalColumnsCount={totalSchemaFields}
             fileName={fileUploadStats.fileName}
             availableSheets={fileUploadStats.availableSheets}
-            themeColor="emerald"
+            themeColor="purple"
             onOpenSchemaModal={onOpenSchemaModal}
             onSwitchSheet={onSwitchSheet}
             extraBadge={
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold rounded-lg text-[11px]">
                 <CheckCircle2 size={13} />
-                <span>Sẵn sàng sinh chuỗi XML Loại 12</span>
+                <span>Sẵn sàng sinh chuỗi XML Loại 72</span>
               </div>
             }
           />
@@ -140,11 +139,11 @@ export const DichVuDropzone: React.FC<DichVuDropzoneProps> = ({
       {/* Quick Actions Toolbar */}
       <DanhMucActionToolbar
         itemsCount={itemsCount}
-        addNewLabel="Thêm DVKT Mới"
-        templateLabel="Tải Mẫu Excel DVKT"
+        addNewLabel="Thêm Thiết Bị Mới"
+        templateLabel="Tải Mẫu Excel TBYT"
         xmlLabel="Xem XML / Base64"
-        apiLabel="Gửi Cổng BHXH (Loại 12)"
-        themeColor="emerald"
+        apiLabel="Gửi Cổng BHXH (Loại 72)"
+        themeColor="purple"
         onAddNew={onAddNew}
         onDownloadTemplate={onDownloadTemplate}
         onOpenXmlModal={onOpenXmlModal}
