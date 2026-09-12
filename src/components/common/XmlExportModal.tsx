@@ -1,10 +1,10 @@
 import React from 'react';
 import { FileCode, Send, Copy, Check, Download, AlertTriangle } from 'lucide-react';
-import { DEFAULT_MA_CSKCB, DEFAULT_MA_TINH } from '../../../utils/shared/excelXmlShared';
-import { useClipboard } from '../../../hooks/useClipboard';
-import { useModalBehavior } from '../../../hooks/useModalBehavior';
+import { DEFAULT_MA_CSKCB, DEFAULT_MA_TINH } from '../../utils/shared/excelXmlShared';
+import { useClipboard } from '../../hooks/useClipboard';
+import { useModalBehavior } from '../../hooks/useModalBehavior';
 
-interface DanhMucXmlModalProps {
+export interface XmlExportModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
@@ -25,7 +25,7 @@ interface DanhMucXmlModalProps {
   apiResponse: any;
 }
 
-export const DanhMucXmlModal: React.FC<DanhMucXmlModalProps> = ({
+export const XmlExportModal: React.FC<XmlExportModalProps> = ({
   isOpen,
   onClose,
   title,
@@ -100,8 +100,8 @@ export const DanhMucXmlModal: React.FC<DanhMucXmlModalProps> = ({
               <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
                 <AlertTriangle size={24} />
               </div>
-              <p className="text-sm font-bold text-slate-800">Chưa có dữ liệu danh mục</p>
-              <p className="text-xs text-slate-500">Vui lòng nạp file Excel trước khi xem mã XML và Base64.</p>
+              <p className="text-sm font-bold text-slate-800">Chưa có dữ liệu</p>
+              <p className="text-xs text-slate-500">Vui lòng nạp hoặc nhập dữ liệu trước khi xem mã XML và Base64.</p>
             </div>
           ) : (
             <>
@@ -117,7 +117,7 @@ export const DanhMucXmlModal: React.FC<DanhMucXmlModalProps> = ({
                   }`}
                 >
                   <FileCode size={14} />
-                  <span>XML Gốc (&lt;HSDANHMUC&gt;)</span>
+                  <span>XML Gốc</span>
                 </button>
 
                 <button

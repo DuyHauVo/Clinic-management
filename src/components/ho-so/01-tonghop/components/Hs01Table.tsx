@@ -7,14 +7,11 @@ import {
   Edit2,
   Trash2,
   User,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight
 } from 'lucide-react';
 import type { Hs01TongHopItem } from '../services/hs01TongHopService';
 import { LOAI_KCB_OPTIONS, GIOI_TINH_MAP } from '../services/hs01TongHopService';
 import { formatCurrencyVnd, formatYmdHmDisplay } from '../../../../utils/shared/excelXmlShared';
+import { Pagination } from '../../../common';
 
 interface Hs01TableProps {
   items: Hs01TongHopItem[];
@@ -46,34 +43,12 @@ export const Hs01Table: React.FC<Hs01TableProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
-  const validCurrentPage = Math.min(currentPage, totalPages);
-
   const paginatedItems = useMemo(() => {
+    const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+    const validCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
     const start = (validCurrentPage - 1) * pageSize;
     return items.slice(start, start + pageSize);
-  }, [items, validCurrentPage, pageSize]);
-
-  const getPaginationPages = () => {
-    const pages: (number | string)[] = [];
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-      if (validCurrentPage > 3) pages.push('...');
-      
-      const start = Math.max(2, validCurrentPage - 1);
-      const end = Math.min(totalPages - 1, validCurrentPage + 1);
-      
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-      
-      if (validCurrentPage < totalPages - 2) pages.push('...');
-      pages.push(totalPages);
-    }
-    return pages;
-  };
+  }, [items, currentPage, pageSize]);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden flex flex-col">
@@ -389,106 +364,17 @@ export const Hs01Table: React.FC<Hs01TableProps> = ({
         </table>
       </div>
 
-      {/* Advanced Pagination Footer */}
-      <div className="p-4 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-600">
-        <div className="flex items-center gap-3">
-          <span>
-            Hiển thị <strong className="text-slate-900">{items.length === 0 ? 0 : (validCurrentPage - 1) * pageSize + 1}</strong> - <strong className="text-slate-900">{Math.min(validCurrentPage * pageSize, items.length)}</strong> trong số <strong className="text-slate-900">{items.length}</strong> hồ sơ
-          </span>
-
-          <div className="flex items-center gap-1.5 pl-3 border-l border-slate-200">
-            <span className="text-slate-400 text-[11px]">Hiển thị:</span>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none cursor-pointer focus:border-indigo-500"
-            >
-              <option value={10}>10 dòng/trang</option>
-              <option value={20}>20 dòng/trang</option>
-              <option value={50}>50 dòng/trang</option>
-              <option value={100}>100 dòng/trang</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Pagination Buttons */}
-        <div className="flex items-center gap-1">
-          {/* First Page */}
-          <button
-            type="button"
-            disabled={validCurrentPage <= 1}
-            onClick={() => setCurrentPage(1)}
-            className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            title="Trang đầu tiên"
-          >
-            <ChevronsLeft size={14} />
-          </button>
-
-          {/* Prev Page */}
-          <button
-            type="button"
-            disabled={validCurrentPage <= 1}
-            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-            className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            title="Trang trước"
-          >
-            <ChevronLeft size={14} />
-          </button>
-
-          {/* Page Numbers */}
-          <div className="flex items-center gap-1 px-1">
-            {getPaginationPages().map((p, idx) => {
-              if (p === '...') {
-                return (
-                  <span key={`ellipsis-${idx}`} className="px-1.5 text-slate-400 font-bold">
-                    ...
-                  </span>
-                );
-              }
-              const isCurrent = p === validCurrentPage;
-              return (
-                <button
-                  key={`page-${p}`}
-                  type="button"
-                  onClick={() => setCurrentPage(Number(p))}
-                  className={`min-w-[28px] h-7 px-2 rounded-lg text-xs font-bold transition-all ${
-                    isCurrent
-                      ? 'bg-indigo-600 text-white shadow-xs shadow-indigo-600/30'
-                      : 'border border-slate-200 bg-white hover:bg-slate-100 text-slate-700'
-                  }`}
-                >
-                  {p}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Next Page */}
-          <button
-            type="button"
-            disabled={validCurrentPage >= totalPages}
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-            className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            title="Trang tiếp theo"
-          >
-            <ChevronRight size={14} />
-          </button>
-
-          {/* Last Page */}
-          <button
-            type="button"
-            disabled={validCurrentPage >= totalPages}
-            onClick={() => setCurrentPage(totalPages)}
-            className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            title="Trang cuối"
-          >
-            <ChevronsRight size={14} />
-          </button>
-        </div>
-      </div>
+      {/* Common Pagination */}
+      <Pagination
+        currentPage={currentPage}
+        totalItems={items.length}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={setPageSize}
+        pageSizeOptions={[10, 20, 50, 100]}
+        itemLabel="hồ sơ"
+        themeColor="indigo"
+      />
     </div>
   );
 };

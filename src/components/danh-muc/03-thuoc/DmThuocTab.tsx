@@ -18,7 +18,8 @@ import { ThuocStatsCards } from './components/ThuocStatsCards';
 import { ThuocDropzone } from './components/ThuocDropzone';
 import { ThuocTable } from './components/ThuocTable';
 import { ThuocEditModal } from './components/ThuocEditModal';
-import { DanhMucXmlModal, SchemaMappingModal, SchemaMappingCard } from '../common';
+import { SchemaMappingModal, SchemaMappingCard } from '../common';
+import { XmlExportModal } from '../../common';
 
 export const DmThuocTab: React.FC = () => {
   const toast = useToast();
@@ -202,7 +203,7 @@ export const DmThuocTab: React.FC = () => {
         onDelete={handleDeleteItem}
       />
 
-      <DanhMucXmlModal
+      <XmlExportModal
         isOpen={isXmlModalOpen}
         onClose={() => setIsXmlModalOpen(false)}
         title="Cấu Trúc XML & Chuỗi Base64 Ký Số Mẫu 03/DM"

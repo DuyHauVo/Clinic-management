@@ -4,13 +4,17 @@ import { Navbar } from './components/Navbar';
 import { DanhMucPage } from './pages/DanhMucPage';
 import { HoSoPage } from './pages/HoSoPage';
 import { ToastProvider } from './context/ToastContext';
-import { initialHoSoXuatToanData } from './mock/mockData';
+import { initialHoSoDieuChinh09Data } from './mock/mockData';
+import type { HoSoDieuChinh09Item } from './utils/types/hs09DieuChinhTypes';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<MainTabType>('ho-so');
   const [hoSoTab, setHoSoTab] = useState<HoSoTabType>('01_tonghop');
+  const [hs09Items, setHs09Items] = useState<HoSoDieuChinh09Item[]>(
+    initialHoSoDieuChinh09Data
+  );
 
-  const pendingXuattoanCount = initialHoSoXuatToanData.filter(
+  const pendingXuattoanCount = hs09Items.filter(
     (x) => x.trangThai === 'cho_xu_ly'
   ).length;
 
@@ -47,6 +51,8 @@ export const App: React.FC = () => {
               <HoSoPage
                 activeTab={hoSoTab}
                 onTabChange={setHoSoTab}
+                hs09Items={hs09Items}
+                onHs09ItemsChange={setHs09Items}
               />
             </div>
           </main>

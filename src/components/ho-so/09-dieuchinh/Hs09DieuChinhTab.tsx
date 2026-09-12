@@ -1,0 +1,398 @@
+import React, { useState, useMemo } from "react";
+import type { WorkBook } from "xlsx";
+import type {
+  HoSoDieuChinh09Item,
+  ParseHs09ExcelResult,
+  SendHs09GatewayResult,
+  ChiPhiDieuChinhItem,
+} from "../../../utils/types/hs09DieuChinhTypes";
+import { HS09_SCHEMA_FIELDS } from "../../../utils/constants/hs09DieuChinhConstants";
+import {
+  parseHs09ExcelFile,
+  parseHs09Worksheet,
+  downloadHs09ExcelTemplate,
+} from "../../../utils/hs09DieuChinhXmlEngine";
+import { initialHoSoDieuChinh09Data } from "../../../mock/mockData";
+import { useToast } from "../../../context/ToastContext";
+import {
+  Hs09StatsCards,
+  Hs09Dropzone,
+  Hs09Table,
+  Hs09EditModal,
+  Hs09XmlModal,
+  Hs09DetailModal,
+} from "./components";
+import { SchemaMappingModal } from "../../danh-muc/common/SchemaMappingModal";
+import { SchemaMappingCard } from "../../danh-muc/common/SchemaMappingCard";
+import {
+  getTodayIsoDate,
+  type SharedSchemaField,
+} from "../../../utils/shared/excelXmlShared";
+
+interface Hs09DieuChinhTabProps {
+  items?: HoSoDieuChinh09Item[];
+  onItemsChange?: (
+    updater:
+      | HoSoDieuChinh09Item[]
+      | ((prev: HoSoDieuChinh09Item[]) => HoSoDieuChinh09Item[]),
+  ) => void;
+}
+
+export const Hs09DieuChinhTab: React.FC<Hs09DieuChinhTabProps> = ({
+  items: propItems,
+  onItemsChange,
+}) => {
+  const toast = useToast();
+  const [internalItems, setInternalItems] = useState<HoSoDieuChinh09Item[]>(
+    initialHoSoDieuChinh09Data,
+  );
+  const items = propItems ?? internalItems;
+  const setItems = (
+    updater:
+      | HoSoDieuChinh09Item[]
+      | ((prev: HoSoDieuChinh09Item[]) => HoSoDieuChinh09Item[]),
+  ) => {
+    if (onItemsChange) {
+      onItemsChange(updater);
+    } else {
+      setInternalItems(updater);
+    }
+  };
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterNhomLoi, setFilterNhomLoi] = useState("all");
+  const [filterSoBangXml, setFilterSoBangXml] = useState("all");
+  const [filterTrangThai, setFilterTrangThai] = useState("all");
+  const [isLoadingFile, setIsLoadingFile] = useState(false);
+  const [fileUploadStats, setFileUploadStats] =
+    useState<ParseHs09ExcelResult | null>(null);
+
+  // Modals
+  const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
+  const [xmlExportTab, setXmlExportTab] = useState<"xml" | "base64" | "api">(
+    "xml",
+  );
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<HoSoDieuChinh09Item | null>(
+    null,
+  );
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [detailItem, setDetailItem] = useState<HoSoDieuChinh09Item | null>(
+    null,
+  );
+  const [isSchemaModalOpen, setIsSchemaModalOpen] = useState(false);
+
+  // File Upload
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsLoadingFile(true);
+    try {
+      const result = await parseHs09ExcelFile(file);
+      setItems(result.items);
+      setFileUploadStats(result);
+      toast.success(
+        `Đã nạp thành công ${result.items.length} hồ sơ điều chỉnh 09/BH từ tệp "${file.name}"\nSheet: "${result.selectedSheet}"`,
+        "Nạp File Excel Mẫu 09/BH Thành Công",
+      );
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Lỗi đọc tệp Excel Hồ sơ điều chỉnh 09/BH!";
+      toast.error(msg, "Lỗi Đọc File");
+    } finally {
+      setIsLoadingFile(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleSwitchSheet = (sheetName: string) => {
+    if (!fileUploadStats?.workbook) return;
+    try {
+      const wb = fileUploadStats.workbook as WorkBook;
+      const ws = wb.Sheets[sheetName];
+      const result = parseHs09Worksheet(
+        ws,
+        sheetName,
+        fileUploadStats.availableSheets,
+        fileUploadStats.fileName,
+        wb,
+      );
+      setItems(result.items);
+      setFileUploadStats(result);
+      toast.info(
+        `Đã chuyển sang Sheet "${sheetName}" (${result.items.length} hồ sơ)`,
+        "Chuyển Sheet Dữ Liệu",
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Lỗi khi chuyển sheet";
+      toast.error(msg, "Lỗi Đọc Sheet");
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    try {
+      downloadHs09ExcelTemplate();
+      toast.success(
+        "Đã tải tệp Excel mẫu chuẩn Mẫu 09/BH thành công!",
+        "Tải File Mẫu",
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Lỗi tải tệp mẫu";
+      toast.error(msg, "Lỗi");
+    }
+  };
+
+  const handleLoadSample = () => {
+    setItems(initialHoSoDieuChinh09Data);
+    setFileUploadStats(null);
+    toast.info(
+      "Đã tải lại danh sách hồ sơ điều chỉnh 09/BH mẫu chuẩn BHXH",
+      "Nạp Dữ Liệu Mẫu",
+    );
+  };
+
+  const handleClearData = () => {
+    if (
+      window.confirm(
+        "Bạn có chắc chắn muốn xóa toàn bộ danh sách hồ sơ 09/BH hiện tại?",
+      )
+    ) {
+      setItems([]);
+      setFileUploadStats(null);
+      toast.warning(
+        "Đã xóa toàn bộ dữ liệu bảng hồ sơ điều chỉnh",
+        "Xóa Dữ Liệu",
+      );
+    }
+  };
+
+  // CRUD
+  const handleAddNew = () => {
+    setEditingItem(null);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEdit = (item: HoSoDieuChinh09Item) => {
+    setEditingItem(item);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDelete = (item: HoSoDieuChinh09Item) => {
+    if (
+      window.confirm(
+        `Bạn có chắc chắn muốn xóa hồ sơ điều chỉnh của bệnh nhân "${item.ttXml1.hoTen}" (LK: ${item.ttXml1.maLk})?`,
+      )
+    ) {
+      setItems((prev) => prev.filter((i) => i.id !== item.id));
+      toast.success(
+        `Đã xóa hồ sơ điều chỉnh LK "${item.ttXml1.maLk}"`,
+        "Xóa Hồ Sơ",
+      );
+    }
+  };
+
+  const handleSaveItem = (savedItem: HoSoDieuChinh09Item) => {
+    if (editingItem) {
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === editingItem.id ? { ...savedItem, id: editingItem.id } : i,
+        ),
+      );
+      toast.success(
+        `Đã cập nhật hồ sơ điều chỉnh LK "${savedItem.ttXml1.maLk}"`,
+        "Cập Nhật Thành Công",
+      );
+    } else {
+      const newItem: HoSoDieuChinh09Item = {
+        ...savedItem,
+        id: `hs09-${Date.now()}`,
+      };
+      setItems((prev) => [newItem, ...prev]);
+      toast.success(
+        `Đã thêm mới hồ sơ điều chỉnh LK "${savedItem.ttXml1.maLk}"`,
+        "Thêm Mới Thành Công",
+      );
+    }
+    setIsEditModalOpen(false);
+  };
+
+  const handleViewDetail = (item: HoSoDieuChinh09Item) => {
+    setDetailItem(item);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleSendSuccess = (result: SendHs09GatewayResult) => {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.trangThai === "chap_nhan" || i.trangThai === "tu_choi"
+          ? i
+          : {
+              ...i,
+              trangThai: "da_gui_cong",
+              ngayGiaiTrinh: getTodayIsoDate(),
+              maGiaoDichBhxh: result.maGiaoDich,
+            },
+      ),
+    );
+  };
+
+  // Filtered Items
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      const q = searchTerm.toLowerCase();
+      const matchSearch =
+        !searchTerm ||
+        item.ttXml1.maLk.toLowerCase().includes(q) ||
+        item.ttXml1.hoTen.toLowerCase().includes(q) ||
+        item.ttXml1.maThe.toLowerCase().includes(q) ||
+        item.ttXml1.maBn.toLowerCase().includes(q) ||
+        (item.khoaDieuTri && item.khoaDieuTri.toLowerCase().includes(q)) ||
+        (item.nhomLoi && item.nhomLoi.toLowerCase().includes(q)) ||
+        item.dsChiPhiDieuChinh.some(
+          (cp: ChiPhiDieuChinhItem) =>
+            (cp.tuChoi && cp.tuChoi.toLowerCase().includes(q)) ||
+            (cp.lyDoDieuChinh && cp.lyDoDieuChinh.toLowerCase().includes(q)),
+        );
+
+      const matchNhomLoi =
+        filterNhomLoi === "all" ||
+        item.nhomLoi === filterNhomLoi ||
+        item.dsChiPhiDieuChinh.some(
+          (cp: ChiPhiDieuChinhItem) => cp.tuChoi === filterNhomLoi,
+        );
+
+      const matchSoBangXml =
+        filterSoBangXml === "all" ||
+        (filterSoBangXml === "xml1" &&
+          (item.dsXml1DieuChinh?.length || 0) > 0) ||
+        item.dsChiPhiDieuChinh.some(
+          (cp: ChiPhiDieuChinhItem) => String(cp.soBangXml) === filterSoBangXml,
+        );
+
+      const matchStatus =
+        filterTrangThai === "all" || item.trangThai === filterTrangThai;
+
+      return matchSearch && matchNhomLoi && matchSoBangXml && matchStatus;
+    });
+  }, [items, searchTerm, filterNhomLoi, filterSoBangXml, filterTrangThai]);
+
+  // Memoize matched headers for schema inspection
+  const { matchedKeys, matchedColumnsMap } = useMemo(() => {
+    if (!fileUploadStats) {
+      return {
+        matchedKeys: HS09_SCHEMA_FIELDS.map((f: SharedSchemaField) => f.key),
+        matchedColumnsMap: {} as Record<string, string>,
+      };
+    }
+    return {
+      matchedKeys: Object.values(fileUploadStats.detectedHeaders),
+      matchedColumnsMap: Object.fromEntries(
+        Object.entries(fileUploadStats.detectedHeaders).map(([colIdx, key]) => [
+          key,
+          `Cột ${Number(colIdx) + 1} (${key})`,
+        ]),
+      ),
+    };
+  }, [fileUploadStats]);
+
+  return (
+    <div className="space-y-6">
+      {/* 1. Header KPIs */}
+      <Hs09StatsCards items={items} />
+
+      {/* 2. Dropzone & Action Toolbar */}
+      <Hs09Dropzone
+        isLoadingFile={isLoadingFile}
+        fileUploadStats={fileUploadStats}
+        itemsCount={items.length}
+        onFileUpload={handleFileUpload}
+        onSwitchSheet={handleSwitchSheet}
+        onDownloadTemplate={handleDownloadTemplate}
+        onLoadSample={handleLoadSample}
+        onClearData={handleClearData}
+        onOpenXmlModal={() => {
+          setXmlExportTab("xml");
+          setIsXmlModalOpen(true);
+        }}
+        onOpenApiTab={() => {
+          setXmlExportTab("api");
+          setIsXmlModalOpen(true);
+        }}
+        onOpenSchemaModal={() => setIsSchemaModalOpen(true)}
+        onAddNew={handleAddNew}
+      />
+
+      {/* 3. Schema Mapping Card / Inspector */}
+      <SchemaMappingCard
+        schemaFields={HS09_SCHEMA_FIELDS}
+        matchedKeys={matchedKeys}
+        matchedColumnsMap={matchedColumnsMap}
+        sheetName={fileUploadStats?.selectedSheet}
+        fileName={fileUploadStats?.fileName}
+        totalRows={fileUploadStats?.totalRows}
+        loaiHsBadge="Loại HS 73 - GuiHoSoDieuChinh09BH"
+        title="Đặc Tả Cấu Trúc Hồ Sơ Điều Chỉnh Giám Định Mẫu 09/BH (XML <HOSO_DIEUCHINH_GD> - Loại HS 73)"
+        defaultExpanded={!!fileUploadStats}
+      />
+
+      {/* 4. Main Data Table */}
+      <Hs09Table
+        items={filteredItems}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        filterNhomLoi={filterNhomLoi}
+        onFilterNhomLoiChange={setFilterNhomLoi}
+        filterSoBangXml={filterSoBangXml}
+        onFilterSoBangXmlChange={setFilterSoBangXml}
+        filterTrangThai={filterTrangThai}
+        onFilterTrangThaiChange={setFilterTrangThai}
+        onAddNew={handleAddNew}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onViewDetail={handleViewDetail}
+      />
+
+      {/* MODALS */}
+      {/* Edit / Add Modal */}
+      <Hs09EditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSave={handleSaveItem}
+        initialData={editingItem}
+        totalItemsCount={items.length}
+      />
+
+      {/* Detail Modal */}
+      <Hs09DetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        item={detailItem}
+      />
+
+      {/* XML / Base64 / API Modal */}
+      <Hs09XmlModal
+        isOpen={isXmlModalOpen}
+        onClose={() => setIsXmlModalOpen(false)}
+        items={items}
+        activeTab={xmlExportTab}
+        onSendSuccess={handleSendSuccess}
+      />
+
+      {/* Schema Mapping Modal */}
+      <SchemaMappingModal
+        isOpen={isSchemaModalOpen}
+        onClose={() => setIsSchemaModalOpen(false)}
+        schemaFields={HS09_SCHEMA_FIELDS}
+        matchedKeys={matchedKeys}
+        matchedColumnsMap={matchedColumnsMap}
+        sheetName={fileUploadStats?.selectedSheet}
+        fileName={fileUploadStats?.fileName}
+        totalRows={fileUploadStats?.totalRows}
+        loaiHsBadge="Loại HS 73 - Mẫu 09/BH"
+        title="Đặc Tả Kỹ Thuật Hồ Sơ Điều Chỉnh Xử Lý Xuất Toán 09/BH (XML <HOSO_DIEUCHINH_GD>)"
+      />
+    </div>
+  );
+};

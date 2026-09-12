@@ -1,62 +1,49 @@
 import * as XLSX from "xlsx";
 import type {
-  Hs01TongHopItem,
-  ParseHs01ExcelResult,
-  SendHs01GatewayResult,
-} from "./types/hs01TongHopTypes";
+  HoSoDieuChinh09Item,
+  ParseHs09ExcelResult,
+  SendHs09GatewayResult,
+  Hs09GatewayCredentials,
+} from "./types/hs09DieuChinhTypes";
 import {
-  HS01_SCHEMA_FIELDS,
-  HS01_FIELD_HEURISTICS,
-  HS01_EXCEL_TEMPLATE_HEADERS,
-  HS01_EXCEL_TEMPLATE_COLS,
-  HS01_EXCEL_TEMPLATE_SAMPLES,
-} from "./constants/hs01TongHopConstants";
+  HS09_SCHEMA_FIELDS,
+  HS09_FIELD_HEURISTICS,
+  HS09_EXCEL_TEMPLATE_HEADERS,
+  HS09_EXCEL_TEMPLATE_COLS,
+  HS09_EXCEL_TEMPLATE_SAMPLES,
+} from "./constants/hs09DieuChinhConstants";
 import {
   createSchemaKeyMatcher,
-  parseYmdHmDate,
-  isValidYmdHmDate,
-  formatCurrencyDecimals,
   readExcelFile,
   pickBestSheetName,
   detectHeaderRow,
-  generateUUID,
   buildSignatureBlock,
   xmlToBase64,
   downloadXmlFile,
   getThoiGianTiepNhan,
+  getTodayYmd,
   DEFAULT_MA_CSKCB,
 } from "./shared/excelXmlShared";
-import { validateHs01Data } from "./validators/hs01Validator";
-import {
-  parseHs01Row,
-  renderHs01ItemXml,
-} from "./parsers/hs01TongHopRowParser";
+import { parseHs09Row, renderHs09ItemXml } from "./parsers/hs09RowParser";
 
-export {
-  xmlToBase64,
-  downloadXmlFile,
-  parseYmdHmDate,
-  isValidYmdHmDate,
-  formatCurrencyDecimals,
-  validateHs01Data,
-};
+export { xmlToBase64, downloadXmlFile };
 
-export const matchHs01SchemaKey = createSchemaKeyMatcher(
-  HS01_SCHEMA_FIELDS,
-  HS01_FIELD_HEURISTICS,
+export const matchHs09SchemaKey = createSchemaKeyMatcher(
+  HS09_SCHEMA_FIELDS,
+  HS09_FIELD_HEURISTICS,
 );
 
 /**
- * Parse một sheet Excel thành danh sách Hs01TongHopItem
+ * Parse một sheet Excel thành danh sách HoSoDieuChinh09Item
  */
-export function parseHs01Worksheet(
+export function parseHs09Worksheet(
   worksheet: XLSX.WorkSheet,
   sheetName: string,
   availableSheets: string[],
   fileName: string,
   workbook?: XLSX.WorkBook,
   defaultMaCskcb = DEFAULT_MA_CSKCB,
-): ParseHs01ExcelResult {
+): ParseHs09ExcelResult {
   const rawRows: unknown[][] = XLSX.utils.sheet_to_json(worksheet, {
     header: 1,
     defval: "",
@@ -69,7 +56,7 @@ export function parseHs01Worksheet(
       validRows: 0,
       invalidRows: 0,
       detectedHeaders: {},
-      missingRequiredFields: HS01_SCHEMA_FIELDS.filter((f) => f.required).map(
+      missingRequiredFields: HS09_SCHEMA_FIELDS.filter((f) => f.required).map(
         (f) => f.key,
       ),
       availableSheets,
@@ -81,7 +68,7 @@ export function parseHs01Worksheet(
 
   const { headerRowIndex, colMapping } = detectHeaderRow(
     rawRows,
-    matchHs01SchemaKey,
+    matchHs09SchemaKey,
     3,
     25,
     "best",
@@ -96,7 +83,7 @@ export function parseHs01Worksheet(
 
     if (Array.isArray(row0)) {
       row0.forEach((cell, idx) => {
-        const key = matchHs01SchemaKey(String(cell ?? "").trim());
+        const key = matchHs09SchemaKey(String(cell ?? "").trim());
         if (key && !Object.values(effectiveColMapping).includes(key)) {
           effectiveColMapping[idx] = key;
         }
@@ -105,12 +92,13 @@ export function parseHs01Worksheet(
   }
 
   const detectedHeaders = effectiveColMapping;
+
   const matchedFieldKeys = new Set(Object.values(effectiveColMapping));
-  const missingRequiredFields = HS01_SCHEMA_FIELDS.filter(
+  const missingRequiredFields = HS09_SCHEMA_FIELDS.filter(
     (f) => f.required && !matchedFieldKeys.has(f.key),
   ).map((f) => f.key);
 
-  const items: Hs01TongHopItem[] = [];
+  const items: HoSoDieuChinh09Item[] = [];
   let validRows = 0;
   let invalidRows = 0;
 
@@ -128,7 +116,7 @@ export function parseHs01Worksheet(
       rowObj[key] = row[Number(colIdx)];
     });
 
-    const item = parseHs01Row(rowObj, r, items.length + 1, defaultMaCskcb);
+    const item = parseHs09Row(rowObj, r, items.length + 1, defaultMaCskcb);
 
     if (!item) {
       continue;
@@ -160,23 +148,30 @@ export function parseHs01Worksheet(
 /**
  * Đọc file Excel tải đúng sheet nếu trong file nhiều sheet
  */
-export async function parseHs01ExcelFile(
+export async function parseHs09ExcelFile(
   file: File,
   selectedSheetName?: string,
   defaultMaCskcb = DEFAULT_MA_CSKCB,
-): Promise<ParseHs01ExcelResult> {
+): Promise<ParseHs09ExcelResult> {
   const workbook = await readExcelFile(file);
   const availableSheets = workbook.SheetNames;
 
-  const hintKeywords = ["HSTH01", "01BH", "TongHop", "Mẫu 01", "Hồ sơ"];
+  const hintKeywords = [
+    "HSDC09",
+    "09BH",
+    "DieuChinh",
+    "XuatToan",
+    "Mẫu 09",
+    "HS09",
+  ];
 
   let sheetName = selectedSheetName;
   if (!sheetName || !availableSheets.includes(sheetName)) {
-    sheetName = pickBestSheetName(workbook, matchHs01SchemaKey, hintKeywords);
+    sheetName = pickBestSheetName(workbook, matchHs09SchemaKey, hintKeywords);
   }
 
   const worksheet = workbook.Sheets[sheetName];
-  return parseHs01Worksheet(
+  return parseHs09Worksheet(
     worksheet,
     sheetName,
     availableSheets,
@@ -187,89 +182,89 @@ export async function parseHs01ExcelFile(
 }
 
 /**
- * Sinh cấu trúc XML chuẩn <HSTH01BH> cho Mẫu 01/BH (Loại HS 5)
+ * Sinh cấu trúc XML chuẩn <HOSO_DIEUCHINH_GD> cho Mẫu 09/BH (Loại HS 73)
  */
-export function generateHs01Xml(
-  items: Hs01TongHopItem[],
+export function generateHs09Xml(
+  items: HoSoDieuChinh09Item[],
   maCskcb = DEFAULT_MA_CSKCB,
 ): string {
-  const containerGuid = `Id-${generateUUID()}`;
-  const rowsXml = items
-    .map((item) => renderHs01ItemXml(item, maCskcb))
+  const recordsXml = items
+    .map((item) => renderHs09ItemXml(item, maCskcb))
     .join("\n");
-
-  const datasetXml = `  <DS_CHITIET Id="${containerGuid}">
-${rowsXml}
-  </DS_CHITIET>`;
 
   const signatureXml = buildSignatureBlock();
 
   return `<?xml version="1.0" encoding="utf-8"?>
-<HSTH01BH>
-${datasetXml}
+<HOSO_DIEUCHINH_GD>
+${recordsXml}
 ${signatureXml}
-</HSTH01BH>`;
+</HOSO_DIEUCHINH_GD>`;
 }
 
 /**
- * Tải file XML Mẫu 01/BH xuống máy
+ * Tạo Base64 từ danh sách HoSoDieuChinh09Item
  */
-export function downloadHs01XmlFile(
-  items: Hs01TongHopItem[],
+export function generateHs09Base64(
+  items: HoSoDieuChinh09Item[],
+  maCskcb = DEFAULT_MA_CSKCB,
+): string {
+  const xml = generateHs09Xml(items, maCskcb);
+  return xmlToBase64(xml);
+}
+
+/**
+ * Tải file XML Mẫu 09/BH xuống máy
+ */
+export function downloadHs09XmlFile(
+  itemsOrXml: HoSoDieuChinh09Item[] | string,
   maCskcb = DEFAULT_MA_CSKCB,
   customFileName?: string,
 ): void {
-  const xml = generateHs01Xml(items, maCskcb);
-  const now = new Date();
-  const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+  const xml =
+    typeof itemsOrXml === "string"
+      ? itemsOrXml
+      : generateHs09Xml(itemsOrXml, maCskcb);
   const fileName =
-    customFileName || `HSTH01BH_${maCskcb}_${ymd}_${items.length}HS.xml`;
+    customFileName ||
+    `HSDC09BH_${maCskcb}_${getTodayYmd()}_${Date.now().toString().slice(-4)}.xml`;
   downloadXmlFile(xml, fileName);
 }
 
 /**
- * Tạo & Tải file Excel Mẫu 01/BH chuẩn 20 cột
+ * Tạo & Tải file Excel Mẫu 09/BH chuẩn 22 cột
  */
-export function downloadHs01ExcelTemplate(): void {
+export function downloadHs09ExcelTemplate(): void {
   const ws = XLSX.utils.aoa_to_sheet([
-    HS01_EXCEL_TEMPLATE_HEADERS,
-    ...HS01_EXCEL_TEMPLATE_SAMPLES,
+    HS09_EXCEL_TEMPLATE_HEADERS,
+    ...HS09_EXCEL_TEMPLATE_SAMPLES,
   ]);
-  ws["!cols"] = HS01_EXCEL_TEMPLATE_COLS;
+  ws["!cols"] = HS09_EXCEL_TEMPLATE_COLS;
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "HSTH01BH");
-  XLSX.writeFile(wb, "Mau_01BH_HoSoTongHop_Chuan_20Cot.xlsx");
+  XLSX.utils.book_append_sheet(wb, ws, "HSDC09BH");
+  XLSX.writeFile(wb, "Mau_09BH_HoSoDieuChinh_Chuan_22Cot.xlsx");
 }
 
 /**
- * Gửi hồ sơ tổng hợp Mẫu 01/BH lên Cổng tiếp nhận Giám định BHYT (Sandbox)
+ * Gửi hồ sơ điều chỉnh Mẫu 09/BH lên Cổng tiếp nhận Giám định BHYT (Sandbox)
+ * Endpoint: https://egw.baohiemxahoi.gov.vn/api/HSDCTT12/GuiHoSoDieuChinh09BH (Loại HS 73)
  */
-export async function sendHs01ToBhxhGateway(
-  items: Hs01TongHopItem[],
-  credentials?: Partial<{
-    maCskcb: string;
-    username: string;
-    passwordHash: string;
-    accessToken: string;
-    tokenId: string;
-    maTinh: string;
-    kyQT: string;
-  }>,
+export async function sendHs09ToBhxhGateway(
+  items: HoSoDieuChinh09Item[],
+  credentials?: Partial<Hs09GatewayCredentials>,
   delayMs = 1000,
-): Promise<SendHs01GatewayResult> {
-  const maCskcb = credentials?.maCskcb || DEFAULT_MA_CSKCB;
-  const kyQT = credentials?.kyQT || '202602';
+): Promise<SendHs09GatewayResult> {
+  const maCskcb =
+    credentials?.maCskcb || items[0]?.ttMau?.maCskcb || DEFAULT_MA_CSKCB;
   await new Promise((resolve) => setTimeout(resolve, delayMs));
 
-  const maGiaoDich = `HS01BH_${maCskcb}_${kyQT}_${Date.now().toString().slice(-6)}`;
+  const maGiaoDich = `HSDC09BH_${maCskcb}_${getTodayYmd()}_${Date.now().toString().slice(-6)}`;
 
   return {
     maKetQua: "200",
     maGiaoDich,
-    thongDiep: `[Mô phỏng Sandbox] Tiếp nhận thành công ${items.length} hồ sơ tổng hợp Mẫu 01/BH vào Hệ thống Giám định BHYT`,
+    thongDiep: `[Mô phỏng Sandbox] Tiếp nhận thành công ${items.length} hồ sơ điều chỉnh Mẫu 09/BH vào Hệ thống Giám định BHYT`,
     thoiGianTiepNhan: getThoiGianTiepNhan(),
     totalRecords: items.length,
-    kyQT,
-    loaiHs: "5",
+    loaiHs: "73",
   };
 }

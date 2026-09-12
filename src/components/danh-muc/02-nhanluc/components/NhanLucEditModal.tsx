@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Users } from 'lucide-react';
+import { Users, Check } from 'lucide-react';
 import type { DmNhanLucItem } from '../../../../types';
 import { useToast } from '../../../../context/ToastContext';
-import { DEFAULT_MA_CSKCB } from '../../../../utils/shared/excelXmlShared';
+import { DEFAULT_MA_CSKCB, getTodayYmd } from '../../../../utils/shared/excelXmlShared';
 import { useModalBehavior } from '../../../../hooks/useModalBehavior';
+import { FormField } from '../../../common';
 
 interface NhanLucEditModalProps {
   isOpen: boolean;
@@ -34,7 +35,7 @@ const getDefaultNhanLucData = (): DmNhanLucItem => ({
   cskcbKhac: '',
   cskcbCgkt: '',
   qdCgkt: '',
-  tuNgay: '',
+  tuNgay: getTodayYmd(),
   denNgay: '',
   maCskcb: DEFAULT_MA_CSKCB
 });
@@ -105,20 +106,20 @@ const NhanLucEditModalContent: React.FC<NhanLucEditModalContentProps> = ({
       aria-modal="true"
     >
       <div
-        className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200"
+        className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200"
         onClick={(e) => e.stopPropagation()}
       >
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
           <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-indigo-100 text-indigo-700">
+              <div className="p-2 rounded-xl bg-blue-100 text-[#1677ff]">
                 <Users size={20} />
               </div>
               <div>
                 <h3 className="text-base font-extrabold text-slate-900">
-                  {initialData ? 'Chỉnh Sửa Nhân Lực KCB (Mẫu 02/DM)' : 'Thêm Mới Nhân Lực KCB (Mẫu 02/DM)'}
+                  {initialData ? 'Chỉnh Sửa Nhân Lực Y Tế' : 'Thêm Mới Nhân Lực Y Tế'}
                 </h3>
-                <p className="text-xs text-slate-500">Đặc tả chuẩn BHXH Việt Nam - Loại hồ sơ 71</p>
+                <p className="text-xs text-slate-500">Quy định Mẫu 02/DM - Loại hồ sơ 71</p>
               </div>
             </div>
             <button
@@ -130,249 +131,125 @@ const NhanLucEditModalContent: React.FC<NhanLucEditModalContentProps> = ({
             </button>
           </div>
 
-          <div className="p-6 overflow-y-auto flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            {/* 1. Thông tin chung */}
-            <div className="md:col-span-3 pb-1 border-b border-slate-100 text-[11px] font-bold uppercase text-slate-400">
-              1. Thông Tin Cá Nhân & Chức Danh
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block font-bold text-slate-700 mb-1">Họ Và Tên (HO_TEN) *</label>
-              <input
-                type="text"
+          <div className="p-6 overflow-y-auto flex-1 space-y-4 text-xs">
+            {/* Section 1: Định danh */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/70 p-3.5 rounded-xl border border-slate-200">
+              <FormField
+                label="Họ và Tên (HO_TEN)"
                 required
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10"
-                placeholder="vd: BS. CKII. Nguyễn Văn An"
+                placeholder="vd: BS. NGUYỄN VĂN A"
                 value={formData.hoTen}
-                onChange={(e) => setFormData({ ...formData, hoTen: e.target.value })}
+                onChange={(v) => setFormData({ ...formData, hoTen: v })}
+                bold
               />
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Giới Tính (GIOI_TINH) *</label>
-              <select
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-indigo-500"
-                value={formData.gioiTinh}
-                onChange={(e) => setFormData({ ...formData, gioiTinh: Number(e.target.value) })}
-              >
-                <option value={1}>1: Nam</option>
-                <option value={2}>2: Nữ</option>
-                <option value={3}>3: Chưa xác định</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Số Định Danh / CCCD (SO_DINH_DANH) *</label>
-              <input
-                type="text"
+              <FormField
+                label="Số Định Danh / CCCD"
                 required
-                maxLength={15}
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 outline-none focus:border-indigo-500"
-                placeholder="12 chữ số CCCD"
+                maxLength={12}
+                placeholder="12 chữ số"
                 value={formData.soDinhDanh}
-                onChange={(e) => setFormData({ ...formData, soDinhDanh: e.target.value })}
+                onChange={(v) => setFormData({ ...formData, soDinhDanh: v })}
+                mono
+                bold
               />
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Chức Danh Nghề Nghiệp (CHUCDANH_NN) *</label>
-              <select
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-indigo-500"
-                value={formData.chucDanhNn}
-                onChange={(e) => setFormData({ ...formData, chucDanhNn: e.target.value })}
-              >
-                <option value="1">1: Bác sỹ</option>
-                <option value="2">2: Y sỹ</option>
-                <option value="3">3: Điều dưỡng</option>
-                <option value="4">4: Hộ sinh</option>
-                <option value="5">5: Kỹ thuật y</option>
-                <option value="6">6: Cử nhân tâm lý LS</option>
-                <option value="7">7: Lương y</option>
-                <option value="8">8: Dược sỹ</option>
-                <option value="9">9: Khác (không cần CCHN)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Vị Trí Chuyên Môn (VI_TRI)</label>
-              <select
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-indigo-500"
-                value={formData.viTri || ''}
-                onChange={(e) => setFormData({ ...formData, viTri: e.target.value || undefined })}
-              >
-                <option value="">-- Không có chức vụ quản lý --</option>
-                <option value="1">1: Người chịu TN chuyên môn</option>
-                <option value="2">2: Trưởng khoa / Trưởng ĐN</option>
-                <option value="3">3: Người chịu TNCM kiêm Trưởng khoa</option>
-                <option value="4">4: Người đứng đầu / Ủy quyền ký giấy</option>
-                <option value="5">5: Phụ trách khoa</option>
-                <option value="6">6: Người được ủy quyền theo NĐ 96</option>
-              </select>
-            </div>
-
-            {/* 2. Khoa phòng & Nơi làm việc */}
-            <div className="md:col-span-3 pt-2 pb-1 border-b border-slate-100 text-[11px] font-bold uppercase text-slate-400">
-              2. Phân Công Khoa Phòng & Địa Bàn Làm Việc
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Mã Khoa / Bàn Khám (MA_KHOA) *</label>
-              <input
-                type="text"
+              <FormField
+                label="Giới Tính"
+                type="select"
+                value={formData.gioiTinh}
+                onChange={(v) => setFormData({ ...formData, gioiTinh: Number(v) })}
+                options={[{ value: 1, label: '1 - Nam' }, { value: 2, label: '2 - Nữ' }]}
+              />
+              <FormField
+                label="Mã Khoa (MA_KHOA)"
                 required
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 outline-none focus:border-indigo-500"
-                placeholder="vd: K01 hoặc K01;K02"
+                placeholder="vd: K01"
                 value={formData.maKhoa}
-                onChange={(e) => setFormData({ ...formData, maKhoa: e.target.value.toUpperCase() })}
+                onChange={(v) => setFormData({ ...formData, maKhoa: v.toUpperCase() })}
+                mono
               />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block font-bold text-slate-700 mb-1">Tên Khoa / Phòng (TEN_KHOA) *</label>
-              <input
-                type="text"
-                required
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-indigo-500"
-                placeholder="vd: Khoa Khám Bệnh;Khoa Hồi Sức Cấp Cứu"
+              <FormField
+                label="Tên Khoa / Phòng"
+                placeholder="vd: Khoa Cấp Cứu"
                 value={formData.tenKhoa}
-                onChange={(e) => setFormData({ ...formData, tenKhoa: e.target.value })}
+                onChange={(v) => setFormData({ ...formData, tenKhoa: v })}
+              />
+              <FormField
+                label="Chức Danh Nghề Nghiệp"
+                value={formData.chucDanhNn}
+                onChange={(v) => setFormData({ ...formData, chucDanhNn: v })}
+                mono
               />
             </div>
 
-            {/* 3. Chứng chỉ hành nghề & Chuyên môn */}
-            <div className="md:col-span-3 pt-2 pb-1 border-b border-slate-100 text-[11px] font-bold uppercase text-slate-400">
-              3. Giấy Phép / Chứng Chỉ Hành Nghề (CCHN)
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Số CCHN / GPHN (MACCHN)</label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 outline-none focus:border-indigo-500"
-                placeholder="vd: 001234/BYT-CCHN"
-                value={formData.macchn || ''}
-                onChange={(e) => setFormData({ ...formData, macchn: e.target.value })}
+            {/* Section 2: Chứng chỉ hành nghề */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/70 p-3.5 rounded-xl border border-slate-200">
+              <FormField
+                label="Mã CCHN (MACCHN)"
+                placeholder="vd: 001234/HNO-CCHN"
+                value={formData.macchn}
+                onChange={(v) => setFormData({ ...formData, macchn: v })}
+                mono
+                bold
               />
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Ngày Cấp CCHN (NGAYCAP_CCHN)</label>
-              <input
-                type="text"
+              <FormField
+                label="Ngày Cấp CCHN (YYYYMMDD)"
                 maxLength={8}
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 outline-none focus:border-indigo-500"
-                placeholder="YYYYMMDD (vd: 20180515)"
-                value={formData.ngaycapCchn || ''}
-                onChange={(e) => setFormData({ ...formData, ngaycapCchn: e.target.value })}
+                value={formData.ngaycapCchn}
+                onChange={(v) => setFormData({ ...formData, ngaycapCchn: v })}
+                mono
+              />
+              <FormField
+                label="Nơi Cấp CCHN"
+                placeholder="vd: Sở Y Tế Hà Nội"
+                value={formData.noicapCchn}
+                onChange={(v) => setFormData({ ...formData, noicapCchn: v })}
+              />
+              <FormField
+                label="Phạm Vi Chuyên Môn"
+                value={formData.phamviCm}
+                onChange={(v) => setFormData({ ...formData, phamviCm: v })}
+                className="sm:col-span-2"
+              />
+              <FormField
+                label="Phạm Vi Bổ Sung"
+                value={formData.phamviCmbs}
+                onChange={(v) => setFormData({ ...formData, phamviCmbs: v })}
               />
             </div>
 
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Nơi Cấp CCHN (NOICAP_CCHN)</label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-indigo-500"
-                placeholder="Bộ Y Tế / Sở Y Tế..."
-                value={formData.noicapCchn || ''}
-                onChange={(e) => setFormData({ ...formData, noicapCchn: e.target.value })}
+            {/* Section 3: Thời gian làm việc */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-50/70 p-3.5 rounded-xl border border-slate-200">
+              <FormField
+                label="Thời Gian Ngày"
+                placeholder="0730-1630"
+                value={formData.thoigianNgay}
+                onChange={(v) => setFormData({ ...formData, thoigianNgay: v })}
+                mono
               />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block font-bold text-slate-700 mb-1">Phạm Vi Chuyên Môn (PHAMVI_CM)</label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-indigo-500"
-                placeholder="Nội khoa, Cấp cứu Hồi sức..."
-                value={formData.phamviCm || ''}
-                onChange={(e) => setFormData({ ...formData, phamviCm: e.target.value })}
+              <FormField
+                label="Thời Gian Tuần"
+                placeholder="T2T3T4T5T6"
+                value={formData.thoigianTuan}
+                onChange={(v) => setFormData({ ...formData, thoigianTuan: v })}
+                mono
               />
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Bổ Sung Phạm Vi (PHAMVI_CMBS)</label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 outline-none focus:border-indigo-500"
-                placeholder="YYYYMMDD_Z"
-                value={formData.phamviCmbs || ''}
-                onChange={(e) => setFormData({ ...formData, phamviCmbs: e.target.value })}
-              />
-            </div>
-
-            {/* 4. Thời gian làm việc */}
-            <div className="md:col-span-3 pt-2 pb-1 border-b border-slate-100 text-[11px] font-bold uppercase text-slate-400">
-              4. Chế Độ & Thời Gian Làm Việc
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Thời Gian Đăng Ký (THOIGIAN_DK) *</label>
-              <select
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-indigo-500"
-                value={formData.thoigianDk}
-                onChange={(e) => setFormData({ ...formData, thoigianDk: Number(e.target.value) })}
-              >
-                <option value={1}>1: Toàn thời gian</option>
-                <option value={2}>2: Không toàn thời gian (Bán thời gian)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Giờ Làm Việc Trong Ngày (THOIGIAN_NGAY)</label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 outline-none focus:border-indigo-500"
-                placeholder="0730-1630 hoặc T20800-1500;..."
-                value={formData.thoigianNgay || ''}
-                onChange={(e) => setFormData({ ...formData, thoigianNgay: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Ngày Trong Tuần (THOIGIAN_TUAN)</label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 outline-none focus:border-indigo-500"
-                placeholder="T2T3T4T5T6, CN..."
-                value={formData.thoigianTuan || ''}
-                onChange={(e) => setFormData({ ...formData, thoigianTuan: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Từ Ngày Hiệu Lực (TU_NGAY) *</label>
-              <input
-                type="text"
+              <FormField
+                label="Từ Ngày (TU_NGAY) *"
                 required
                 maxLength={8}
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 outline-none focus:border-indigo-500"
-                placeholder="20260101"
+                placeholder="YYYYMMDD"
                 value={formData.tuNgay}
-                onChange={(e) => setFormData({ ...formData, tuNgay: e.target.value })}
+                onChange={(v) => setFormData({ ...formData, tuNgay: v })}
+                mono
+                bold
               />
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Đến Ngày (DEN_NGAY - Tùy chọn)</label>
-              <input
-                type="text"
+              <FormField
+                label="Đến Ngày (DEN_NGAY)"
                 maxLength={8}
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 outline-none focus:border-indigo-500"
-                placeholder="Để trống nếu đang áp dụng"
+                placeholder="YYYYMMDD"
                 value={formData.denNgay || ''}
-                onChange={(e) => setFormData({ ...formData, denNgay: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Mã Cơ Sở KCB (MA_CSKCB) *</label>
-              <input
-                type="text"
-                required
-                maxLength={5}
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 outline-none focus:border-indigo-500"
-                value={formData.maCskcb}
-                onChange={(e) => setFormData({ ...formData, maCskcb: e.target.value })}
+                onChange={(v) => setFormData({ ...formData, denNgay: v })}
+                mono
               />
             </div>
           </div>
@@ -387,9 +264,10 @@ const NhanLucEditModalContent: React.FC<NhanLucEditModalContentProps> = ({
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20"
+              className="flex items-center gap-1.5 px-5 py-2 bg-[#1677ff] hover:bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20"
             >
-              Lưu Thông Tin Nhân Lực (02/DM)
+              <Check size={14} />
+              <span>Lưu Thông Tin Nhân Lực</span>
             </button>
           </div>
         </form>
