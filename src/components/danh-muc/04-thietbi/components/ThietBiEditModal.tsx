@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Cpu, X, Save, ShieldCheck, DollarSign, Calendar, Tag, FileText } from 'lucide-react';
 import type { DmThietBiItem } from '../../../../types';
 import { LOAI_THAU_OPTIONS, HT_THAU_OPTIONS } from '../services/thietBiService';
+import { DEFAULT_MA_CSKCB } from '../../../../utils/shared/excelXmlShared';
+import { useModalBehavior } from '../../../../hooks/useModalBehavior';
 
 interface ThietBiEditModalProps {
   isOpen: boolean;
@@ -31,7 +33,7 @@ const getDefaultThietBiData = (): DmThietBiItem => ({
   ttThau: '',
   tuNgayHd: '',
   denNgayHd: '',
-  maCskcb: '01929',
+  maCskcb: DEFAULT_MA_CSKCB,
   loaiThau: 1,
   htThau: 1,
   maCskcbTbyt: '',
@@ -46,7 +48,7 @@ const getInitialFormData = (data: DmThietBiItem | null): DmThietBiItem => {
       tyleTtBh: data.tyleTtBh ?? 100,
       loaiThau: data.loaiThau ?? 1,
       donViTinh: data.donViTinh || 'Cái',
-      maCskcb: data.maCskcb || '01929'
+      maCskcb: data.maCskcb || DEFAULT_MA_CSKCB
     };
   }
   return getDefaultThietBiData();
@@ -58,6 +60,8 @@ export const ThietBiEditModal: React.FC<ThietBiEditModalProps> = ({
   onSave,
   initialData
 }) => {
+  useModalBehavior(isOpen, onClose);
+
   if (!isOpen) return null;
 
   return (
@@ -85,8 +89,16 @@ const ThietBiEditModalForm: React.FC<Omit<ThietBiEditModalProps, 'isOpen'>> = ({
   const isHtThauDisabled = [3, 4, 5, 7].includes(formData.loaiThau);
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 ant-modal-anim">
-      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200">
+    <div
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 ant-modal-anim"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
           <div className="flex items-center gap-3">
@@ -501,7 +513,7 @@ const ThietBiEditModalForm: React.FC<Omit<ThietBiEditModalProps, 'isOpen'>> = ({
                   type="text"
                   required
                   maxLength={5}
-                  placeholder="01929"
+                  placeholder="48001"
                   value={formData.maCskcb}
                   onChange={(e) => setFormData({ ...formData, maCskcb: e.target.value })}
                   className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
@@ -514,7 +526,7 @@ const ThietBiEditModalForm: React.FC<Omit<ThietBiEditModalProps, 'isOpen'>> = ({
                 </label>
                 <input
                   type="text"
-                  placeholder="C.01929"
+                  placeholder="C.48001"
                   value={formData.maCskcbTbyt || ''}
                   onChange={(e) => setFormData({ ...formData, maCskcbTbyt: e.target.value })}
                   className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-mono focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"

@@ -1,4 +1,5 @@
 import type { NhanLucSchemaField } from '../types/nhanLucTypes';
+import { getCurrentYearStartYmd } from '../shared/excelXmlShared';
 
 export const CHUC_DANH_DICT: Record<string, string> = {
   '1': 'Bác sỹ',
@@ -222,25 +223,71 @@ export const NHANLUC_SCHEMA_FIELDS: NhanLucSchemaField[] = [
     label: 'Mã CSKCB',
     type: 'string',
     required: true,
-    desc: 'Mã cơ sở khám chữa bệnh (5 ký tự, ví dụ: 01929, 79012)',
+    desc: 'Mã cơ sở khám chữa bệnh (5 ký tự, ví dụ: 48001, 79012)',
     aliases: ['MA_CSKCB', 'MA_CƠ SỞ KCB', 'MÃ CSKCB', 'MÃ CƠ SỞ KCB', 'MACSKCB', 'MÃ CS KCB', 'MÃ BỆNH VIỆN', 'MÃ ĐƠN VỊ']
   }
+];
+
+export const NHANLUC_EXCEL_TEMPLATE_HEADERS = NHANLUC_SCHEMA_FIELDS.map((f) => f.key);
+export const NHANLUC_EXCEL_TEMPLATE_LABELS = NHANLUC_SCHEMA_FIELDS.map((f) => f.label);
+
+export const NHANLUC_EXCEL_TEMPLATE_COLS = [
+  { wch: 6 }, // STT
+  { wch: 15 }, // MA_KHOA
+  { wch: 30 }, // TEN_KHOA
+  { wch: 25 }, // HO_TEN
+  { wch: 10 }, // GIOI_TINH
+  { wch: 18 }, // SO_DINH_DANH
+  { wch: 14 }, // CHUCDANH_NN
+  { wch: 10 }, // VI_TRI
+  { wch: 20 }, // MACCHN
+  { wch: 14 }, // NGAYCAP_CCHN
+  { wch: 20 }, // NOICAP_CCHN
+  { wch: 22 }, // PHAMVI_CM
+  { wch: 15 }, // PHAMVI_CMBS
+  { wch: 15 }, // DVKT_KHAC
+  { wch: 15 }, // VB_PHANCONG
+  { wch: 14 }, // THOIGIAN_DK
+  { wch: 16 }, // THOIGIAN_NGAY
+  { wch: 16 }, // THOIGIAN_TUAN
+  { wch: 14 }, // CSKCB_KHAC
+  { wch: 14 }, // CSKCB_CGKT
+  { wch: 14 }, // QD_CGKT
+  { wch: 12 }, // TU_NGAY
+  { wch: 12 }, // DEN_NGAY
+  { wch: 12 }, // MA_CSKCB
 ];
 
 export const NHANLUC_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
   [
     1, 'K01;K02', 'Khoa Khám Bệnh;Khoa Cấp Cứu', 'BS. CKII. Nguyễn Văn An', 1, '001088012345',
     '1', '1', '001234/BYT-CCHN', '20180515', 'Bộ Y Tế', 'Nội khoa; Cấp cứu', '', '', '',
-    1, '0730-1630', 'T2T3T4T5T6', '', '', '', '20260101', '', '01929'
+    1, '0730-1630', 'T2T3T4T5T6', '', '', '', getCurrentYearStartYmd(), '', '48001'
   ],
   [
     2, 'K0809', 'Khoa Hồi Sức Tích Cực & Chống Độc', 'ThS. BS. Trần Thị Mai', 2, '001192009876',
     '1', '2', '005678/SYT-CCHN', '20190820', 'Sở Y Tế Hà Nội', 'Hồi sức cấp cứu', '', '', '',
-    1, '0730-1630', 'T2T3T4T5T6T7', '', '', '', '20260101', '', '01929'
+    1, '0730-1630', 'T2T3T4T5T6T7', '', '', '', getCurrentYearStartYmd(), '', '48001'
   ],
   [
     3, 'K01', 'Khoa Khám Bệnh', 'CNĐD. Lê Hoàng Long', 1, '001095004321',
     '3', '', '009876/SYT-CCHN', '20210310', 'Sở Y Tế Hà Nội', 'Điều dưỡng đa khoa', '', '', '',
-    1, '0730-1630', 'T2T3T4T5T6', '', '', '', '20260101', '', '01929'
+    1, '0730-1630', 'T2T3T4T5T6', '', '', '', getCurrentYearStartYmd(), '', '48001'
   ]
 ];
+
+export const NHANLUC_FIELD_HEURISTICS: Array<[RegExp | string, string]> = [
+  [/HOTEN|BACSI|NHANSU/, 'HO_TEN'],
+  [/CCCD|DINHDANH|CMND/, 'SO_DINH_DANH'],
+  [/MAKHOA|MABANKHAM/, 'MA_KHOA'],
+  [/TENKHOA|TENBANKHAM/, 'TEN_KHOA'],
+  ['CHUCDANH', 'CHUCDANH_NN'],
+  [/MACCHN|SOCCHN|GPHN/, 'MACCHN'],
+  ['NGAYCAP', 'NGAYCAP_CCHN'],
+  ['NOICAP', 'NOICAP_CCHN'],
+  [/PHAMVI(?!.*BS)/, 'PHAMVI_CM'],
+  [/TUNGAY|BATDAU/, 'TU_NGAY'],
+  [/DENNGAY|KETTHUC/, 'DEN_NGAY'],
+  [/MACSKCB|CSKCB/, 'MA_CSKCB'],
+];
+

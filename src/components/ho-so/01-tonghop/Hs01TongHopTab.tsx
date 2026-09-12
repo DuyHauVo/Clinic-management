@@ -20,6 +20,7 @@ import {
 } from "./components";
 import { SchemaMappingModal } from "../../danh-muc/common/SchemaMappingModal";
 import { SchemaMappingCard } from "../../danh-muc/common/SchemaMappingCard";
+import { getTodayIsoDate } from "../../../utils/shared/excelXmlShared";
 
 export const Hs01TongHopTab: React.FC = () => {
   const toast = useToast();
@@ -182,7 +183,7 @@ export const Hs01TongHopTab: React.FC = () => {
       prev.map((i) => ({
         ...i,
         trangThai: "da_gui_cong",
-        ngayGuiCong: new Date().toISOString().slice(0, 10),
+        ngayGuiCong: getTodayIsoDate(),
         maGiaoDichBhxh: result.maGiaoDich,
       })),
     );
@@ -212,6 +213,25 @@ export const Hs01TongHopTab: React.FC = () => {
       return matchSearch && matchType && matchStatus;
     });
   }, [items, searchTerm, filterLoaiKcb, filterTrangThai]);
+
+  // Memoize matched headers for schema inspection
+  const { matchedKeys, matchedColumnsMap } = useMemo(() => {
+    if (!fileUploadStats) {
+      return {
+        matchedKeys: HS01_SCHEMA_FIELDS.map((f) => f.key),
+        matchedColumnsMap: {} as Record<string, string>,
+      };
+    }
+    return {
+      matchedKeys: Object.values(fileUploadStats.detectedHeaders),
+      matchedColumnsMap: Object.fromEntries(
+        Object.entries(fileUploadStats.detectedHeaders).map(([colIdx, key]) => [
+          key,
+          `Cột ${Number(colIdx) + 1} (${key})`,
+        ]),
+      ),
+    };
+  }, [fileUploadStats]);
 
   return (
     <div className="space-y-6">
@@ -243,23 +263,8 @@ export const Hs01TongHopTab: React.FC = () => {
       {/* 3. Schema Mapping Card / Inspector */}
       <SchemaMappingCard
         schemaFields={HS01_SCHEMA_FIELDS}
-        matchedKeys={
-          fileUploadStats
-            ? Object.values(fileUploadStats.detectedHeaders)
-            : HS01_SCHEMA_FIELDS.map((f) => f.key)
-        }
-        matchedColumnsMap={
-          fileUploadStats
-            ? Object.fromEntries(
-                Object.entries(fileUploadStats.detectedHeaders).map(
-                  ([colIdx, key]) => [
-                    key,
-                    `Cột ${Number(colIdx) + 1} (${key})`,
-                  ],
-                ),
-              )
-            : {}
-        }
+        matchedKeys={matchedKeys}
+        matchedColumnsMap={matchedColumnsMap}
         sheetName={fileUploadStats?.selectedSheet}
         fileName={fileUploadStats?.fileName}
         totalRows={fileUploadStats?.totalRows}
@@ -312,23 +317,8 @@ export const Hs01TongHopTab: React.FC = () => {
         isOpen={isSchemaModalOpen}
         onClose={() => setIsSchemaModalOpen(false)}
         schemaFields={HS01_SCHEMA_FIELDS}
-        matchedKeys={
-          fileUploadStats
-            ? Object.values(fileUploadStats.detectedHeaders)
-            : HS01_SCHEMA_FIELDS.map((f) => f.key)
-        }
-        matchedColumnsMap={
-          fileUploadStats
-            ? Object.fromEntries(
-                Object.entries(fileUploadStats.detectedHeaders).map(
-                  ([colIdx, key]) => [
-                    key,
-                    `Cột ${Number(colIdx) + 1} (${key})`,
-                  ],
-                ),
-              )
-            : {}
-        }
+        matchedKeys={matchedKeys}
+        matchedColumnsMap={matchedColumnsMap}
         sheetName={fileUploadStats?.selectedSheet}
         fileName={fileUploadStats?.fileName}
         totalRows={fileUploadStats?.totalRows}

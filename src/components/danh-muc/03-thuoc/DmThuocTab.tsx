@@ -45,7 +45,7 @@ export const DmThuocTab: React.FC = () => {
 
     setIsLoadingFile(true);
     try {
-      const result = await parseThuocExcelFile(file, undefined, '01929');
+      const result = await parseThuocExcelFile(file);
       setThuocItems(result.items);
       setFileUploadStats(result);
       toast.success(
@@ -63,7 +63,7 @@ export const DmThuocTab: React.FC = () => {
   const handleSwitchSheet = (sheetName: string) => {
     if (!fileUploadStats?.workbook) return;
     try {
-      const result = parseThuocWorksheet(fileUploadStats.workbook, sheetName, fileUploadStats.fileName, '01929');
+      const result = parseThuocWorksheet(fileUploadStats.workbook, sheetName, fileUploadStats.fileName);
       setThuocItems(result.items);
       setFileUploadStats(result);
       toast.info(`Đã chuyển sang Sheet "${sheetName}" (${result.items.length} mặt hàng)`, 'Chuyển Sheet Dữ Liệu');
@@ -117,7 +117,7 @@ export const DmThuocTab: React.FC = () => {
       return;
     }
     const xml = generateThuocXml(thuocItems);
-    downloadThuocXmlFile(xml, 'DanhMuc03_DMTHUOC_01929.xml');
+    downloadThuocXmlFile(xml);
     toast.success('Đã tải xuống file XML Mẫu 03/DM chuẩn Loại hồ sơ 10', 'Xuất File Thành Công');
   };
 
@@ -128,7 +128,7 @@ export const DmThuocTab: React.FC = () => {
     }
     setIsSendingApi(true);
     try {
-      const res = await sendThuocToBhxhGateway(thuocItems, '01929', '01');
+      const res = await sendThuocToBhxhGateway(thuocItems);
       setApiResponse(res);
       toast.success(`[Sandbox] Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`, 'Gửi API Thành Công (Mô phỏng)');
     } catch (err: any) {

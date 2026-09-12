@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Pill, AlertCircle } from 'lucide-react';
 import type { DmThuocItem } from '../../../../types';
 import { useToast } from '../../../../context/ToastContext';
+import { DEFAULT_MA_CSKCB } from '../../../../utils/shared/excelXmlShared';
+import { useModalBehavior } from '../../../../hooks/useModalBehavior';
 
 interface ThuocEditModalProps {
   isOpen: boolean;
@@ -32,7 +34,7 @@ const getDefaultThuocData = (): DmThuocItem => ({
   ttThau: '',
   tuNgayHd: '',
   denNgayHd: '',
-  maCskcb: '01929',
+  maCskcb: DEFAULT_MA_CSKCB,
   loaiThuoc: 1,
   loaiThau: 1,
   htThau: 1,
@@ -57,6 +59,31 @@ export const ThuocEditModal: React.FC<ThuocEditModalProps> = ({
   onSave,
   initialData
 }) => {
+  useModalBehavior(isOpen, onClose);
+
+  if (!isOpen) return null;
+
+  return (
+    <ThuocEditModalContent
+      key={initialData?.id ?? 'new'}
+      onClose={onClose}
+      onSave={onSave}
+      initialData={initialData}
+    />
+  );
+};
+
+interface ThuocEditModalContentProps {
+  onClose: () => void;
+  onSave: (item: DmThuocItem) => void;
+  initialData: DmThuocItem | null;
+}
+
+const ThuocEditModalContent: React.FC<ThuocEditModalContentProps> = ({
+  onClose,
+  onSave,
+  initialData
+}) => {
   const toast = useToast();
   const [activeSection, setActiveSection] = useState<'info' | 'thau' | 'yhct' | 'validity'>('info');
 
@@ -64,19 +91,6 @@ export const ThuocEditModal: React.FC<ThuocEditModalProps> = ({
     if (initialData) return { ...initialData };
     return getDefaultThuocData();
   });
-
-  useEffect(() => {
-    if (isOpen) {
-      if (initialData) {
-        setFormData({ ...initialData });
-      } else {
-        setFormData(getDefaultThuocData());
-      }
-      setActiveSection('info');
-    }
-  }, [isOpen, initialData]);
-
-  if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,8 +130,16 @@ export const ThuocEditModal: React.FC<ThuocEditModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 ant-modal-anim">
-      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200">
+    <div
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 ant-modal-anim"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
           {/* Modal Header */}
           <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">

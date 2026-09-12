@@ -9,6 +9,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useToast } from "../context/ToastContext";
+import { DEFAULT_MA_CSKCB } from "../utils/shared/excelXmlShared";
 
 export type MainTabType = "danh-muc" | "ho-so";
 export type HoSoTabType = "01_tonghop" | "09_xuattoan";
@@ -208,7 +209,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="p-3.5 bg-slate-900/90 rounded-xl border border-slate-800/80 text-xs flex flex-col gap-2">
             <div className="flex items-center justify-between font-semibold text-slate-200 pb-1.5 border-b border-slate-800">
               <span className="flex items-center gap-1.5 text-blue-400 font-bold">
-                <Building2 size={14} /> CSKCB 01929
+                <Building2 size={14} /> CSKCB {DEFAULT_MA_CSKCB}
               </span>
               <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded font-bold">
                 Tuyến Tỉnh

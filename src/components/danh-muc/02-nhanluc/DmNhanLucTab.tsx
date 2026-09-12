@@ -25,7 +25,7 @@ import { useClipboard } from '../../../hooks';
 
 export const DmNhanLucTab: React.FC = () => {
   const toast = useToast();
-  const { isCopied: isNhanLucCopied, copy: handleNhanLucCopyText } = useClipboard();
+  const { isKeyCopied: isNhanLucKeyCopied, copy: handleNhanLucCopyText } = useClipboard();
   const [nhanLucItems, setNhanLucItems] = useState<DmNhanLucItem[]>(initialNhanLucData);
   const [searchNhanLuc, setSearchNhanLuc] = useState('');
   const [isLoadingNhanLucFile, setIsLoadingNhanLucFile] = useState(false);
@@ -138,7 +138,7 @@ export const DmNhanLucTab: React.FC = () => {
     }
     setIsNhanLucSendingApi(true);
     try {
-      const res = await sendNhanLucToBhxhGateway(nhanLucItems, '01929', '01');
+      const res = await sendNhanLucToBhxhGateway(nhanLucItems);
       setNhanLucApiResponse(res);
       toast.success(`[Sandbox] Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`, 'Gửi API Thành Công (Mô phỏng)');
     } catch (err: any) {
@@ -228,7 +228,7 @@ export const DmNhanLucTab: React.FC = () => {
         base64Content={currentNhanLucBase64}
         tab={nhanLucXmlExportTab}
         onTabChange={setNhanLucXmlExportTab}
-        isCopied={isNhanLucCopied}
+        isKeyCopied={isNhanLucKeyCopied}
         onCopy={handleNhanLucCopyText}
         onExportXml={handleNhanLucExportXml}
         onSendApi={handleNhanLucSendBhxhApi}

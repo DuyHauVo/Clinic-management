@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { User, FileText, DollarSign, Calendar, ShieldCheck, X } from 'lucide-react';
 import type { Hs01TongHopItem } from '../services/hs01TongHopService';
 import { LOAI_KCB_OPTIONS } from '../services/hs01TongHopService';
 import { useModalBehavior } from '../../../../hooks/useModalBehavior';
 import { validateHs01Data } from '../../../../utils/validators';
+import { DEFAULT_MA_CSKCB } from '../../../../utils/shared/excelXmlShared';
 import { useToast } from '../../../../context/ToastContext';
 
 interface Hs01EditModalProps {
@@ -28,8 +29,8 @@ const getDefaultHs01Data = (count = 0): Hs01TongHopItem => {
     hoTen: '',
     ngaySinh: '199001010000',
     gioiTinh: '1',
-    maTheBhyt: 'DN479',
-    maBenhChinh: 'I10',
+    maTheBhyt: '',
+    maBenhChinh: '',
     ngayVao: ymdHm,
     ngayVaoNoiTru: '',
     ngayRa: ymdHmRa,
@@ -41,7 +42,7 @@ const getDefaultHs01Data = (count = 0): Hs01TongHopItem => {
     tBncct: 0,
     tBntt: 0,
     tNguonkhac: 0,
-    maCskcb: '01929',
+    maCskcb: DEFAULT_MA_CSKCB,
     namQt: y,
     thangQt: m,
     trangThai: 'hop_le',
@@ -57,25 +58,39 @@ export const Hs01EditModal: React.FC<Hs01EditModalProps> = ({
   initialData,
   totalItemsCount = 0
 }) => {
-  const toast = useToast();
   useModalBehavior(isOpen, onClose);
 
+  if (!isOpen) return null;
+
+  return (
+    <Hs01EditModalContent
+      key={initialData?.id ?? 'new'}
+      onClose={onClose}
+      onSave={onSave}
+      initialData={initialData}
+      totalItemsCount={totalItemsCount}
+    />
+  );
+};
+
+interface Hs01EditModalContentProps {
+  onClose: () => void;
+  onSave: (item: Hs01TongHopItem) => void;
+  initialData: Hs01TongHopItem | null;
+  totalItemsCount: number;
+}
+
+const Hs01EditModalContent: React.FC<Hs01EditModalContentProps> = ({
+  onClose,
+  onSave,
+  initialData,
+  totalItemsCount
+}) => {
+  const toast = useToast();
   const [formData, setFormData] = useState<Hs01TongHopItem>(() => {
     if (initialData) return { ...initialData };
     return getDefaultHs01Data(totalItemsCount);
   });
-
-  useEffect(() => {
-    if (isOpen) {
-      if (initialData) {
-        setFormData({ ...initialData });
-      } else {
-        setFormData(getDefaultHs01Data(totalItemsCount));
-      }
-    }
-  }, [isOpen, initialData, totalItemsCount]);
-
-  if (!isOpen) return null;
 
   const handleCalculateCosts = (field: string, val: number) => {
     const updated = { ...formData, [field]: val };

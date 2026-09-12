@@ -32,7 +32,7 @@ export const initialBpcmData: DmBpcmItem[] = [
     giuongHscc: 0,
     tuNgay: '20260101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     isValid: true,
     errors: []
   },
@@ -48,7 +48,7 @@ export const initialBpcmData: DmBpcmItem[] = [
     giuongHscc: 15,
     tuNgay: '20260101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     isValid: true,
     errors: []
   },
@@ -64,7 +64,7 @@ export const initialBpcmData: DmBpcmItem[] = [
     giuongHscc: 0,
     tuNgay: '20260101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     isValid: true,
     errors: []
   },
@@ -80,7 +80,7 @@ export const initialBpcmData: DmBpcmItem[] = [
     giuongHscc: 0,
     tuNgay: '20260101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     isValid: true,
     errors: []
   },
@@ -96,7 +96,7 @@ export const initialBpcmData: DmBpcmItem[] = [
     giuongHscc: 6,
     tuNgay: '20260101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     isValid: true,
     errors: []
   },
@@ -112,7 +112,7 @@ export const initialBpcmData: DmBpcmItem[] = [
     giuongHscc: 0,
     tuNgay: '20260101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     isValid: true,
     errors: []
   }
@@ -147,7 +147,7 @@ export const initialNhanLucData: DmNhanLucItem[] = [
     qdCgkt: '',
     tuNgay: '20260101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     isValid: true,
     errors: []
   },
@@ -176,7 +176,7 @@ export const initialNhanLucData: DmNhanLucItem[] = [
     qdCgkt: '',
     tuNgay: '20260101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     isValid: true,
     errors: []
   },
@@ -205,7 +205,7 @@ export const initialNhanLucData: DmNhanLucItem[] = [
     qdCgkt: '',
     tuNgay: '20260101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     isValid: true,
     errors: []
   },
@@ -234,7 +234,7 @@ export const initialNhanLucData: DmNhanLucItem[] = [
     qdCgkt: '',
     tuNgay: '20260101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     isValid: true,
     errors: []
   }
@@ -267,7 +267,7 @@ export const initialThuocData: DmThuocItem[] = [
     ttThau: '01/2026/QĐ-SYT',
     tuNgayHd: '20260101',
     denNgayHd: '20261231',
-    maCskcb: '01929',
+    maCskcb: '48001',
     loaiThuoc: 1,
     loaiThau: 1,
     htThau: 1,
@@ -298,7 +298,7 @@ export const initialThuocData: DmThuocItem[] = [
     ttThau: '01/2026/QĐ-SYT',
     tuNgayHd: '20260101',
     denNgayHd: '20261231',
-    maCskcb: '01929',
+    maCskcb: '48001',
     loaiThuoc: 1,
     loaiThau: 1,
     htThau: 1,
@@ -329,7 +329,7 @@ export const initialThuocData: DmThuocItem[] = [
     ttThau: '01/2026/QĐ-SYT',
     tuNgayHd: '20260101',
     denNgayHd: '20261231',
-    maCskcb: '01929',
+    maCskcb: '48001',
     loaiThuoc: 1,
     loaiThau: 1,
     htThau: 1,
@@ -360,7 +360,7 @@ export const initialThuocData: DmThuocItem[] = [
     ttThau: 'HĐ-MAU-2026',
     tuNgayHd: '20260101',
     denNgayHd: '20261231',
-    maCskcb: '01929',
+    maCskcb: '48001',
     loaiThuoc: 10,
     loaiThau: 2,
     htThau: 5,
@@ -397,7 +397,7 @@ export const initialThietBiData: DmThietBiItem[] = [
     ttThau: '456/QĐ-BV;G1;N1;2024',
     tuNgayHd: '20250101',
     denNgayHd: '20261231',
-    maCskcb: '01929',
+    maCskcb: '48001',
     loaiThau: 1,
     htThau: 1,
     maCskcbTbyt: '',
@@ -427,7 +427,7 @@ export const initialThietBiData: DmThietBiItem[] = [
     ttThau: '456/QĐ-BV;G2;N1;2024',
     tuNgayHd: '20250101',
     denNgayHd: '20261231',
-    maCskcb: '01929',
+    maCskcb: '48001',
     loaiThau: 1,
     htThau: 1,
     maCskcbTbyt: '',
@@ -457,7 +457,7 @@ export const initialThietBiData: DmThietBiItem[] = [
     ttThau: '789/QĐ-BV;G3;N2;2024',
     tuNgayHd: '20250101',
     denNgayHd: '20261231',
-    maCskcb: '01929',
+    maCskcb: '48001',
     loaiThau: 2,
     htThau: 1,
     maCskcbTbyt: '',
@@ -486,7 +486,7 @@ export const initialDichVuData: DmDichVuItem[] = [
     giaThanhToan: 42100,
     tuNgay: '20260101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     dsThuocPx: [],
     isValid: true,
     errors: []
@@ -505,7 +505,7 @@ export const initialDichVuData: DmDichVuItem[] = [
     giaThanhToan: 247000,
     tuNgay: '20260101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     dsThuocPx: [],
     isValid: true,
     errors: []
@@ -524,7 +524,7 @@ export const initialDichVuData: DmDichVuItem[] = [
     giaThanhToan: 75000,
     tuNgay: '20260101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     dsThuocPx: [],
     isValid: true,
     errors: []
@@ -543,7 +543,7 @@ export const initialDichVuData: DmDichVuItem[] = [
     giaThanhToan: 24500,
     tuNgay: '20260101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     dsThuocPx: [],
     isValid: true,
     errors: []
@@ -562,7 +562,7 @@ export const initialDichVuData: DmDichVuItem[] = [
     giaThanhToan: 2450000,
     tuNgay: '20260101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     dsThuocPx: [
       {
         id: 'px-1',
@@ -603,7 +603,7 @@ export const initialTbytThdvData: DmTbytThdvItem[] = [
     hdDen: '',
     tuNgay: '20240101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     isValid: true,
     errors: []
   },
@@ -622,7 +622,7 @@ export const initialTbytThdvData: DmTbytThdvItem[] = [
     hdDen: '20271231',
     tuNgay: '20220101',
     denNgay: '20271231',
-    maCskcb: '01929',
+    maCskcb: '48001',
     isValid: true,
     errors: []
   },
@@ -641,7 +641,7 @@ export const initialTbytThdvData: DmTbytThdvItem[] = [
     hdDen: '',
     tuNgay: '20240101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     isValid: true,
     errors: []
   },
@@ -660,7 +660,7 @@ export const initialTbytThdvData: DmTbytThdvItem[] = [
     hdDen: '',
     tuNgay: '20240101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     isValid: true,
     errors: []
   },
@@ -679,7 +679,7 @@ export const initialTbytThdvData: DmTbytThdvItem[] = [
     hdDen: '',
     tuNgay: '20240101',
     denNgay: '',
-    maCskcb: '01929',
+    maCskcb: '48001',
     isValid: true,
     errors: []
   },
@@ -698,7 +698,7 @@ export const initialTbytThdvData: DmTbytThdvItem[] = [
     hdDen: '20261231',
     tuNgay: '20200101',
     denNgay: '20261231',
-    maCskcb: '01929',
+    maCskcb: '48001',
     isValid: true,
     errors: []
   }
@@ -727,7 +727,7 @@ export const initialHs01TongHopData: Hs01TongHopItem[] = [
     tBncct: 169000.00,
     tBntt: 0.00,
     tNguonkhac: 0.00,
-    maCskcb: '01929',
+    maCskcb: '48001',
     namQt: 2026,
     thangQt: '02',
     trangThai: 'da_gui_cong',
@@ -753,7 +753,7 @@ export const initialHs01TongHopData: Hs01TongHopItem[] = [
     tBncct: 124000.00,
     tBntt: 0.00,
     tNguonkhac: 0.00,
-    maCskcb: '01929',
+    maCskcb: '48001',
     namQt: 2026,
     thangQt: '02',
     trangThai: 'hop_le',
@@ -779,7 +779,7 @@ export const initialHs01TongHopData: Hs01TongHopItem[] = [
     tBncct: 0.00,
     tBntt: 50000.00,
     tNguonkhac: 0.00,
-    maCskcb: '01929',
+    maCskcb: '48001',
     namQt: 2026,
     thangQt: '02',
     trangThai: 'da_gui_cong',
@@ -805,7 +805,7 @@ export const initialHs01TongHopData: Hs01TongHopItem[] = [
     tBncct: 76000.00,
     tBntt: 0.00,
     tNguonkhac: 0.00,
-    maCskcb: '01929',
+    maCskcb: '48001',
     namQt: 2026,
     thangQt: '02',
     trangThai: 'hop_le',
@@ -831,7 +831,7 @@ export const initialHs01TongHopData: Hs01TongHopItem[] = [
     tBncct: 490000.00,
     tBntt: 0.00,
     tNguonkhac: 0.00,
-    maCskcb: '01929',
+    maCskcb: '48001',
     namQt: 2026,
     thangQt: '02',
     trangThai: 'hop_le',
@@ -846,13 +846,13 @@ export const initialHs01TongHopData: Hs01TongHopItem[] = [
 export const initialHoSoTongHopData: HoSoTongHop[] = [
   {
     id: 'hs-th-01',
-    maLk: 'LK0192920260908001',
+    maLk: 'LK4800120260908001',
     maBenhNhan: 'BN-2026-001',
     hoTen: 'Nguyễn Đình Trọng',
     ngaySinh: '1988-05-14',
     gioiTinh: 'Nam',
     soTheBhyt: 'DN4791234567890',
-    maDkbd: '01929',
+    maDkbd: '48001',
     mucHuong: 80,
     loaiKcb: 'Ngoại trú',
     khoaKcb: 'Khoa Khám Bệnh Đa Khoa',
@@ -867,10 +867,10 @@ export const initialHoSoTongHopData: HoSoTongHop[] = [
     tienNguonKhac: 0,
     trangThai: 'da_gui_cong',
     ngayGuiCong: '2026-09-08 11:30',
-    maGiaoDichBhxh: 'GD_01929_20260908_99812',
+    maGiaoDichBhxh: 'GD_48001_20260908_99812',
     chiTiet: {
       xml1TongHop: {
-        maLk: 'LK0192920260908001',
+        maLk: 'LK4800120260908001',
         maBn: 'BN-2026-001',
         hoTen: 'Nguyễn Đình Trọng',
         ngayVao: '202609080815',
@@ -938,13 +938,13 @@ export const initialHoSoTongHopData: HoSoTongHop[] = [
   },
   {
     id: 'hs-th-02',
-    maLk: 'LK0192920260909002',
+    maLk: 'LK4800120260909002',
     maBenhNhan: 'BN-2026-002',
     hoTen: 'Phạm Thị Thùy Dung',
     ngaySinh: '1995-11-20',
     gioiTinh: 'Nữ',
     soTheBhyt: 'GD4799876543210',
-    maDkbd: '01929',
+    maDkbd: '48001',
     mucHuong: 80,
     loaiKcb: 'Ngoại trú',
     khoaKcb: 'Khoa Khám Bệnh Đa Khoa',
@@ -959,10 +959,10 @@ export const initialHoSoTongHopData: HoSoTongHop[] = [
     tienNguonKhac: 0,
     trangThai: 'hop_le',
     ngayGuiCong: '2026-09-09 10:30',
-    maGiaoDichBhxh: 'GD_01929_20260909_11029',
+    maGiaoDichBhxh: 'GD_48001_20260909_11029',
     chiTiet: {
       xml1TongHop: {
-        maLk: 'LK0192920260909002',
+        maLk: 'LK4800120260909002',
         maBn: 'BN-2026-002',
         hoTen: 'Phạm Thị Thùy Dung',
         ngayVao: '202609090830',
@@ -1007,13 +1007,13 @@ export const initialHoSoTongHopData: HoSoTongHop[] = [
   },
   {
     id: 'hs-th-03',
-    maLk: 'LK0192920260909003',
+    maLk: 'LK4800120260909003',
     maBenhNhan: 'BN-2026-003',
     hoTen: 'Lê Hoàng Khang',
     ngaySinh: '2018-03-02',
     gioiTinh: 'Nam',
     soTheBhyt: 'TE1798889991122',
-    maDkbd: '01929',
+    maDkbd: '48001',
     mucHuong: 100,
     loaiKcb: 'Cấp cứu',
     khoaKcb: 'Khoa Nhi & Sơ Sinh',
@@ -1032,13 +1032,13 @@ export const initialHoSoTongHopData: HoSoTongHop[] = [
   },
   {
     id: 'hs-th-04',
-    maLk: 'LK0192920260909004',
+    maLk: 'LK4800120260909004',
     maBenhNhan: 'BN-2026-004',
     hoTen: 'Võ Thanh Tùng',
     ngaySinh: '1976-08-19',
     gioiTinh: 'Nam',
     soTheBhyt: 'HT4795556667778',
-    maDkbd: '01929',
+    maDkbd: '48001',
     mucHuong: 95,
     loaiKcb: 'Nội trú',
     khoaKcb: 'Khoa Hồi Sức Cấp Cứu - Chống Độc',
@@ -1053,7 +1053,7 @@ export const initialHoSoTongHopData: HoSoTongHop[] = [
     tienNguonKhac: 0,
     trangThai: 'canh_bao',
     ngayGuiCong: '2026-09-09 09:00',
-    maGiaoDichBhxh: 'GD_01929_20260909_77412'
+    maGiaoDichBhxh: 'GD_48001_20260909_77412'
   }
 ];
 
@@ -1063,7 +1063,7 @@ export const initialHoSoTongHopData: HoSoTongHop[] = [
 export const initialHoSoXuatToanData: HoSoXuatToan[] = [
   {
     id: 'xt-01',
-    maLk: 'LK0192920260828005',
+    maLk: 'LK4800120260828005',
     maBenhNhan: 'BN-2026-004',
     hoTen: 'Võ Thanh Tùng',
     soTheBhyt: 'HT4795556667778',
@@ -1087,7 +1087,7 @@ export const initialHoSoXuatToanData: HoSoXuatToan[] = [
   },
   {
     id: 'xt-02',
-    maLk: 'LK0192920260830012',
+    maLk: 'LK4800120260830012',
     maBenhNhan: 'BN-2026-015',
     hoTen: 'Trần Văn Hưng',
     soTheBhyt: 'DN4793322114455',
@@ -1112,7 +1112,7 @@ export const initialHoSoXuatToanData: HoSoXuatToan[] = [
   },
   {
     id: 'xt-03',
-    maLk: 'LK0192920260901019',
+    maLk: 'LK4800120260901019',
     maBenhNhan: 'BN-2026-022',
     hoTen: 'Lê Thị Thu Thủy',
     soTheBhyt: 'GD4796677889900',
@@ -1136,7 +1136,7 @@ export const initialHoSoXuatToanData: HoSoXuatToan[] = [
   },
   {
     id: 'xt-04',
-    maLk: 'LK0192920260903033',
+    maLk: 'LK4800120260903033',
     maBenhNhan: 'BN-2026-041',
     hoTen: 'Đỗ Mạnh Cường',
     soTheBhyt: 'DN4791100223344',

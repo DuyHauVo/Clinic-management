@@ -83,7 +83,9 @@ export function createSchemaKeyMatcher(
  * Parse số nguyên từ ô Excel ("8 bàn", "8,5"...) - bỏ ký tự không phải số.
  */
 export function parseNumberCell(val: unknown, defaultVal = 0): number {
-  const num = Number(String(val ?? "").replace(/[^0-9.-]/g, ""));
+  const clean = String(val ?? "").replace(/[^0-9.-]/g, "");
+  if (clean === "" || clean === "-" || clean === ".") return defaultVal;
+  const num = Number(clean);
   return isNaN(num) ? defaultVal : num;
 }
 
@@ -176,7 +178,10 @@ export function isValidYmdHmDate(str?: string | null): boolean {
  * - Chuỗi 8 số YYYYMMDD (chỉ ghép defaultHourMinute nếu caller chỉ định cụ thể, ví dụ '0000' cho ngày sinh)
  * - Chuỗi có dấu phân cách: dd/mm/yyyy hh:mm hoặc yyyy-mm-dd hh:mm
  */
-export function parseYmdHmDate(val: unknown, defaultHourMinute?: string): string {
+export function parseYmdHmDate(
+  val: unknown,
+  defaultHourMinute?: string,
+): string {
   if (val === null || val === undefined || val === "") return "";
   const str = String(val).trim();
   if (!str) return "";
@@ -205,7 +210,9 @@ export function parseYmdHmDate(val: unknown, defaultHourMinute?: string): string
     return digitsOnly;
   }
   if (digitsOnly.length === 8) {
-    return defaultHourMinute !== undefined ? `${digitsOnly}${defaultHourMinute}` : digitsOnly;
+    return defaultHourMinute !== undefined
+      ? `${digitsOnly}${defaultHourMinute}`
+      : digitsOnly;
   }
 
   // Chuỗi có phân cách: dd/mm/yyyy hh:mm hoặc yyyy-mm-dd hh:mm
@@ -262,11 +269,6 @@ export function formatCurrencyDecimals(val?: number): string {
   return val.toFixed(2);
 }
 
-/**
- * Tương thích ngược: tên cũ đang được export từ nhanlucXmlEngine.
- */
-export const formatToYmdString = parseYmdDate;
-
 // ============================================================
 // 3. ĐỌC WORKBOOK EXCEL
 // ============================================================
@@ -296,8 +298,8 @@ export function readExcelFile(file: File): Promise<XLSX.WorkBook> {
   });
 }
 
-export const DEFAULT_MA_CSKCB = "01929";
-export const DEFAULT_MA_TINH = "01";
+export const DEFAULT_MA_CSKCB = "48001";
+export const DEFAULT_MA_TINH = "48";
 
 /**
  * Tự động tìm sheet phù hợp nhất dựa trên heuristic:
@@ -498,15 +500,48 @@ export function generateUUID(): string {
 }
 
 /**
- * Tên cũ của generateUUID ở nhanlucXmlEngine - giữ để tương thích.
+ * Lấy ngày hôm nay theo giờ địa phương (local time / VN UTC+7) định dạng YYYYMMDD (8 ký tự).
  */
-export const generatePseudoGuid = generateUUID;
+export function getTodayYmd(): string {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}${mm}${dd}`;
+}
+
+export const todayYmd = getTodayYmd;
 
 /**
- * Thời điểm ký chuẩn ISO 8601 (bỏ mili giây & hậu tố Z).
+ * Lấy ngày hôm nay theo giờ địa phương (local time / VN UTC+7) định dạng YYYY-MM-DD (10 ký tự).
+ */
+export function getTodayIsoDate(): string {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/**
+ * Lấy ngày đầu năm hiện tại theo giờ địa phương định dạng YYYYMMDD (vd: 20260101).
+ */
+export function getCurrentYearStartYmd(): string {
+  return `${new Date().getFullYear()}0101`;
+}
+
+/**
+ * Thời điểm ký chuẩn ISO 8601 theo giờ địa phương (bỏ mili giây & hậu tố Z).
  */
 export function getSigningTimeIso(): string {
-  return new Date().toISOString().replace(/\.\d+Z$/, "");
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  const ss = String(d.getSeconds()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}`;
 }
 
 /**
@@ -551,16 +586,14 @@ export function xmlToBase64(xmlString: string): string {
 }
 
 // ============================================================
-// 9. TIỆN ÍCH CLIPBOARD DÙNG CHUNG
+// 5. TIỆN ÍCH CLIPBOARD DÙNG CHUNG
 // ============================================================
 
-export async function copyTextToClipboard(text: string): Promise<boolean> {
+/**
+ * Fallback sao chép qua phần tử textarea ẩn cho môi trường HTTP / mạng nội bộ bệnh viện.
+ */
+function fallbackCopyTextToClipboard(text: string): boolean {
   try {
-    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-    // Fallback for non-HTTPS or legacy context
     const textarea = document.createElement("textarea");
     textarea.value = text;
     textarea.style.position = "fixed";
@@ -573,22 +606,24 @@ export async function copyTextToClipboard(text: string): Promise<boolean> {
     document.body.removeChild(textarea);
     return successful;
   } catch (err) {
-    try {
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      textarea.style.position = "fixed";
-      textarea.style.left = "-9999px";
-      textarea.style.top = "-9999px";
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
-      const successful = document.execCommand("copy");
-      document.body.removeChild(textarea);
-      return successful;
-    } catch {
-      console.error("Failed to copy text: ", err);
-      return false;
+    console.error("Fallback clipboard copy failed: ", err);
+    return false;
+  }
+}
+
+export async function copyTextToClipboard(text: string): Promise<boolean> {
+  try {
+    if (
+      typeof navigator !== "undefined" &&
+      navigator.clipboard &&
+      navigator.clipboard.writeText
+    ) {
+      await navigator.clipboard.writeText(text);
+      return true;
     }
+    return fallbackCopyTextToClipboard(text);
+  } catch {
+    return fallbackCopyTextToClipboard(text);
   }
 }
 
@@ -609,12 +644,47 @@ export function downloadXmlFile(xmlContent: string, fileName: string): void {
   URL.revokeObjectURL(url);
 }
 
+// ============================================================
+// 6. CỔNG EGW BHXH & ĐỊNH DẠNG HIỂN THỊ UI
+// ============================================================
+
 export interface GatewaySendResult {
   maKetQua: string;
   maGiaoDich: string;
   thongDiep: string;
   thoiGianTiepNhan: string;
   totalRecords: number;
+}
+
+/**
+ * Định dạng tiền tệ hiển thị tiếng Việt (vd: 1.500.000 đ)
+ */
+export function formatCurrencyVnd(val?: number): string {
+  if (val === undefined || val === null || isNaN(val)) return "0 đ";
+  return `${Math.round(val).toLocaleString("vi-VN")} đ`;
+}
+
+/**
+ * Định dạng chuỗi ngày giờ YYYYMMDDHHmm hoặc YYYYMMDD thành dạng dễ đọc DD/MM/YYYY HH:mm
+ */
+export function formatYmdHmDisplay(str?: string): string {
+  if (!str) return "-";
+  const clean = String(str).replace(/[^0-9]/g, "");
+  if (clean.length === 12) {
+    const y = clean.slice(0, 4);
+    const m = clean.slice(4, 6);
+    const d = clean.slice(6, 8);
+    const h = clean.slice(8, 10);
+    const mi = clean.slice(10, 12);
+    return `${d}/${m}/${y} ${h}:${mi}`;
+  }
+  if (clean.length === 8) {
+    const y = clean.slice(0, 4);
+    const m = clean.slice(4, 6);
+    const d = clean.slice(6, 8);
+    return `${d}/${m}/${y}`;
+  }
+  return str;
 }
 
 /**
@@ -633,16 +703,13 @@ export function getThoiGianTiepNhan(): string {
 
 /**
  * Mock gửi danh mục lên Cổng EGW BHXH (sandbox).
- * Khi tích hợp thật: POST fileHsBase64 tới
- * https://egw.baohiemxahoi.gov.vn/api/DanhMucGW/GuiDanhMucXX_...
- * với accessToken / tokenId / passwordHash từ cấu hình bảo mật.
  */
 export async function mockSendDanhMucToBhxhGateway(
   loaiHs: string,
   recordCount: number,
   recordLabel: string,
-  maCskcb: string = "01929",
-  maTinh: string = "01",
+  maCskcb: string = DEFAULT_MA_CSKCB,
+  maTinh: string = DEFAULT_MA_TINH,
   delayMs = 800,
 ): Promise<GatewaySendResult> {
   await new Promise((r) => setTimeout(r, delayMs));

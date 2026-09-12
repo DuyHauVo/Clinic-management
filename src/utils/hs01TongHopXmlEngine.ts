@@ -7,24 +7,30 @@ import type {
 import {
   HS01_SCHEMA_FIELDS,
   HS01_FIELD_HEURISTICS,
+  HS01_EXCEL_TEMPLATE_HEADERS,
+  HS01_EXCEL_TEMPLATE_COLS,
+  HS01_EXCEL_TEMPLATE_SAMPLES,
 } from "./constants/hs01TongHopConstants";
 import {
   createSchemaKeyMatcher,
-  parseNumberCell,
   parseYmdHmDate,
   isValidYmdHmDate,
   formatCurrencyDecimals,
   readExcelFile,
-  findBestSheetName,
+  pickBestSheetName,
   detectHeaderRow,
-  escapeXml,
   generateUUID,
   buildSignatureBlock,
   xmlToBase64,
   downloadXmlFile,
   getThoiGianTiepNhan,
+  DEFAULT_MA_CSKCB,
 } from "./shared/excelXmlShared";
 import { validateHs01Data } from "./validators/hs01Validator";
+import {
+  parseHs01Row,
+  renderHs01ItemXml,
+} from "./parsers/hs01TongHopRowParser";
 
 export {
   xmlToBase64,
@@ -49,7 +55,7 @@ export function parseHs01Worksheet(
   availableSheets: string[],
   fileName: string,
   workbook?: XLSX.WorkBook,
-  defaultMaCskcb = "01929",
+  defaultMaCskcb = DEFAULT_MA_CSKCB,
 ): ParseHs01ExcelResult {
   const rawRows: unknown[][] = XLSX.utils.sheet_to_json(worksheet, {
     header: 1,
@@ -108,9 +114,6 @@ export function parseHs01Worksheet(
   let validRows = 0;
   let invalidRows = 0;
 
-  const currentYear = new Date().getFullYear();
-  const currentMonth = String(new Date().getMonth() + 1).padStart(2, "0");
-
   for (let r = effectiveHeaderRow + 1; r < rawRows.length; r++) {
     const row = rawRows[r];
     if (
@@ -120,127 +123,24 @@ export function parseHs01Worksheet(
       continue;
     }
 
-    const rowObj: Record<string, any> = {};
+    const rowObj: Record<string, unknown> = {};
     Object.entries(effectiveColMapping).forEach(([colIdx, key]) => {
       rowObj[key] = row[Number(colIdx)];
     });
 
-    const hoTen = String(rowObj["HO_TEN"] ?? "").trim();
-    const maTheBhyt = String(rowObj["MA_THE_BHYT"] ?? "").trim();
+    const item = parseHs01Row(rowObj, r, items.length + 1, defaultMaCskcb);
 
-    if (!hoTen && !maTheBhyt) {
+    if (!item) {
       continue;
     }
 
-    const stt = parseNumberCell(rowObj["STT"], items.length + 1);
-    const ngaySinh = parseYmdHmDate(rowObj["NGAY_SINH"], "0000");
-
-    let gioiTinhRaw = String(rowObj["GIOI_TINH"] ?? "").trim();
-    let gioiTinh = "";
-    if (gioiTinhRaw === "Nam" || gioiTinhRaw === "1") gioiTinh = "1";
-    else if (
-      gioiTinhRaw === "Nữ" ||
-      gioiTinhRaw === "Nu" ||
-      gioiTinhRaw === "2"
-    )
-      gioiTinh = "2";
-    else if (gioiTinhRaw === "3") gioiTinh = "3";
-    else gioiTinh = gioiTinhRaw;
-
-    const maBenhChinh = String(rowObj["MA_BENH_CHINH"] ?? "")
-      .trim()
-      .toUpperCase();
-    const ngayVao = parseYmdHmDate(rowObj["NGAY_VAO"]);
-    const ngayVaoNoiTru = rowObj["NGAY_VAO_NOI_TRU"]
-      ? parseYmdHmDate(rowObj["NGAY_VAO_NOI_TRU"])
-      : undefined;
-    const ngayRa = parseYmdHmDate(rowObj["NGAY_RA"]);
-
-    let soNgayDtri = parseNumberCell(rowObj["SO_NGAY_DTRI"], 0);
-    if (
-      soNgayDtri <= 0 &&
-      isValidYmdHmDate(ngayVao) &&
-      isValidYmdHmDate(ngayRa)
-    ) {
-      const dVao = new Date(
-        Number(ngayVao.slice(0, 4)),
-        Number(ngayVao.slice(4, 6)) - 1,
-        Number(ngayVao.slice(6, 8)),
-        Number(ngayVao.slice(8, 10)),
-        Number(ngayVao.slice(10, 12)),
-      );
-      const dRa = new Date(
-        Number(ngayRa.slice(0, 4)),
-        Number(ngayRa.slice(4, 6)) - 1,
-        Number(ngayRa.slice(6, 8)),
-        Number(ngayRa.slice(8, 10)),
-        Number(ngayRa.slice(10, 12)),
-      );
-      const diffTime = dRa.getTime() - dVao.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      soNgayDtri = Math.max(1, diffDays > 0 ? diffDays : 1);
+    if (item.isValid) {
+      validRows++;
+    } else {
+      invalidRows++;
     }
 
-    let maLoaiKcb = String(rowObj["MA_LOAI_KCB"] ?? "").trim();
-    if (maLoaiKcb.length === 1) maLoaiKcb = `0${maLoaiKcb}`;
-
-    const tTongchiBv = parseNumberCell(rowObj["T_TONGCHI_BV"], 0);
-    const tTongchiBh = parseNumberCell(rowObj["T_TONGCHI_BH"], 0);
-    const tBhtt = parseNumberCell(rowObj["T_BHTT"], 0);
-    const tBncct = parseNumberCell(rowObj["T_BNCCT"], 0);
-    const tBntt = parseNumberCell(rowObj["T_BNTT"], 0);
-    const tNguonkhac = parseNumberCell(rowObj["T_NGUONKHAC"], 0);
-
-    const maCskcb =
-      String(rowObj["MA_CSKCB"] ?? defaultMaCskcb).trim() || defaultMaCskcb;
-    const namQt = parseNumberCell(rowObj["NAM_QT"], currentYear);
-    let thangQt = String(rowObj["THANG_QT"] ?? currentMonth).trim();
-    if (thangQt.length === 1) thangQt = `0${thangQt}`;
-
-    // Validation nghiêm ngặt (Strict Medical Validation)
-    const errors = validateHs01Data({
-      hoTen,
-      maTheBhyt,
-      gioiTinh,
-      maBenhChinh,
-      maLoaiKcb,
-      ngaySinh,
-      ngayVao,
-      ngayRa,
-      ngayVaoNoiTru,
-      tTongchiBv,
-    });
-
-    const isValid = errors.length === 0;
-    if (isValid) validRows++;
-    else invalidRows++;
-
-    items.push({
-      id: `hs01-${generateUUID()}`,
-      stt,
-      hoTen,
-      ngaySinh,
-      gioiTinh,
-      maTheBhyt,
-      maBenhChinh,
-      ngayVao,
-      ngayVaoNoiTru,
-      ngayRa,
-      soNgayDtri,
-      maLoaiKcb,
-      tTongchiBv,
-      tTongchiBh,
-      tBhtt,
-      tBncct,
-      tBntt,
-      tNguonkhac,
-      maCskcb,
-      namQt,
-      thangQt,
-      trangThai: isValid ? "hop_le" : "canh_bao",
-      isValid,
-      errors,
-    });
+    items.push(item);
   }
 
   return {
@@ -263,21 +163,16 @@ export function parseHs01Worksheet(
 export async function parseHs01ExcelFile(
   file: File,
   selectedSheetName?: string,
-  defaultMaCskcb = "01929",
+  defaultMaCskcb = DEFAULT_MA_CSKCB,
 ): Promise<ParseHs01ExcelResult> {
   const workbook = await readExcelFile(file);
   const availableSheets = workbook.SheetNames;
 
+  const hintKeywords = ["HSTH01", "01BH", "TongHop", "Mẫu 01", "Hồ sơ"];
+
   let sheetName = selectedSheetName;
   if (!sheetName || !availableSheets.includes(sheetName)) {
-    sheetName =
-      findBestSheetName(workbook, matchHs01SchemaKey, 20, [
-        "HSTH01",
-        "01BH",
-        "TongHop",
-        "Mẫu 01",
-        "Hồ sơ",
-      ]) || availableSheets[0];
+    sheetName = pickBestSheetName(workbook, matchHs01SchemaKey, hintKeywords);
   }
 
   const worksheet = workbook.Sheets[sheetName];
@@ -296,35 +191,11 @@ export async function parseHs01ExcelFile(
  */
 export function generateHs01Xml(
   items: Hs01TongHopItem[],
-  maCskcb = "01929",
+  maCskcb = DEFAULT_MA_CSKCB,
 ): string {
   const containerGuid = `Id-${generateUUID()}`;
-
   const rowsXml = items
-    .map((item, index) => {
-      return `    <CHITIET_HS01BH>
-      <STT>${item.stt || index + 1}</STT>
-      <HO_TEN>${escapeXml(item.hoTen)}</HO_TEN>
-      <NGAY_SINH>${escapeXml(item.ngaySinh)}</NGAY_SINH>
-      <GIOI_TINH>${escapeXml(item.gioiTinh)}</GIOI_TINH>
-      <MA_THE_BHYT>${escapeXml(item.maTheBhyt)}</MA_THE_BHYT>
-      <MA_BENH_CHINH>${escapeXml(item.maBenhChinh)}</MA_BENH_CHINH>
-      <NGAY_VAO>${escapeXml(item.ngayVao)}</NGAY_VAO>
-      <NGAY_VAO_NOI_TRU>${escapeXml(item.ngayVaoNoiTru || "")}</NGAY_VAO_NOI_TRU>
-      <NGAY_RA>${escapeXml(item.ngayRa)}</NGAY_RA>
-      <SO_NGAY_DTRI>${item.soNgayDtri}</SO_NGAY_DTRI>
-      <MA_LOAI_KCB>${escapeXml(item.maLoaiKcb)}</MA_LOAI_KCB>
-      <T_TONGCHI_BV>${formatCurrencyDecimals(item.tTongchiBv)}</T_TONGCHI_BV>
-      <T_TONGCHI_BH>${formatCurrencyDecimals(item.tTongchiBh)}</T_TONGCHI_BH>
-      <T_BHTT>${formatCurrencyDecimals(item.tBhtt)}</T_BHTT>
-      <T_BNCCT>${formatCurrencyDecimals(item.tBncct)}</T_BNCCT>
-      <T_BNTT>${formatCurrencyDecimals(item.tBntt)}</T_BNTT>
-      <T_NGUONKHAC>${formatCurrencyDecimals(item.tNguonkhac || 0)}</T_NGUONKHAC>
-      <MA_CSKCB>${escapeXml(item.maCskcb || maCskcb)}</MA_CSKCB>
-      <NAM_QT>${item.namQt}</NAM_QT>
-      <THANG_QT>${escapeXml(item.thangQt)}</THANG_QT>
-    </CHITIET_HS01BH>`;
-    })
+    .map((item) => renderHs01ItemXml(item, maCskcb))
     .join("\n");
 
   const datasetXml = `  <DS_CHITIET Id="${containerGuid}">
@@ -345,7 +216,7 @@ ${signatureXml}
  */
 export function downloadHs01XmlFile(
   items: Hs01TongHopItem[],
-  maCskcb = "01929",
+  maCskcb = DEFAULT_MA_CSKCB,
   customFileName?: string,
 ): void {
   const xml = generateHs01Xml(items, maCskcb);
@@ -360,99 +231,11 @@ export function downloadHs01XmlFile(
  * Tạo & Tải file Excel Mẫu 01/BH chuẩn 20 cột
  */
 export function downloadHs01ExcelTemplate(): void {
-  const headers = [
-    "STT",
-    "HO_TEN",
-    "NGAY_SINH",
-    "GIOI_TINH",
-    "MA_THE_BHYT",
-    "MA_BENH_CHINH",
-    "NGAY_VAO",
-    "NGAY_VAO_NOI_TRU",
-    "NGAY_RA",
-    "SO_NGAY_DTRI",
-    "MA_LOAI_KCB",
-    "T_TONGCHI_BV",
-    "T_TONGCHI_BH",
-    "T_BHTT",
-    "T_BNCCT",
-    "T_BNTT",
-    "T_NGUONKHAC",
-    "MA_CSKCB",
-    "NAM_QT",
-    "THANG_QT",
-  ];
-
-  const sampleRows = [
-    [
-      1,
-      "Nguyễn Văn An",
-      "198505140000",
-      "1",
-      "DN4791234567890",
-      "I10",
-      "202602050815",
-      "",
-      "202602051045",
-      1,
-      "01",
-      845000.0,
-      845000.0,
-      676000.0,
-      169000.0,
-      0.0,
-      0.0,
-      "01929",
-      2026,
-      "02",
-    ],
-    [
-      2,
-      "Trần Thị Mai",
-      "199209200000",
-      "2",
-      "GD4799876543210",
-      "K29.0",
-      "202602060900",
-      "",
-      "202602061130",
-      1,
-      "01",
-      620000.0,
-      620000.0,
-      496000.0,
-      124000.0,
-      0.0,
-      0.0,
-      "01929",
-      2026,
-      "02",
-    ],
-    [
-      3,
-      "Lê Hoàng Long",
-      "197003150000",
-      "1",
-      "HT2791122334455",
-      "E11.9",
-      "202602070800",
-      "",
-      "202602071000",
-      1,
-      "07",
-      1250000.0,
-      1200000.0,
-      1200000.0,
-      0.0,
-      50000.0,
-      0.0,
-      "01929",
-      2026,
-      "02",
-    ],
-  ];
-
-  const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleRows]);
+  const ws = XLSX.utils.aoa_to_sheet([
+    HS01_EXCEL_TEMPLATE_HEADERS,
+    ...HS01_EXCEL_TEMPLATE_SAMPLES,
+  ]);
+  ws["!cols"] = HS01_EXCEL_TEMPLATE_COLS;
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "HSTH01BH");
   XLSX.writeFile(wb, "Mau_01BH_HoSoTongHop_Chuan_20Cot.xlsx");
@@ -460,7 +243,6 @@ export function downloadHs01ExcelTemplate(): void {
 
 /**
  * Gửi hồ sơ tổng hợp Mẫu 01/BH lên Cổng tiếp nhận Giám định BHYT (Sandbox)
- * Endpoint: https://egw.baohiemxahoi.gov.vn/api/HoSoTongHop7980/GuiHoSoTongHop01BH
  */
 export async function sendHs01ToBhxhGateway(
   items: Hs01TongHopItem[],

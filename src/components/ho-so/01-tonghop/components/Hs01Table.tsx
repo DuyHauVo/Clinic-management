@@ -14,15 +14,16 @@ import {
 } from 'lucide-react';
 import type { Hs01TongHopItem } from '../services/hs01TongHopService';
 import { LOAI_KCB_OPTIONS, GIOI_TINH_MAP } from '../services/hs01TongHopService';
+import { formatCurrencyVnd, formatYmdHmDisplay } from '../../../../utils/shared/excelXmlShared';
 
 interface Hs01TableProps {
   items: Hs01TongHopItem[];
   searchTerm: string;
-  onSearchChange: (term: string) => void;
+  onSearchChange: (val: string) => void;
   filterLoaiKcb: string;
-  onFilterLoaiKcbChange: (type: string) => void;
+  onFilterLoaiKcbChange: (val: string) => void;
   filterTrangThai: string;
-  onFilterTrangThaiChange: (status: string) => void;
+  onFilterTrangThaiChange: (val: string) => void;
   onAddNew: () => void;
   onEdit: (item: Hs01TongHopItem) => void;
   onDelete: (item: Hs01TongHopItem) => void;
@@ -44,23 +45,6 @@ export const Hs01Table: React.FC<Hs01TableProps> = ({
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-
-  const formatVnd = (n?: number) => {
-    if (n === undefined || n === null) return '0 đ';
-    return new Intl.NumberFormat('vi-VN').format(n) + ' đ';
-  };
-
-  const formatDateDisplay = (str?: string) => {
-    if (!str || str.length < 8) return str || '-';
-    const y = str.slice(0, 4);
-    const m = str.slice(4, 6);
-    const d = str.slice(6, 8);
-    let time = '';
-    if (str.length >= 12) {
-      time = ` ${str.slice(8, 10)}:${str.slice(10, 12)}`;
-    }
-    return `${d}/${m}/${y}${time}`;
-  };
 
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
   const validCurrentPage = Math.min(currentPage, totalPages);
@@ -275,7 +259,7 @@ export const Hs01Table: React.FC<Hs01TableProps> = ({
 
                     {/* 3. NGAY_SINH */}
                     <td className="py-3 px-3 whitespace-nowrap text-slate-700">
-                      {formatDateDisplay(item.ngaySinh).split(' ')[0]}
+                      {formatYmdHmDisplay(item.ngaySinh).split(' ')[0]}
                     </td>
 
                     {/* 4. GIOI_TINH */}
@@ -301,17 +285,17 @@ export const Hs01Table: React.FC<Hs01TableProps> = ({
 
                     {/* 7. NGAY_VAO */}
                     <td className="py-3 px-3 text-[11px] whitespace-nowrap text-slate-700">
-                      {formatDateDisplay(item.ngayVao)}
+                      {formatYmdHmDisplay(item.ngayVao)}
                     </td>
 
                     {/* 8. NGAY_VAO_NOI_TRU */}
                     <td className="py-3 px-3 text-[11px] whitespace-nowrap text-slate-500">
-                      {item.ngayVaoNoiTru ? formatDateDisplay(item.ngayVaoNoiTru) : '-'}
+                      {item.ngayVaoNoiTru ? formatYmdHmDisplay(item.ngayVaoNoiTru) : '-'}
                     </td>
 
                     {/* 9. NGAY_RA */}
                     <td className="py-3 px-3 text-[11px] whitespace-nowrap text-slate-700">
-                      {formatDateDisplay(item.ngayRa)}
+                      {formatYmdHmDisplay(item.ngayRa)}
                     </td>
 
                     {/* 10. SO_NGAY_DTRI */}
@@ -328,32 +312,32 @@ export const Hs01Table: React.FC<Hs01TableProps> = ({
 
                     {/* 12. T_TONGCHI_BV */}
                     <td className="py-3 px-3 text-right whitespace-nowrap font-bold text-slate-900">
-                      {formatVnd(item.tTongchiBv)}
+                      {formatCurrencyVnd(item.tTongchiBv)}
                     </td>
 
                     {/* 13. T_TONGCHI_BH */}
                     <td className="py-3 px-3 text-right whitespace-nowrap font-bold text-blue-700">
-                      {formatVnd(item.tTongchiBh)}
+                      {formatCurrencyVnd(item.tTongchiBh)}
                     </td>
 
                     {/* 14. T_BHTT */}
                     <td className="py-3 px-3 text-right whitespace-nowrap font-bold text-emerald-700">
-                      {formatVnd(item.tBhtt)}
+                      {formatCurrencyVnd(item.tBhtt)}
                     </td>
 
                     {/* 15. T_BNCCT */}
                     <td className="py-3 px-3 text-right whitespace-nowrap font-semibold text-amber-700">
-                      {formatVnd(item.tBncct)}
+                      {formatCurrencyVnd(item.tBncct)}
                     </td>
 
                     {/* 16. T_BNTT */}
                     <td className="py-3 px-3 text-right whitespace-nowrap text-slate-600">
-                      {formatVnd(item.tBntt)}
+                      {formatCurrencyVnd(item.tBntt)}
                     </td>
 
                     {/* 17. T_NGUONKHAC */}
                     <td className="py-3 px-3 text-right whitespace-nowrap text-slate-500">
-                      {formatVnd(item.tNguonkhac || 0)}
+                      {formatCurrencyVnd(item.tNguonkhac || 0)}
                     </td>
 
                     {/* 18. MA_CSKCB */}

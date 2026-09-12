@@ -4,17 +4,18 @@ import type { SheetInfo, ParseExcelResult } from "./types/bpcmTypes";
 import {
   BPCM_SCHEMA_FIELDS,
   BPCM_EXCEL_TEMPLATE_HEADERS,
+  BPCM_EXCEL_TEMPLATE_LABELS,
+  BPCM_EXCEL_TEMPLATE_COLS,
   BPCM_EXCEL_TEMPLATE_SAMPLES,
+  BPCM_FIELD_HEURISTICS,
 } from "./constants/bpcmConstants";
+import { parseBpcmRow, renderBpcmItemXml } from "./parsers";
 import {
   normalizeHeaderKey,
   createSchemaKeyMatcher,
-  parseNumberCell,
-  parseYmdDate,
   readExcelFile,
-  findBestSheetName,
+  pickBestSheetName,
   detectHeaderRow,
-  escapeXml,
   generateUUID,
   buildSignatureBlock,
   buildHsDanhMucDocument,
@@ -22,30 +23,23 @@ import {
   downloadXmlFile,
   mockSendDanhMucToBhxhGateway,
   type GatewaySendResult,
+  DEFAULT_MA_CSKCB,
+  DEFAULT_MA_TINH,
 } from "./shared";
-import { validateBpcmData } from "./validators";
 
 // Re-export để giữ nguyên API công khai cũ
-export { normalizeHeaderKey, xmlToBase64, downloadXmlFile };
+export {
+  normalizeHeaderKey,
+  xmlToBase64,
+  downloadXmlFile,
+  parseBpcmRow,
+  renderBpcmItemXml,
+};
 
-const matchBpcmSchemaKey = createSchemaKeyMatcher(BPCM_SCHEMA_FIELDS, [
-  ["TENKHOA", "TEN_KHOA"],
-  ["TENBANKHAM", "TEN_KHOA"],
-  ["TENBPCM", "TEN_KHOA"],
-  ["MAKHOA", "MA_KHOA"],
-  ["MABANKHAM", "MA_KHOA"],
-  ["MAKP", "MA_KHOA"],
-  ["BANKHAM", "BAN_KHAM"],
-  ["SOBANKHAM", "BAN_KHAM"],
-  [/GIUONGPD|GIUONGKH|GIUONGPHE/, "GIUONG_PD"],
-  [/GIUONGTK|GIUONGTHUC/, "GIUONG_TK"],
-  [/GIUONGHSTC|HSTC/, "GIUONG_HSTC"],
-  [/GIUONGHSCC|HSCC/, "GIUONG_HSCC"],
-  [/TUNGAY|BATDAU/, "TU_NGAY"],
-  [/DENNGAY|KETTHUC/, "DEN_NGAY"],
-  [/MACSKCB|CSKCB/, "MA_CSKCB"],
-  [/^STT$|^TT$|^SOTHUTU$|^NO$/, "STT"],
-]);
+export const matchBpcmSchemaKey = createSchemaKeyMatcher(
+  BPCM_SCHEMA_FIELDS,
+  BPCM_FIELD_HEURISTICS,
+);
 
 export function findMatchingBpcmSchemaKey(colHeader: string): string | null {
   return matchBpcmSchemaKey(colHeader);
@@ -58,7 +52,7 @@ export function parseWorksheet(
   workbook: XLSX.WorkBook,
   sheetName: string,
   fileName: string,
-  defaultMaCskcb: string = "01929",
+  defaultMaCskcb: string = DEFAULT_MA_CSKCB,
 ): ParseExcelResult {
   const worksheet = workbook.Sheets[sheetName];
 
@@ -79,7 +73,6 @@ export function parseWorksheet(
       defval: "",
     });
 
-    // Đếm số cột khớp
     let matchedCount = 0;
     if (rows && rows.length > 0) {
       for (let r = 0; r < Math.min(rows.length, 10); r++) {
@@ -102,7 +95,7 @@ export function parseWorksheet(
     };
   });
 
-  // Tìm dòng tiêu đề (Header row) trong sheet được chọn
+  // Tìm dòng tiêu đề trong sheet được chọn
   const { headerRowIndex: detectedIdx, colMapping } = detectHeaderRow(
     rawRows,
     matchBpcmSchemaKey,
@@ -112,32 +105,28 @@ export function parseWorksheet(
   );
 
   let headerRowIndex = detectedIdx;
-  const matchedColumns: { [schemaKey: string]: number } = {};
-  Object.entries(colMapping).forEach(([colIdx, key]) => {
-    if (matchedColumns[key] === undefined) {
-      matchedColumns[key] = Number(colIdx);
-    }
-  });
+  const effectiveColMapping: { [colIdx: number]: string } = { ...colMapping };
 
   // Fallback nếu không phát hiện dòng tiêu đề
   if (headerRowIndex === -1 && rawRows.length > 0) {
     headerRowIndex = 0;
     rawRows[0].forEach((cellValue, colIndex) => {
       const matchedKey = matchBpcmSchemaKey(String(cellValue ?? ""));
-      if (matchedKey && matchedColumns[matchedKey] === undefined) {
-        matchedColumns[matchedKey] = colIndex;
+      if (
+        matchedKey &&
+        !Object.values(effectiveColMapping).includes(matchedKey)
+      ) {
+        effectiveColMapping[colIndex] = matchedKey;
       }
     });
   }
 
-  const matchedKeys = Object.keys(matchedColumns);
+  const matchedFieldKeys = new Set(Object.values(effectiveColMapping));
   const missingKeys = BPCM_SCHEMA_FIELDS.filter(
-    (f) => f.required && matchedColumns[f.key] === undefined,
+    (f) => f.required && !matchedFieldKeys.has(f.key),
   ).map((f) => f.key);
 
   const items: DmBpcmItem[] = [];
-  let validRowsCount = 0;
-  let invalidRowsCount = 0;
 
   for (let r = headerRowIndex + 1; r < rawRows.length; r++) {
     const row = rawRows[r];
@@ -145,73 +134,34 @@ export function parseWorksheet(
       continue;
     }
 
-    const getValue = (key: string): unknown => {
-      const colIdx = matchedColumns[key];
-      if (colIdx !== undefined && row[colIdx] !== undefined) {
-        return row[colIdx];
-      }
-      return "";
-    };
+    const rowObj: Record<string, unknown> = {};
+    for (const [colIdxStr, key] of Object.entries(effectiveColMapping)) {
+      rowObj[key] = row[Number(colIdxStr)];
+    }
 
-    const stt = parseNumberCell(getValue("STT"), items.length + 1);
-    const maKhoa = String(getValue("MA_KHOA") ?? "").trim();
-    const tenKhoa = String(getValue("TEN_KHOA") ?? "").trim();
-    const banKham = parseNumberCell(getValue("BAN_KHAM"), 0);
-    const giuongPd = parseNumberCell(getValue("GIUONG_PD"), 0);
-    const giuongTk = parseNumberCell(getValue("GIUONG_TK"), 0);
-    const giuongHstc = parseNumberCell(getValue("GIUONG_HSTC"), 0);
-    const giuongHscc = parseNumberCell(getValue("GIUONG_HSCC"), 0);
-    const tuNgay = parseYmdDate(getValue("TU_NGAY"));
-    const denNgay = parseYmdDate(getValue("DEN_NGAY"));
-    const rawDenNgay = getValue("DEN_NGAY");
-    const maCskcb = String(getValue("MA_CSKCB") ?? "").trim() || defaultMaCskcb;
-
-    const errors = validateBpcmData({
-      maKhoa,
-      tenKhoa,
-      tuNgay,
-      rawDenNgay,
-      denNgay,
-      maCskcb
-    });
-
-    const isValid = errors.length === 0;
-    if (isValid) validRowsCount++;
-    else invalidRowsCount++;
-
-    items.push({
-      id: `bpcm-${sheetName}-${r}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      stt,
-      maKhoa,
-      tenKhoa,
-      banKham,
-      giuongPd,
-      giuongTk,
-      giuongHstc,
-      giuongHscc,
-      tuNgay,
-      denNgay,
-      maCskcb,
-      isValid,
-      errors,
-    });
+    const item = parseBpcmRow(rowObj, r, items.length + 1, defaultMaCskcb);
+    if (item) {
+      items.push(item);
+    }
   }
 
+  const validRowsCount = items.filter((i) => i.isValid).length;
   const matchedColumnsMap: { [schemaKey: string]: string } = {};
-  Object.entries(matchedColumns).forEach(([schemaKey, colIdx]) => {
+  for (const [colIdxStr, schemaKey] of Object.entries(effectiveColMapping)) {
+    const colIdx = Number(colIdxStr);
     matchedColumnsMap[schemaKey] = String(
       rawRows[headerRowIndex]?.[colIdx] || schemaKey,
     );
-  });
+  }
 
   return {
     items,
-    matchedFields: matchedKeys,
+    matchedFields: Array.from(matchedFieldKeys),
     missingFields: missingKeys,
     matchedColumnsMap,
     totalRows: items.length,
     validRows: validRowsCount,
-    invalidRows: invalidRowsCount,
+    invalidRows: items.length - validRowsCount,
     fileName,
     sheets: sheetsInfo,
     selectedSheet: sheetName,
@@ -220,28 +170,22 @@ export function parseWorksheet(
 }
 
 /**
- * Đọc file Excel từ máy tính của người dùng (tự động phát hiện sheet có dữ liệu khớp nhất)
+ * Đọc file Excel BPCM từ máy tính của người dùng
  */
 export async function parseBpcmExcelFile(
   file: File,
-  defaultMaCskcb: string = "01929",
+  defaultMaCskcb: string = DEFAULT_MA_CSKCB,
   preferredSheet?: string,
 ): Promise<ParseExcelResult> {
   try {
     const workbook = await readExcelFile(file);
 
-    // Nếu người dùng chọn sheet cụ thể, dùng luôn; ngược lại quét tìm sheet khớp schema nhiều nhất
+    const hintKeywords = ["01", "BPCM", "KHOA", "PHONG", "BANKHAM", "BO_PHAN"];
+
     const targetSheetName =
       preferredSheet && workbook.SheetNames.includes(preferredSheet)
         ? preferredSheet
-        : findBestSheetName(workbook, matchBpcmSchemaKey, 15, [
-            "01",
-            "BPCM",
-            "KHOA",
-            "PHONG",
-            "BANKHAM",
-            "BO_PHAN",
-          ]);
+        : pickBestSheetName(workbook, matchBpcmSchemaKey, hintKeywords);
 
     return parseWorksheet(workbook, targetSheetName, file.name, defaultMaCskcb);
   } catch (err: unknown) {
@@ -251,32 +195,19 @@ export async function parseBpcmExcelFile(
 }
 
 /**
- * Tạo XML chuẩn Mẫu 01/DM 100% TỪ DỮ LIỆU FILE EXCEL ĐÃ IMPORT
- * Tuyệt đối không mock, lấy chính xác từng dòng từ items
+ * Tạo XML chuẩn Mẫu 01/DM
  */
-export function generateBpcmXml(items: DmBpcmItem[]): string {
+export function generateBpcmXml(
+  items: DmBpcmItem[],
+  maCskcb = DEFAULT_MA_CSKCB,
+): string {
   const datasetId = `Id-${generateUUID()}`;
-
   const rowsXml = items
-    .map(
-      (item) => `
-    <DMBOPHANCHUYENMON>
-      <STT>${item.stt}</STT>
-      <MA_KHOA>${escapeXml(item.maKhoa)}</MA_KHOA>
-      <TEN_KHOA>${escapeXml(item.tenKhoa)}</TEN_KHOA>
-      <BAN_KHAM>${item.banKham}</BAN_KHAM>
-      <GIUONG_PD>${item.giuongPd}</GIUONG_PD>
-      <GIUONG_TK>${item.giuongTk}</GIUONG_TK>
-      <GIUONG_HSTC>${item.giuongHstc}</GIUONG_HSTC>
-      <GIUONG_HSCC>${item.giuongHscc}</GIUONG_HSCC>
-      <TU_NGAY>${item.tuNgay || "20260101"}</TU_NGAY>
-      ${item.denNgay ? `<DEN_NGAY>${item.denNgay}</DEN_NGAY>` : "<DEN_NGAY/>"}
-      <MA_CSKCB>${escapeXml(item.maCskcb || "01929")}</MA_CSKCB>
-    </DMBOPHANCHUYENMON>`,
-    )
-    .join("");
+    .map((item) => renderBpcmItemXml(item, maCskcb))
+    .join("\n");
 
-  const containerXml = `  <DANHSACH_DMBOPHANCHUYENMON Id="${datasetId}">${rowsXml}
+  const containerXml = `  <DANHSACH_DMBOPHANCHUYENMON Id="${datasetId}">
+${rowsXml}
   </DANHSACH_DMBOPHANCHUYENMON>`;
   const signature = buildSignatureBlock();
 
@@ -284,27 +215,26 @@ export function generateBpcmXml(items: DmBpcmItem[]): string {
 }
 
 /**
+ * Tải file XML xuống máy tính của người dùng
+ */
+export function downloadBpcmXmlFile(
+  xmlContent: string,
+  fileName: string = `DanhMuc01_BPCMKBCB_${DEFAULT_MA_CSKCB}.xml`,
+): void {
+  downloadXmlFile(xmlContent, fileName);
+}
+
+/**
  * Xuất file Excel mẫu chuẩn Mẫu 01/DM (Loại 70) để người dùng điền
  */
-export function downloadBpcmExcelTemplate() {
+export function downloadBpcmExcelTemplate(): void {
   const ws = XLSX.utils.aoa_to_sheet([
+    BPCM_EXCEL_TEMPLATE_LABELS,
     BPCM_EXCEL_TEMPLATE_HEADERS,
     ...BPCM_EXCEL_TEMPLATE_SAMPLES,
   ]);
 
-  ws["!cols"] = [
-    { wch: 6 }, // STT
-    { wch: 14 }, // MA_KHOA
-    { wch: 38 }, // TEN_KHOA
-    { wch: 12 }, // BAN_KHAM
-    { wch: 14 }, // GIUONG_PD
-    { wch: 14 }, // GIUONG_TK
-    { wch: 14 }, // GIUONG_HSTC
-    { wch: 14 }, // GIUONG_HSCC
-    { wch: 12 }, // TU_NGAY
-    { wch: 12 }, // DEN_NGAY
-    { wch: 12 }, // MA_CSKCB
-  ];
+  ws["!cols"] = BPCM_EXCEL_TEMPLATE_COLS;
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "DM_BPCM_Loai70");
@@ -313,12 +243,11 @@ export function downloadBpcmExcelTemplate() {
 
 /**
  * Gửi dữ liệu lên Cổng tiếp nhận BHXH Việt Nam (mô phỏng sandbox)
- * API thật: https://egw.baohiemxahoi.gov.vn/api/DanhMucGW/GuiDanhMuc01_BPCMKBCB
  */
 export async function sendBpcmToBhxhGateway(
   items: DmBpcmItem[],
-  maCskcb: string = "01929",
-  maTinh: string = "01",
+  maCskcb: string = DEFAULT_MA_CSKCB,
+  maTinh: string = DEFAULT_MA_TINH,
 ): Promise<GatewaySendResult> {
   return mockSendDanhMucToBhxhGateway(
     "DANHMUC01",

@@ -26,7 +26,7 @@ export interface DmThuocItem {
   ttThau?: string; // 18. TT_THAU - Thông tin gói thầu
   tuNgayHd?: string; // 19. TU_NGAY_HD - Ngày hiệu lực HĐ (YYYYMMDD)
   denNgayHd?: string; // 20. DEN_NGAY_HD - Ngày hết hạn HĐ (YYYYMMDD)
-  maCskcb: string; // 21. MA_CSKCB (bắt buộc) - Mã cơ sở KCB (vd: 01929)
+  maCskcb: string; // 21. MA_CSKCB (bắt buộc) - Mã cơ sở KCB (vd: 48001)
   loaiThuoc: number; // 22. LOAI_THUOC (bắt buộc) - 1..10 (1: Tân dược, 2: Chế phẩm, 3: Vị thuốc, 9: Máu, 10: Chế phẩm máu...)
   loaiThau?: number; // 23. LOAI_THAU - 1..7 (1: Thầu tập trung, 2: Thầu riêng...)
   htThau?: number; // 24. HT_THAU - 1..9 (1: Đấu thầu rộng rãi, 3: Chỉ định thầu...)
