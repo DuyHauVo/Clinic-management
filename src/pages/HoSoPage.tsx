@@ -18,6 +18,8 @@ import type {
 } from '../types';
 import { initialHoSoXuatToanData } from '../mock/mockData';
 import { useToast } from '../context/ToastContext';
+import { useModalBehavior } from '../hooks/useModalBehavior';
+import { formatCurrencyVnd, getTodayIsoDate } from '../utils/shared/excelXmlShared';
 import { Hs01TongHopTab } from '../components/ho-so/01-tonghop';
 
 type HoSoTab = '01_tonghop' | '09_xuattoan';
@@ -79,14 +81,14 @@ export const HoSoPage: React.FC<HoSoPageProps> = ({
   // HANDLERS
   // ==========================================
   const handleSaveGiaiTrinh = (id: string, noiDung: string, taiLieu: string[]) => {
-    setHoSoXuatToanList(hoSoXuatToanList.map(item => {
+    setHoSoXuatToanList(prev => prev.map(item => {
       if (item.id === id) {
         return {
           ...item,
           trangThai: 'da_giai_trinh' as TrangThaiGiaiTrinh,
           noiDungGiaiTrinh: noiDung,
           taiLieuDinhKem: taiLieu,
-          ngayGiaiTrinh: new Date().toISOString().slice(0, 10),
+          ngayGiaiTrinh: getTodayIsoDate(),
           nguoiGiaiTrinh: 'BS. CKII. Nguyễn Văn An'
         };
       }
@@ -211,7 +213,7 @@ export const HoSoPage: React.FC<HoSoPageProps> = ({
               <div>
                 <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Tiền Bị Xuất Toán</span>
                 <div className="text-2xl font-black text-rose-700 tracking-tight">
-                  {totalXuatToanAmount.toLocaleString('vi-VN')} đ
+                  {formatCurrencyVnd(totalXuatToanAmount)}
                 </div>
               </div>
             </div>
@@ -235,7 +237,7 @@ export const HoSoPage: React.FC<HoSoPageProps> = ({
               <div>
                 <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Đã Cứu Toán Thành Công</span>
                 <div className="text-2xl font-black text-emerald-700 tracking-tight">
-                  {totalRecoveredAmount.toLocaleString('vi-VN')} đ
+                  {formatCurrencyVnd(totalRecoveredAmount)}
                 </div>
               </div>
             </div>
@@ -356,13 +358,13 @@ export const HoSoPage: React.FC<HoSoPageProps> = ({
                           </div>
                         </td>
                         <td className="py-4 px-4 text-right whitespace-nowrap font-mono font-extrabold text-slate-900">
-                          {item.tongChiKcb.toLocaleString('vi-VN')} đ
+                          {formatCurrencyVnd(item.tongChiKcb)}
                         </td>
                         <td className="py-4 px-4 text-right whitespace-nowrap font-mono font-black text-rose-700">
-                          - {item.tienXuatToan.toLocaleString('vi-VN')} đ
+                          - {formatCurrencyVnd(item.tienXuatToan)}
                           {item.tienChapNhanLai && item.tienChapNhanLai > 0 ? (
                             <div className="text-[11px] text-emerald-700 font-bold mt-0.5">
-                              + Đã cứu: {item.tienChapNhanLai.toLocaleString('vi-VN')} đ
+                              + Đã cứu: {formatCurrencyVnd(item.tienChapNhanLai)}
                             </div>
                           ) : null}
                         </td>
@@ -446,6 +448,7 @@ interface GiaiTrinhModalProps {
 
 const GiaiTrinhXuatToanModal: React.FC<GiaiTrinhModalProps> = ({ item, onClose, onSave }) => {
   const toast = useToast();
+  useModalBehavior(true, onClose);
   const [noiDung, setNoiDung] = useState(item.noiDungGiaiTrinh || '');
   const [selectedDocs, setSelectedDocs] = useState<string[]>(item.taiLieuDinhKem || []);
 
@@ -467,8 +470,16 @@ const GiaiTrinhXuatToanModal: React.FC<GiaiTrinhModalProps> = ({ item, onClose, 
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 ant-modal-anim">
-      <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200">
+    <div
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 ant-modal-anim"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         <form onSubmit={handleFormSubmit} className="flex flex-col h-full">
           <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
             <div className="flex items-center gap-3">
@@ -503,7 +514,7 @@ const GiaiTrinhXuatToanModal: React.FC<GiaiTrinhModalProps> = ({ item, onClose, 
               </div>
               <div className="pt-2 border-t border-rose-200 flex items-center justify-between font-extrabold text-sm">
                 <span>Số tiền bị xuất toán / giảm trừ:</span>
-                <span className="text-rose-700 text-base">- {item.tienXuatToan.toLocaleString('vi-VN')} đ</span>
+                <span className="text-rose-700 text-base">- {formatCurrencyVnd(item.tienXuatToan)}</span>
               </div>
             </div>
 

@@ -3,7 +3,7 @@ import { Cpu, X, Save, Building2, FileText } from 'lucide-react';
 import type { DmTbytThdvItem } from '../../../../types';
 import { useToast } from '../../../../context/ToastContext';
 import { useModalBehavior } from '../../../../hooks/useModalBehavior';
-import { isValidYmdDate } from '../../../../utils/shared/excelXmlShared';
+import { isValidYmdDate, DEFAULT_MA_CSKCB, getTodayYmd } from '../../../../utils/shared/excelXmlShared';
 
 interface TbytThdvEditModalProps {
   isOpen: boolean;
@@ -24,9 +24,9 @@ const getDefaultTbytThdvData = (): DmTbytThdvItem => ({
   soLuuHanh: '',
   hdTu: '',
   hdDen: '',
-  tuNgay: new Date().toISOString().slice(0, 10).replace(/-/g, ''),
+  tuNgay: getTodayYmd(),
   denNgay: '',
-  maCskcb: '01929'
+  maCskcb: DEFAULT_MA_CSKCB
 });
 
 export const TbytThdvEditModal: React.FC<TbytThdvEditModalProps> = ({

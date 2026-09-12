@@ -29,7 +29,7 @@ import { useClipboard } from "../../../hooks";
 
 export const DmDichVuTab: React.FC = () => {
   const toast = useToast();
-  const { isCopied, copy: handleCopyText } = useClipboard();
+  const { isKeyCopied, copy: handleCopyText } = useClipboard();
   const [dichVuItems, setDichVuItems] =
     useState<DmDichVuItem[]>(initialDichVuData);
   const [searchTerm, setSearchTerm] = useState("");
@@ -347,7 +347,7 @@ export const DmDichVuTab: React.FC = () => {
         base64Content={base64Content}
         tab={xmlExportTab}
         onTabChange={setXmlExportTab}
-        isCopied={isCopied}
+        isKeyCopied={isKeyCopied}
         onCopy={handleCopyText}
         onExportXml={handleExportXml}
         onSendApi={handleSendBhxhApi}

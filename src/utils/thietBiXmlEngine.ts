@@ -7,29 +7,28 @@ import type {
 import {
   THIETBI_SCHEMA_FIELDS,
   THIETBI_FIELD_HEURISTICS,
+  THIETBI_EXCEL_TEMPLATE_HEADERS,
+  THIETBI_EXCEL_TEMPLATE_LABELS,
+  THIETBI_EXCEL_TEMPLATE_COLS,
+  THIETBI_EXCEL_TEMPLATE_SAMPLES,
 } from "./constants/thietBiConstants";
+import { parseThietBiRow, renderThietBiItemXml } from "./parsers";
 import {
   createSchemaKeyMatcher,
-  parseNumberCell,
-  parseYmdDate,
   readExcelFile,
-  findBestSheetName,
   pickBestSheetName,
   detectHeaderRow,
-  escapeXml,
   generateUUID,
   buildSignatureBlock,
   buildHsDanhMucDocument,
   xmlToBase64,
   downloadXmlFile,
   mockSendDanhMucToBhxhGateway,
-} from "./shared";
-import { validateThietBiData } from "./validators";
-import {
   DEFAULT_MA_CSKCB,
-} from "./shared/excelXmlShared";
+  DEFAULT_MA_TINH,
+} from "./shared";
 
-export { xmlToBase64, downloadXmlFile };
+export { xmlToBase64, downloadXmlFile, parseThietBiRow, renderThietBiItemXml };
 
 export const matchThietBiSchemaKey = createSchemaKeyMatcher(
   THIETBI_SCHEMA_FIELDS,
@@ -49,7 +48,7 @@ export function parseThietBiWorksheet(
   availableSheets: string[],
   fileName: string,
   workbook?: XLSX.WorkBook,
-  defaultMaCskcb = "01929",
+  defaultMaCskcb = DEFAULT_MA_CSKCB,
 ): ParseThietBiExcelResult {
   const rawRows: unknown[][] = XLSX.utils.sheet_to_json(worksheet, {
     header: 1,
@@ -83,7 +82,7 @@ export function parseThietBiWorksheet(
   );
 
   let effectiveHeaderRow = headerRowIndex;
-  let effectiveColMapping: { [colIdx: number]: string } = { ...colMapping };
+  const effectiveColMapping: { [colIdx: number]: string } = { ...colMapping };
 
   // Fallback: nếu không phát hiện dòng header, dùng dòng 0
   if (effectiveHeaderRow === -1 && rawRows.length > 0) {
@@ -106,8 +105,6 @@ export function parseThietBiWorksheet(
   ).map((f) => f.key);
 
   const items: DmThietBiItem[] = [];
-  let validRows = 0;
-  let invalidRows = 0;
 
   for (let r = effectiveHeaderRow + 1; r < rawRows.length; r++) {
     const row = rawRows[r];
@@ -119,107 +116,23 @@ export function parseThietBiWorksheet(
     }
 
     const rowObj: Record<string, unknown> = {};
-    Object.entries(effectiveColMapping).forEach(([colIdx, key]) => {
-      rowObj[key] = row[Number(colIdx)];
-    });
-
-    const maVatTu = String(rowObj["MA_VAT_TU"] ?? "").trim();
-    const tenVatTu = String(rowObj["TEN_VAT_TU"] ?? "").trim();
-    const nhomVatTu = String(rowObj["NHOM_VAT_TU"] ?? "").trim();
-
-    // Bỏ qua dòng trống không có mã hoặc tên
-    if (!maVatTu && !tenVatTu) {
-      continue;
+    for (const [colIdxStr, key] of Object.entries(effectiveColMapping)) {
+      rowObj[key] = row[Number(colIdxStr)];
     }
 
-    const stt = parseNumberCell(rowObj["STT"], items.length + 1);
-    const maHieu = String(rowObj["MA_HIEU"] ?? "").trim();
-    const soLuuHanh = String(rowObj["SO_LUU_HANH"] ?? "").trim();
-    const tinhnangKt = String(rowObj["TINHNANG_KT"] ?? "").trim();
-    const quyCach = String(rowObj["QUY_CACH"] ?? "").trim();
-    const hangSx = String(rowObj["HANG_SX"] ?? "").trim();
-    const nuocSx = String(rowObj["NUOC_SX"] ?? "").trim();
-    const donViTinh = String(rowObj["DON_VI_TINH"] ?? "Cái").trim() || "Cái";
-    const donGia = parseNumberCell(rowObj["DON_GIA"], 0);
-    const donGiaBh = parseNumberCell(rowObj["DON_GIA_BH"], donGia);
-    const tyleTtBhRaw = parseNumberCell(rowObj["TYLE_TT_BH"], 100);
-    const tyleTtBh = tyleTtBhRaw > 0 ? tyleTtBhRaw : 100;
-    const soLuong = parseNumberCell(rowObj["SO_LUONG"], 1);
-    const dinhMucRaw = parseNumberCell(rowObj["DINH_MUC"], 0);
-    const dinhMuc = dinhMucRaw > 0 ? dinhMucRaw : undefined;
-    const nhaThau = String(rowObj["NHA_THAU"] ?? "").trim();
-    const ttThau = String(rowObj["TT_THAU"] ?? "").trim();
-    const tuNgayHd = parseYmdDate(rowObj["TU_NGAY_HD"]);
-    const denNgayHd = parseYmdDate(rowObj["DEN_NGAY_HD"]);
-    const maCskcb =
-      String(rowObj["MA_CSKCB"] ?? defaultMaCskcb).trim() || defaultMaCskcb;
-    const loaiThau = parseNumberCell(rowObj["LOAI_THAU"], 1);
-    const htThauRaw = parseNumberCell(rowObj["HT_THAU"], 0);
-    const htThau = [3, 4, 5, 7].includes(loaiThau)
-      ? undefined
-      : htThauRaw > 0
-        ? htThauRaw
-        : 1;
-    const maCskcbTbyt = String(rowObj["MA_CSKCB_TBYT"] ?? "").trim();
-    const rawTuNgay = rowObj["TU_NGAY"];
-    const parsedTuNgay = parseYmdDate(rawTuNgay);
-    const todayYmd = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    const tuNgay = parsedTuNgay || todayYmd;
-    const denNgay = parseYmdDate(rowObj["DEN_NGAY"]);
-
-    const errors = validateThietBiData({
-      maVatTu,
-      nhomVatTu,
-      tenVatTu,
-      donViTinh,
-      donGia,
-      donGiaBh,
-      rawTuNgay,
-      parsedTuNgay
-    });
-
-    const isValid = errors.length === 0;
-    if (isValid) validRows++;
-    else invalidRows++;
-
-    items.push({
-      id: `tb-${generateUUID()}`,
-      stt,
-      maVatTu,
-      nhomVatTu,
-      tenVatTu,
-      maHieu: maHieu || undefined,
-      soLuuHanh: soLuuHanh || undefined,
-      tinhnangKt: tinhnangKt || undefined,
-      quyCach: quyCach || undefined,
-      hangSx: hangSx || undefined,
-      nuocSx: nuocSx || undefined,
-      donViTinh,
-      donGia,
-      donGiaBh,
-      tyleTtBh,
-      soLuong,
-      dinhMuc,
-      nhaThau: nhaThau || undefined,
-      ttThau: ttThau || undefined,
-      tuNgayHd: tuNgayHd || undefined,
-      denNgayHd: denNgayHd || undefined,
-      maCskcb,
-      loaiThau: loaiThau >= 1 && loaiThau <= 7 ? loaiThau : 1,
-      htThau,
-      maCskcbTbyt: maCskcbTbyt || undefined,
-      tuNgay,
-      denNgay: denNgay || undefined,
-      isValid,
-      errors,
-    });
+    const item = parseThietBiRow(rowObj, r, items.length + 1, defaultMaCskcb);
+    if (item) {
+      items.push(item);
+    }
   }
+
+  const validRows = items.filter((i) => i.isValid).length;
 
   return {
     items,
     totalRows: items.length,
     validRows,
-    invalidRows,
+    invalidRows: items.length - validRows,
     detectedHeaders,
     missingRequiredFields,
     availableSheets,
@@ -267,13 +180,13 @@ export async function parseThietBiExcelFile(
     defaultMaCskcb,
   );
 
-  // Fallback: nếu sheet chọn ra 0 bản ghi nhưng workbook còn sheet khác thì tự động thử fallback sang findBestSheetName
+  // Fallback: nếu sheet chọn ra 0 bản ghi nhưng workbook còn sheet khác
   if (
     result.items.length === 0 &&
     availableSheets.length > 1 &&
     !selectedSheetName
   ) {
-    const fallbackSheet = findBestSheetName(workbook, matchThietBiSchemaKey);
+    const fallbackSheet = pickBestSheetName(workbook, matchThietBiSchemaKey);
     if (fallbackSheet && fallbackSheet !== sheetName) {
       const fallbackWs = workbook.Sheets[fallbackSheet];
       const fallbackResult = parseThietBiWorksheet(
@@ -298,54 +211,11 @@ export async function parseThietBiExcelFile(
  */
 export function generateThietBiXml(
   items: DmThietBiItem[],
-  maCskcb = "01929",
+  maCskcb = DEFAULT_MA_CSKCB,
 ): string {
   const datasetId = `Id-${generateUUID()}`;
-
   const rowsXml = items
-    .map((item, idx) => {
-      const stt = item.stt || idx + 1;
-      const cskcb = item.maCskcb || maCskcb;
-
-      const tagOrEmpty = (
-        tag: string,
-        val: string | number | undefined | null,
-      ) => {
-        if (val === undefined || val === null || val === "") {
-          return `      <${tag}/>`;
-        }
-        return `      <${tag}>${escapeXml(val)}</${tag}>`;
-      };
-
-      return `    <DM_TBYT>
-      <STT>${stt}</STT>
-      <MA_VAT_TU>${escapeXml(item.maVatTu)}</MA_VAT_TU>
-      <NHOM_VAT_TU>${escapeXml(item.nhomVatTu)}</NHOM_VAT_TU>
-      <TEN_VAT_TU>${escapeXml(item.tenVatTu)}</TEN_VAT_TU>
-${tagOrEmpty("MA_HIEU", item.maHieu)}
-${tagOrEmpty("SO_LUU_HANH", item.soLuuHanh)}
-${tagOrEmpty("TINHNANG_KT", item.tinhnangKt)}
-${tagOrEmpty("QUY_CACH", item.quyCach)}
-${tagOrEmpty("HANG_SX", item.hangSx)}
-${tagOrEmpty("NUOC_SX", item.nuocSx)}
-      <DON_VI_TINH>${escapeXml(item.donViTinh)}</DON_VI_TINH>
-      <DON_GIA>${item.donGia}</DON_GIA>
-      <DON_GIA_BH>${item.donGiaBh}</DON_GIA_BH>
-      <TYLE_TT_BH>${item.tyleTtBh ?? 100}</TYLE_TT_BH>
-      <SO_LUONG>${item.soLuong}</SO_LUONG>
-${tagOrEmpty("DINH_MUC", item.dinhMuc)}
-${tagOrEmpty("NHA_THAU", item.nhaThau)}
-${tagOrEmpty("TT_THAU", item.ttThau)}
-${tagOrEmpty("TU_NGAY_HD", item.tuNgayHd)}
-${tagOrEmpty("DEN_NGAY_HD", item.denNgayHd)}
-      <MA_CSKCB>${escapeXml(cskcb)}</MA_CSKCB>
-      <LOAI_THAU>${item.loaiThau ?? 1}</LOAI_THAU>
-${tagOrEmpty("HT_THAU", [3, 4, 5, 7].includes(item.loaiThau) ? "" : item.htThau)}
-${tagOrEmpty("MA_CSKCB_TBYT", item.maCskcbTbyt)}
-      <TU_NGAY>${escapeXml(item.tuNgay)}</TU_NGAY>
-${tagOrEmpty("DEN_NGAY", item.denNgay)}
-    </DM_TBYT>`;
-    })
+    .map((item) => renderThietBiItemXml(item, maCskcb))
     .join("\n");
 
   const datasetContainerXml = `  <DSACH_TBYT Id="${datasetId}">
@@ -361,7 +231,7 @@ ${rowsXml}
  */
 export function downloadThietBiXmlFile(
   xmlContent: string,
-  fileName = "Mau_04_DM_ThietBiYTe.xml",
+  fileName = `Mau_04_DM_ThietBiYTe_${DEFAULT_MA_CSKCB}.xml`,
 ): void {
   downloadXmlFile(xmlContent, fileName);
 }
@@ -370,38 +240,14 @@ export function downloadThietBiXmlFile(
  * Xuất mẫu Excel chuẩn cho Danh mục Thiết bị y tế Mẫu 04/DM
  */
 export function downloadThietBiExcelTemplate(): void {
-  const vnLabels = THIETBI_SCHEMA_FIELDS.map((f) => f.label);
-  const headers = THIETBI_SCHEMA_FIELDS.map((f) => f.key);
-  const sampleRow = [
-    1,
-    "N04.01.001",
-    "Kim tiêm",
-    "Kim dùng cho buồng tiêm 20G x 25mm",
-    "MH-KT-2024",
-    "2400012/ĐKLH/BYT",
-    "Thép không gỉ y tế 304, đầu vát Huber",
-    "1 bộ/túi",
-    "B. Braun Medical AG",
-    "Đức",
-    "Cái",
-    15000,
-    15000,
-    80,
-    770,
-    1,
-    "Công ty CP Dược & TBYT TW",
-    "456/QĐ-BV;G1;N1;2024",
-    "20250101",
-    "20261231",
-    "01929",
-    1,
-    1,
-    "",
-    "20250101",
-    "",
-  ];
+  const ws = XLSX.utils.aoa_to_sheet([
+    THIETBI_EXCEL_TEMPLATE_LABELS,
+    THIETBI_EXCEL_TEMPLATE_HEADERS,
+    ...THIETBI_EXCEL_TEMPLATE_SAMPLES,
+  ]);
 
-  const ws = XLSX.utils.aoa_to_sheet([vnLabels, headers, sampleRow]);
+  ws["!cols"] = THIETBI_EXCEL_TEMPLATE_COLS;
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "04_DM_TBYT");
   XLSX.writeFile(wb, "Mau_04_DM_ThietBiYTe_Template.xlsx");
@@ -412,8 +258,8 @@ export function downloadThietBiExcelTemplate(): void {
  */
 export async function sendThietBiToBhxhGateway(
   items: DmThietBiItem[],
-  maCskcb = "01929",
-  maTinh = "01",
+  maCskcb = DEFAULT_MA_CSKCB,
+  maTinh = DEFAULT_MA_TINH,
 ): Promise<SendThietBiGatewayResult> {
   return mockSendDanhMucToBhxhGateway(
     "11",

@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { FileCode, Send, Copy, Check, Download, AlertTriangle } from 'lucide-react';
-import { useToast } from '../../../context/ToastContext';
+import { DEFAULT_MA_CSKCB, DEFAULT_MA_TINH } from '../../../utils/shared/excelXmlShared';
+import { useClipboard } from '../../../hooks/useClipboard';
+import { useModalBehavior } from '../../../hooks/useModalBehavior';
 
 interface DanhMucXmlModalProps {
   isOpen: boolean;
@@ -15,8 +17,8 @@ interface DanhMucXmlModalProps {
   loaiHsCode?: string;
   tab: 'xml' | 'base64' | 'api';
   onTabChange: (tab: 'xml' | 'base64' | 'api') => void;
-  isCopied?: boolean;
-  onCopy?: (text: string) => void;
+  isKeyCopied?: (key: string) => boolean;
+  onCopy?: (text: string, message?: string, key?: string) => void;
   onExportXml: () => void;
   onSendApi: () => void;
   isSendingApi: boolean;
@@ -36,33 +38,32 @@ export const DanhMucXmlModal: React.FC<DanhMucXmlModalProps> = ({
   loaiHsCode = '70',
   tab,
   onTabChange,
-  isCopied: externalIsCopied,
+  isKeyCopied: externalIsKeyCopied,
   onCopy: externalOnCopy,
   onExportXml,
   onSendApi,
   isSendingApi,
   apiResponse
 }) => {
-  const toast = useToast();
-  const [internalIsCopied, setInternalIsCopied] = useState(false);
+  const { isKeyCopied: internalIsKeyCopied, copy: internalCopy } = useClipboard();
+  useModalBehavior(isOpen, onClose);
 
-  const isCopied = externalIsCopied !== undefined ? externalIsCopied : internalIsCopied;
+  const isKeyCopied = externalIsKeyCopied || internalIsKeyCopied;
+  const handleCopy = externalOnCopy || internalCopy;
 
-  const handleCopy = (text: string) => {
-    if (externalOnCopy) {
-      externalOnCopy(text);
-      return;
-    }
-    navigator.clipboard.writeText(text);
-    setInternalIsCopied(true);
-    toast.success('Đã sao chép vào bộ nhớ đệm!', 'Sao Chép Thành Công');
-    setTimeout(() => setInternalIsCopied(false), 2000);
-  };
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 ant-modal-anim">
-      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200">
+    <div
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 ant-modal-anim"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Modal Header */}
         <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
           <div className="flex items-center gap-3">
@@ -156,11 +157,11 @@ export const DanhMucXmlModal: React.FC<DanhMucXmlModalProps> = ({
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => handleCopy(xmlContent)}
+                        onClick={() => handleCopy(xmlContent, 'Đã sao chép nội dung XML vào bộ nhớ đệm!', 'xml')}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all"
                       >
-                        {isCopied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                        {isCopied ? 'Đã chép' : 'Sao chép XML'}
+                        {isKeyCopied('xml') ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                        {isKeyCopied('xml') ? 'Đã chép' : 'Sao chép XML'}
                       </button>
                       <button
                         type="button"
@@ -187,11 +188,11 @@ export const DanhMucXmlModal: React.FC<DanhMucXmlModalProps> = ({
                     </span>
                     <button
                       type="button"
-                      onClick={() => handleCopy(base64Content)}
+                      onClick={() => handleCopy(base64Content, 'Đã sao chép chuỗi Base64 vào bộ nhớ đệm!', 'base64')}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all"
                     >
-                      {isCopied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                      {isCopied ? 'Đã chép' : 'Sao chép Base64'}
+                      {isKeyCopied('base64') ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                      {isKeyCopied('base64') ? 'Đã chép' : 'Sao chép Base64'}
                     </button>
                   </div>
                   <textarea
@@ -212,7 +213,7 @@ export const DanhMucXmlModal: React.FC<DanhMucXmlModalProps> = ({
                     </div>
                     <div>• <b>URL:</b> <code className="bg-white px-2 py-0.5 rounded-md border border-blue-200 font-mono">{apiEndpoint}</code></div>
                     <div>• <b>Method:</b> POST • <b>Content-Type:</b> application/x-www-form-urlencoded; charset=utf-8</div>
-                    <div>• <b>Body Params:</b> username, loaiHs={loaiHsCode}, maTinh=01, maCskcb=01929, fileHsBase64</div>
+                    <div>• <b>Body Params:</b> username, loaiHs={loaiHsCode}, maTinh={DEFAULT_MA_TINH}, maCskcb={DEFAULT_MA_CSKCB}, fileHsBase64</div>
                   </div>
 
                   {/* cURL Example Box */}
@@ -223,7 +224,7 @@ export const DanhMucXmlModal: React.FC<DanhMucXmlModalProps> = ({
                         type="button"
                         onClick={() =>
                           handleCopy(
-                            `curl --location '${apiEndpoint}' \\\n--header 'accessToken: {access_token}' \\\n--header 'tokenId: {token_id}' \\\n--header 'passwordHash: {md5_hash}' \\\n--header 'Content-Type: application/x-www-form-urlencoded' \\\n--data-urlencode 'username=01929_BV' \\\n--data-urlencode 'loaiHs=${loaiHsCode}' \\\n--data-urlencode 'maTinh=01' \\\n--data-urlencode 'maCskcb=01929' \\\n--data-urlencode 'fileHsBase64=${base64Content.substring(0, 50)}...'`
+                            `curl --location '${apiEndpoint}' \\\n--header 'accessToken: {access_token}' \\\n--header 'tokenId: {token_id}' \\\n--header 'passwordHash: {md5_hash}' \\\n--header 'Content-Type: application/x-www-form-urlencoded' \\\n--data-urlencode 'username=${DEFAULT_MA_CSKCB}_BV' \\\n--data-urlencode 'loaiHs=${loaiHsCode}' \\\n--data-urlencode 'maTinh=${DEFAULT_MA_TINH}' \\\n--data-urlencode 'maCskcb=${DEFAULT_MA_CSKCB}' \\\n--data-urlencode 'fileHsBase64=${base64Content.substring(0, 50)}...'`
                           )
                         }
                         className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
@@ -237,10 +238,10 @@ export const DanhMucXmlModal: React.FC<DanhMucXmlModalProps> = ({
 --header 'tokenId: {token_id}' \\
 --header 'passwordHash: {md5_hash}' \\
 --header 'Content-Type: application/x-www-form-urlencoded' \\
---data-urlencode 'username=01929_BV' \\
+--data-urlencode 'username=${DEFAULT_MA_CSKCB}_BV' \\
 --data-urlencode 'loaiHs=${loaiHsCode}' \\
---data-urlencode 'maTinh=01' \\
---data-urlencode 'maCskcb=01929' \\
+--data-urlencode 'maTinh=${DEFAULT_MA_TINH}' \\
+--data-urlencode 'maCskcb=${DEFAULT_MA_CSKCB}' \\
 --data-urlencode 'fileHsBase64=${base64Content.substring(0, 40)}...'`}
                     </pre>
                   </div>

@@ -1,4 +1,5 @@
-import type { TbytThdvSchemaField } from '../types/tbyttHdvTypes';
+import type { TbytThdvSchemaField } from "../types/tbyttHdvTypes";
+import { getCurrentYearStartYmd } from "../shared/excelXmlShared";
 
 export const TBYTTHDV_SCHEMA_FIELDS: TbytThdvSchemaField[] = [
   {
@@ -163,7 +164,7 @@ export const TBYTTHDV_SCHEMA_FIELDS: TbytThdvSchemaField[] = [
       'MA_CSKCB', 'MACSKCB', 'MÃ CSKCB', 'MÃ CƠ SỞ KCB', 'MA_CO_SO_KCB',
       'MÃ CƠ SỞ KHÁM CHỮA BỆNH', 'MÃ BỆNH VIỆN', 'MA_BV', 'MABV'
     ],
-    example: '01929'
+    example: '48001'
   }
 ];
 
@@ -182,5 +183,76 @@ export const TBYTTHDV_FIELD_HEURISTICS: Array<[RegExp | string, string]> = [
   [/tu[_\s]?ngay|ngay[_\s]?bat[_\s]?dau|from[_\s]?date|start[_\s]?date/i, 'TU_NGAY'],
   [/den[_\s]?ngay|ngay[_\s]?ket[_\s]?thuc|to[_\s]?date|end[_\s]?date/i, 'DEN_NGAY'],
   [/ma[_\s]?cskcb|ma[_\s]?co[_\s]?so|ma[_\s]?bv|hospital[_\s]?code/i, 'MA_CSKCB']
+];
+
+export const TBYTTHDV_EXCEL_TEMPLATE_HEADERS = TBYTTHDV_SCHEMA_FIELDS.map((f) => f.key);
+export const TBYTTHDV_EXCEL_TEMPLATE_LABELS = TBYTTHDV_SCHEMA_FIELDS.map((f) => f.label);
+
+export const TBYTTHDV_EXCEL_TEMPLATE_COLS = [
+  { wch: 6 }, // STT
+  { wch: 38 }, // TEN_TB
+  { wch: 18 }, // KY_HIEU
+  { wch: 28 }, // CONGTY_SX
+  { wch: 16 }, // NUOC_SX
+  { wch: 10 }, // NAM_SX
+  { wch: 10 }, // NAM_SD
+  { wch: 18 }, // MA_MAY
+  { wch: 24 }, // SO_LUU_HANH
+  { wch: 12 }, // HD_TU
+  { wch: 12 }, // HD_DEN
+  { wch: 12 }, // TU_NGAY
+  { wch: 12 }, // DEN_NGAY
+  { wch: 12 }, // MA_CSKCB
+];
+
+export const TBYTTHDV_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
+  [
+    1,
+    "Máy thở đa năng kèm khí nén",
+    "Servo-air",
+    "Maquet Critical Care AB",
+    "Thụy Điển",
+    2020,
+    2021,
+    "48001.01.001",
+    "2100123/ĐKLH/BYT-TB",
+    "",
+    "",
+    getCurrentYearStartYmd(),
+    "",
+    "48001",
+  ],
+  [
+    2,
+    "Máy chụp X-quang kỹ thuật số cao tần",
+    "FDR Smart X",
+    "Fujifilm Corporation",
+    "Nhật Bản",
+    2019,
+    2020,
+    "48001.02.005",
+    "1900456/ĐKLH/BYT-TB",
+    "20220101",
+    "20271231",
+    "20220101",
+    "20271231",
+    "48001",
+  ],
+  [
+    3,
+    "Máy siêu âm màu 4 đầu dò Doppler màu 4D",
+    "Voluson E10",
+    "GE Healthcare Austria GmbH & Co OG",
+    "Áo",
+    2021,
+    2022,
+    "48001.03.012",
+    "2200789/ĐKLH/BYT-TB",
+    "",
+    "",
+    getCurrentYearStartYmd(),
+    "",
+    "48001",
+  ],
 ];
 

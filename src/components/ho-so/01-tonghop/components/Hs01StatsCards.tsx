@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileSpreadsheet, DollarSign, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import type { Hs01TongHopItem } from '../services/hs01TongHopService';
+import { formatCurrencyVnd } from '../../../../utils/shared/excelXmlShared';
 
 interface Hs01StatsCardsProps {
   items: Hs01TongHopItem[];
@@ -13,10 +14,6 @@ export const Hs01StatsCards: React.FC<Hs01StatsCardsProps> = ({ items }) => {
   const totalBncct = items.reduce((sum, i) => sum + (i.tBncct || 0), 0);
   const totalBntt = items.reduce((sum, i) => sum + (i.tBntt || 0), 0);
   const validCount = items.filter(i => i.isValid !== false).length;
-
-  const formatVnd = (n: number) => {
-    return new Intl.NumberFormat('vi-VN').format(n) + ' đ';
-  };
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -46,7 +43,7 @@ export const Hs01StatsCards: React.FC<Hs01StatsCardsProps> = ({ items }) => {
             Tổng Chi Phí KBCB (BV)
           </span>
           <div className="text-2xl font-black text-blue-700 tracking-tight mt-0.5">
-            {formatVnd(totalBv)}
+            {formatCurrencyVnd(totalBv)}
           </div>
         </div>
       </div>
@@ -61,7 +58,7 @@ export const Hs01StatsCards: React.FC<Hs01StatsCardsProps> = ({ items }) => {
             BHYT Thanh Toán (T_BHTT)
           </span>
           <div className="text-2xl font-black text-emerald-700 tracking-tight mt-0.5">
-            {formatVnd(totalBhtt)}
+            {formatCurrencyVnd(totalBhtt)}
           </div>
         </div>
       </div>
@@ -78,7 +75,7 @@ export const Hs01StatsCards: React.FC<Hs01StatsCardsProps> = ({ items }) => {
           <div className="text-2xl font-black text-purple-700 tracking-tight mt-0.5">
             {validCount}/{totalCount}{' '}
             <span className="text-xs font-bold text-slate-500">
-              (NB: {formatVnd(totalBncct + totalBntt)})
+              (NB: {formatCurrencyVnd(totalBncct + totalBntt)})
             </span>
           </div>
         </div>

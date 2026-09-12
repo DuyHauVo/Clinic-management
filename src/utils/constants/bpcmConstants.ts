@@ -1,4 +1,5 @@
 import type { BpcmSchemaField } from '../types/bpcmTypes';
+import { getCurrentYearStartYmd } from '../shared/excelXmlShared';
 
 export const BPCM_SCHEMA_FIELDS: BpcmSchemaField[] = [
   {
@@ -122,7 +123,7 @@ export const BPCM_SCHEMA_FIELDS: BpcmSchemaField[] = [
     label: 'Mã CSKCB',
     type: 'string',
     required: true,
-    desc: 'Mã cơ sở 5 ký tự (vd: 01929, 79012)',
+    desc: 'Mã cơ sở 5 ký tự (vd: 48001, 79012)',
     aliases: [
       'MA_CSKCB', 'MACSKCB', 'MÃ CSKCB', 'MÃ CƠ SỞ KCB', 'MA_CƠ SỞ KCB', 'MA_CO_SO_KCB', 'MA_CS',
       'MÃ CS', 'MA CS', 'CƠ SỞ KCB', 'MA_COSO_KCB', 'MÃ BỆNH VIỆN', 'MA_BV', 'MA BV', 'MABV',
@@ -146,10 +147,46 @@ export const BPCM_EXCEL_TEMPLATE_HEADERS: string[] = [
   'MA_CSKCB'
 ];
 
-export const BPCM_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
-  [1, 'K01', 'Khoa Khám Bệnh Đa Khoa', 8, 0, 0, 0, 0, '20260101', '', '01929'],
-  [2, 'K02', 'Khoa Hồi Sức Cấp Cứu - Chống Độc', 2, 25, 28, 10, 15, '20260101', '', '01929'],
-  [3, 'K0809', 'Khoa Nội Tiết - Dị Ứng Miễn Dịch', 4, 40, 45, 0, 0, '20260101', '', '01929'],
-  [4, 'K02.D35', 'Đơn nguyên Thận Nhân Tạo', 2, 15, 15, 5, 0, '20260101', '', '01929'],
-  [5, 'K05', 'Khoa Nhi & Sơ Sinh', 3, 35, 35, 4, 6, '20260101', '', '01929'],
+export const BPCM_EXCEL_TEMPLATE_LABELS = BPCM_SCHEMA_FIELDS.map((f) => f.label);
+
+export const BPCM_EXCEL_TEMPLATE_COLS = [
+  { wch: 6 }, // STT
+  { wch: 15 }, // MA_KHOA
+  { wch: 30 }, // TEN_KHOA
+  { wch: 12 }, // BAN_KHAM
+  { wch: 14 }, // GIUONG_PD
+  { wch: 14 }, // GIUONG_TK
+  { wch: 14 }, // GIUONG_HSTC
+  { wch: 14 }, // GIUONG_HSCC
+  { wch: 12 }, // TU_NGAY
+  { wch: 12 }, // DEN_NGAY
+  { wch: 12 }, // MA_CSKCB
 ];
+
+export const BPCM_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
+  [1, 'K01', 'Khoa Khám Bệnh Đa Khoa', 8, 0, 0, 0, 0, getCurrentYearStartYmd(), '', '48001'],
+  [2, 'K02', 'Khoa Hồi Sức Cấp Cứu - Chống Độc', 2, 25, 28, 10, 15, getCurrentYearStartYmd(), '', '48001'],
+  [3, 'K0809', 'Khoa Nội Tiết - Dị Ứng Miễn Dịch', 4, 40, 45, 0, 0, getCurrentYearStartYmd(), '', '48001'],
+  [4, 'K02.D35', 'Đơn nguyên Thận Nhân Tạo', 2, 15, 15, 5, 0, getCurrentYearStartYmd(), '', '48001'],
+  [5, 'K05', 'Khoa Nhi & Sơ Sinh', 3, 35, 35, 4, 6, getCurrentYearStartYmd(), '', '48001'],
+];
+
+export const BPCM_FIELD_HEURISTICS: Array<[RegExp | string, string]> = [
+  ['TENKHOA', 'TEN_KHOA'],
+  ['TENBANKHAM', 'TEN_KHOA'],
+  ['TENBPCM', 'TEN_KHOA'],
+  ['MAKHOA', 'MA_KHOA'],
+  ['MABANKHAM', 'MA_KHOA'],
+  ['MAKP', 'MA_KHOA'],
+  ['BANKHAM', 'BAN_KHAM'],
+  ['SOBANKHAM', 'BAN_KHAM'],
+  [/GIUONGPD|GIUONGKH|GIUONGPHE/, 'GIUONG_PD'],
+  [/GIUONGTK|GIUONGTHUC/, 'GIUONG_TK'],
+  [/GIUONGHSTC|HSTC/, 'GIUONG_HSTC'],
+  [/GIUONGHSCC|HSCC/, 'GIUONG_HSCC'],
+  [/TUNGAY|BATDAU/, 'TU_NGAY'],
+  [/DENNGAY|KETTHUC/, 'DEN_NGAY'],
+  [/MACSKCB|CSKCB/, 'MA_CSKCB'],
+  [/^STT$|^TT$|^SOTHUTU$|^NO$/, 'STT'],
+];
+

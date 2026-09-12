@@ -26,7 +26,7 @@ import { useClipboard } from '../../../hooks';
 
 export const DmThietBiTab: React.FC = () => {
   const toast = useToast();
-  const { isCopied, copy: handleCopyText } = useClipboard();
+  const { isKeyCopied, copy: handleCopyText } = useClipboard();
   const [thietBiItems, setThietBiItems] = useState<DmThietBiItem[]>(initialThietBiData);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoadingFile, setIsLoadingFile] = useState(false);
@@ -263,7 +263,7 @@ export const DmThietBiTab: React.FC = () => {
         base64Content={base64Content}
         tab={xmlExportTab}
         onTabChange={setXmlExportTab}
-        isCopied={isCopied}
+        isKeyCopied={isKeyCopied}
         onCopy={handleCopyText}
         onExportXml={handleExportXml}
         onSendApi={handleSendBhxhApi}

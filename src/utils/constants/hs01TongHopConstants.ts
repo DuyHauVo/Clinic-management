@@ -1,4 +1,5 @@
 import type { SharedSchemaField } from '../shared/excelXmlShared';
+import { DEFAULT_MA_CSKCB } from '../shared/excelXmlShared';
 
 /**
  * 20 trường thông tin chuẩn của Mẫu 01/BH (XML <HSTH01BH> - Loại HS 5)
@@ -145,7 +146,7 @@ export const HS01_SCHEMA_FIELDS: SharedSchemaField[] = [
     label: 'Mã Cơ Sở KCB',
     type: 'string',
     required: true,
-    desc: 'Ghi mã cơ sở KBCB nơi người bệnh đến khám bệnh, điều trị (5 ký tự, vd: 01929).',
+    desc: 'Ghi mã cơ sở KBCB nơi người bệnh đến khám bệnh, điều trị (5 ký tự, vd: 48001).',
     aliases: ['MA_CSKCB', 'MA_CO_SO_KCB', 'MA_CS', 'MA_BV', 'FACILITY_CODE']
   },
   {
@@ -210,6 +211,101 @@ export const HS01_FIELD_HEURISTICS: Array<[RegExp | string, string]> = [
   [/^(THANGQT|THANGQUYETTOAN|THANG)/, 'THANG_QT'],
   // 20. STT
   [/^(STT|SOTHUTU|SOTT)/, 'STT']
+];
+
+export const HS01_EXCEL_TEMPLATE_HEADERS = HS01_SCHEMA_FIELDS.map((f) => f.key);
+export const HS01_EXCEL_TEMPLATE_LABELS = HS01_SCHEMA_FIELDS.map((f) => f.label);
+
+export const HS01_EXCEL_TEMPLATE_COLS = [
+  { wch: 6 },  // STT
+  { wch: 22 }, // HO_TEN
+  { wch: 16 }, // NGAY_SINH
+  { wch: 10 }, // GIOI_TINH
+  { wch: 18 }, // MA_THE_BHYT
+  { wch: 14 }, // MA_BENH_CHINH
+  { wch: 16 }, // NGAY_VAO
+  { wch: 16 }, // NGAY_VAO_NOI_TRU
+  { wch: 16 }, // NGAY_RA
+  { wch: 12 }, // SO_NGAY_DTRI
+  { wch: 12 }, // MA_LOAI_KCB
+  { wch: 16 }, // T_TONGCHI_BV
+  { wch: 16 }, // T_TONGCHI_BH
+  { wch: 16 }, // T_BHTT
+  { wch: 16 }, // T_BNCCT
+  { wch: 16 }, // T_BNTT
+  { wch: 16 }, // T_NGUONKHAC
+  { wch: 12 }, // MA_CSKCB
+  { wch: 10 }, // NAM_QT
+  { wch: 10 }  // THANG_QT
+];
+
+export const HS01_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
+  [
+    1,
+    'Nguyễn Văn An',
+    '198505140000',
+    '1',
+    'DN4791234567890',
+    'I10',
+    '202602050815',
+    '',
+    '202602051045',
+    1,
+    '01',
+    845000.0,
+    845000.0,
+    676000.0,
+    169000.0,
+    0.0,
+    0.0,
+    DEFAULT_MA_CSKCB,
+    2026,
+    '02'
+  ],
+  [
+    2,
+    'Trần Thị Mai',
+    '199209200000',
+    '2',
+    'GD4799876543210',
+    'K29.0',
+    '202602060900',
+    '',
+    '202602061130',
+    1,
+    '01',
+    620000.0,
+    620000.0,
+    496000.0,
+    124000.0,
+    0.0,
+    0.0,
+    DEFAULT_MA_CSKCB,
+    2026,
+    '02'
+  ],
+  [
+    3,
+    'Lê Hoàng Long',
+    '197003150000',
+    '1',
+    'HT2791122334455',
+    'E11.9',
+    '202602070800',
+    '',
+    '202602071000',
+    1,
+    '07',
+    1250000.0,
+    1200000.0,
+    1200000.0,
+    0.0,
+    50000.0,
+    0.0,
+    DEFAULT_MA_CSKCB,
+    2026,
+    '02'
+  ]
 ];
 
 /**

@@ -16,7 +16,7 @@ export interface DmBpcmItem {
   giuongHscc: number;
   tuNgay: string; // YYYYMMDD
   denNgay?: string; // YYYYMMDD hoặc để trống
-  maCskcb: string; // 5 ký tự (vd: 01929, 79012)
+  maCskcb: string; // 5 ký tự (vd: 48001, 79012)
   isValid?: boolean;
   errors?: string[];
 }

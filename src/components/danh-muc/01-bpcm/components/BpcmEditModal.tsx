@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Building2 } from 'lucide-react';
 import type { DmBpcmItem } from '../../../../types';
 import { useToast } from '../../../../context/ToastContext';
+import { DEFAULT_MA_CSKCB } from '../../../../utils/shared/excelXmlShared';
+import { useModalBehavior } from '../../../../hooks/useModalBehavior';
 
 interface BpcmEditModalProps {
   isOpen: boolean;
@@ -21,11 +23,36 @@ const getDefaultBpcmData = (): DmBpcmItem => ({
   giuongHscc: 0,
   tuNgay: '',
   denNgay: '',
-  maCskcb: '01929'
+  maCskcb: DEFAULT_MA_CSKCB
 });
 
 export const BpcmEditModal: React.FC<BpcmEditModalProps> = ({
   isOpen,
+  onClose,
+  onSave,
+  initialData
+}) => {
+  useModalBehavior(isOpen, onClose);
+
+  if (!isOpen) return null;
+
+  return (
+    <BpcmEditModalContent
+      key={initialData?.id ?? 'new'}
+      onClose={onClose}
+      onSave={onSave}
+      initialData={initialData}
+    />
+  );
+};
+
+interface BpcmEditModalContentProps {
+  onClose: () => void;
+  onSave: (item: DmBpcmItem) => void;
+  initialData: DmBpcmItem | null;
+}
+
+const BpcmEditModalContent: React.FC<BpcmEditModalContentProps> = ({
   onClose,
   onSave,
   initialData
@@ -35,18 +62,6 @@ export const BpcmEditModal: React.FC<BpcmEditModalProps> = ({
     if (initialData) return { ...initialData };
     return getDefaultBpcmData();
   });
-
-  useEffect(() => {
-    if (isOpen) {
-      if (initialData) {
-        setFormData({ ...initialData });
-      } else {
-        setFormData(getDefaultBpcmData());
-      }
-    }
-  }, [isOpen, initialData]);
-
-  if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,8 +77,16 @@ export const BpcmEditModal: React.FC<BpcmEditModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 ant-modal-anim">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200">
+    <div
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 ant-modal-anim"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
           <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
             <div className="flex items-center gap-3">

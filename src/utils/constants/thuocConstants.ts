@@ -1,3 +1,5 @@
+import { getCurrentYearStartYmd } from '../shared/excelXmlShared';
+
 export interface ThuocSchemaField {
   key: string;
   label: string;
@@ -158,7 +160,7 @@ export const THUOC_SCHEMA_FIELDS: ThuocSchemaField[] = [
     label: 'Mã Cơ Sở KCB (*)',
     required: true,
     aliases: ['MA CSKCB', 'MA_CSKCB', 'MACSKCB', 'MA CO SO KCB', 'MA BENH VIEN', 'MA PHONG KHAM'],
-    desc: 'Mã 5 ký tự của CSKCB theo chuẩn Bộ Y Tế (vd: 01929)'
+    desc: 'Mã 5 ký tự của CSKCB theo chuẩn Bộ Y Tế (vd: 48001)'
   },
   {
     key: 'LOAI_THUOC',
@@ -277,6 +279,46 @@ export const THUOC_SCHEMA_FIELDS: ThuocSchemaField[] = [
 export const THUOC_EXCEL_TEMPLATE_HEADERS = THUOC_SCHEMA_FIELDS.map((f) => f.key);
 export const THUOC_EXCEL_TEMPLATE_LABELS = THUOC_SCHEMA_FIELDS.map((f) => f.label);
 
+export const THUOC_EXCEL_TEMPLATE_COLS = [
+  { wch: 6 }, // STT
+  { wch: 16 }, // MA_THUOC
+  { wch: 28 }, // TEN_HOAT_CHAT
+  { wch: 32 }, // TEN_THUOC
+  { wch: 12 }, // DON_VI_TINH
+  { wch: 18 }, // HAM_LUONG
+  { wch: 14 }, // DUONG_DUNG
+  { wch: 14 }, // MA_DUONG_DUNG
+  { wch: 20 }, // DANG_BAO_CHE
+  { wch: 18 }, // SO_DANG_KY
+  { wch: 12 }, // SO_LUONG
+  { wch: 14 }, // DON_GIA
+  { wch: 14 }, // DON_GIA_BH
+  { wch: 22 }, // QUY_CACH
+  { wch: 28 }, // NHA_SX
+  { wch: 16 }, // NUOC_SX
+  { wch: 28 }, // NHA_THAU
+  { wch: 18 }, // TT_THAU
+  { wch: 12 }, // TU_NGAY_HD
+  { wch: 12 }, // DEN_NGAY_HD
+  { wch: 12 }, // MA_CSKCB
+  { wch: 12 }, // LOAI_THUOC
+  { wch: 12 }, // LOAI_THAU
+  { wch: 12 }, // HT_THAU
+  { wch: 12 }, // MA_DVKT
+  { wch: 12 }, // TCCL
+  { wch: 12 }, // BO_PHAN_VT
+  { wch: 18 }, // TEN_KHOA_HOC
+  { wch: 16 }, // NGUON_GOC
+  { wch: 16 }, // PP_CHEBIEN
+  { wch: 14 }, // MA_DL_NHAP
+  { wch: 14 }, // MA_DL_CB
+  { wch: 12 }, // TLHH_CB
+  { wch: 12 }, // TLHH_BQ
+  { wch: 16 }, // MA_CSKCB_THUOC
+  { wch: 12 }, // TU_NGAY
+  { wch: 12 }, // DEN_NGAY
+];
+
 export const THUOC_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
   [
     1,
@@ -296,10 +338,10 @@ export const THUOC_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
     'Công ty TNHH Sanofi-Aventis Việt Nam',
     'Việt Nam',
     'Công ty CP Dược liệu TW 2',
-    '01/2026/QĐ-SYT',
-    '20260101',
-    '20261231',
-    '01929',
+    `01/${new Date().getFullYear()}/QĐ-SYT`,
+    getCurrentYearStartYmd(),
+    `${new Date().getFullYear()}1231`,
+    '48001',
     1,
     1,
     1,
@@ -314,7 +356,7 @@ export const THUOC_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
     0,
     0,
     '',
-    '20260101',
+    getCurrentYearStartYmd(),
     ''
   ],
   [
@@ -335,10 +377,10 @@ export const THUOC_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
     'Glaxo Operations UK Limited',
     'Vương Quốc Anh',
     'Công ty TNHH Dược phẩm Mega Lifesciences',
-    '01/2026/QĐ-SYT',
-    '20260101',
-    '20261231',
-    '01929',
+    `01/${new Date().getFullYear()}/QĐ-SYT`,
+    getCurrentYearStartYmd(),
+    `${new Date().getFullYear()}1231`,
+    '48001',
     1,
     1,
     1,
@@ -353,7 +395,7 @@ export const THUOC_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
     0,
     0,
     '',
-    '20260101',
+    getCurrentYearStartYmd(),
     ''
   ],
   [
@@ -374,10 +416,10 @@ export const THUOC_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
     'GlaxoSmithKline Pharmaceuticals S.A.',
     'Ba Lan',
     'Công ty TNHH DKSH Việt Nam',
-    '01/2026/QĐ-SYT',
-    '20260101',
-    '20261231',
-    '01929',
+    `01/${new Date().getFullYear()}/QĐ-SYT`,
+    getCurrentYearStartYmd(),
+    `${new Date().getFullYear()}1231`,
+    '48001',
     1,
     1,
     1,
@@ -392,7 +434,7 @@ export const THUOC_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
     0,
     0,
     '',
-    '20260101',
+    getCurrentYearStartYmd(),
     ''
   ],
   [
@@ -413,10 +455,10 @@ export const THUOC_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
     'Viện Huyết học - Truyền máu Trung ương',
     'Việt Nam',
     'Trung tâm Máu Quốc gia',
-    'HĐ-MAU-2026',
-    '20260101',
-    '20261231',
-    '01929',
+    `HĐ-MAU-${new Date().getFullYear()}`,
+    getCurrentYearStartYmd(),
+    `${new Date().getFullYear()}1231`,
+    '48001',
     10,
     2,
     5,
@@ -431,7 +473,57 @@ export const THUOC_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
     0,
     0,
     '',
-    '20260101',
+    getCurrentYearStartYmd(),
     ''
   ]
+];
+
+export const THUOC_FIELD_HEURISTICS: Array<[RegExp | string, string]> = [
+  [/STT|SO_TT/, 'STT'],
+  [/MATHUOC|MAHOATCHAT/, 'MA_THUOC'],
+  [/TENHOATCHAT|HOATCHAT/, 'TEN_HOAT_CHAT'],
+  [/TENTHUOC|BIETDUOC/, 'TEN_THUOC'],
+  [/DONVITINH|DVT/, 'DON_VI_TINH'],
+  [/HAMLUONG|NONGDO/, 'HAM_LUONG'],
+  [/MADUONGDUNG/, 'MA_DUONG_DUNG'],
+  [/DUONGDUNG/, 'DUONG_DUNG'],
+  [/DANGBAOCHE|DANGTHUOC/, 'DANG_BAO_CHE'],
+  [/SODANGKY|GPNK|SDK/, 'SO_DANG_KY'],
+  [/SOLUONG/, 'SO_LUONG'],
+  [/DONGIABH|GIABHYT/, 'DON_GIA_BH'],
+  [/DONGIA|GIAMUA/, 'DON_GIA'],
+  [/QUYCACH|DONGGOI/, 'QUY_CACH'],
+  [/NHASX|HANGSX/, 'NHA_SX'],
+  [/NUOCSX|XUATXU/, 'NUOC_SX'],
+  [/NHATHAU|DONVICUNGUNG/, 'NHA_THAU'],
+  [/TTTHAU|GOITHAU/, 'TT_THAU'],
+  [/TUNGAYHD/, 'TU_NGAY_HD'],
+  [/DENNGAYHD/, 'DEN_NGAY_HD'],
+  [/MACSKCBTHUOC/, 'MA_CSKCB_THUOC'],
+  [/MACSKCB/, 'MA_CSKCB'],
+  [/LOAITHUOC/, 'LOAI_THUOC'],
+  [/LOAITHAU/, 'LOAI_THAU'],
+  [/HTTHAU|HINHTHUCTHAU/, 'HT_THAU'],
+  [/MADVKT/, 'MA_DVKT'],
+  [/TCCL/, 'TCCL'],
+  [/BOPHANVT/, 'BO_PHAN_VT'],
+  [/TENKHOAHOC/, 'TEN_KHOA_HOC'],
+  [/NGUONGOC/, 'NGUON_GOC'],
+  [/PPCHEBIEN/, 'PP_CHEBIEN'],
+  [/MADLNHAP/, 'MA_DL_NHAP'],
+  [/MADLCB/, 'MA_DL_CB'],
+  [/TLHHCB/, 'TLHH_CB'],
+  [/TLHHBQ/, 'TLHH_BQ'],
+  [/TUNGAY|BATDAU|APDUNG/, 'TU_NGAY'],
+  [/DENNGAY|KETTHUC|HETHAN/, 'DEN_NGAY']
+];
+
+export const LOAI_THUOC_LOOKUP: Array<[RegExp, number]> = [
+  [/che pham mau|chế phẩm máu/i, 10],
+  [/che pham|chế phẩm/i, 2],
+  [/vi thuoc|vị thuốc/i, 3],
+  [/phong xa|phóng xạ/i, 4],
+  [/duoc lieu|dược liệu/i, 7],
+  [/mau|máu/i, 9],
+  [/tan duoc|tân dược/i, 1],
 ];

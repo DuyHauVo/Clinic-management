@@ -2,6 +2,7 @@ export * from './types';
 export * from './constants';
 export * from './shared';
 export * from './validators';
+export * from './parsers';
 export * from './bpcmXmlEngine';
 export * from './nhanlucXmlEngine';
 export * from './thuocXmlEngine';

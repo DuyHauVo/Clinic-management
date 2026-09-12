@@ -1,4 +1,5 @@
-import type { ThietBiSchemaField } from '../types/thietBiTypes';
+import type { ThietBiSchemaField } from "../types/thietBiTypes";
+import { getCurrentYearStartYmd } from "../shared/excelXmlShared";
 
 export const THIETBI_SCHEMA_FIELDS: ThietBiSchemaField[] = [
   {
@@ -236,7 +237,7 @@ export const THIETBI_SCHEMA_FIELDS: ThietBiSchemaField[] = [
     aliases: [
       'MA_CSKCB', 'MACSKCB', 'MÃ CSKCB', 'MÃ CƠ SỞ KCB', 'MA_CO_SO_KCB', 'MÃ BV', 'MA_BV', 'MABV'
     ],
-    example: '01929'
+    example: '48001'
   },
   {
     key: 'LOAI_THAU',
@@ -349,4 +350,67 @@ export const HT_THAU_OPTIONS = [
   { value: 7, label: '7 - Đàm phán giá' },
   { value: 8, label: '8 - Chào giá trực tuyến' },
   { value: 9, label: '9 - Mua sắm trực tuyến' }
+];
+
+export const THIETBI_EXCEL_TEMPLATE_HEADERS = THIETBI_SCHEMA_FIELDS.map((f) => f.key);
+export const THIETBI_EXCEL_TEMPLATE_LABELS = THIETBI_SCHEMA_FIELDS.map((f) => f.label);
+
+export const THIETBI_EXCEL_TEMPLATE_COLS = [
+  { wch: 6 }, // STT
+  { wch: 16 }, // MA_VAT_TU
+  { wch: 24 }, // NHOM_VAT_TU
+  { wch: 32 }, // TEN_VAT_TU
+  { wch: 16 }, // MA_HIEU
+  { wch: 20 }, // SO_LUU_HANH
+  { wch: 30 }, // TINHNANG_KT
+  { wch: 18 }, // QUY_CACH
+  { wch: 24 }, // HANG_SX
+  { wch: 14 }, // NUOC_SX
+  { wch: 12 }, // DON_VI_TINH
+  { wch: 14 }, // DON_GIA
+  { wch: 14 }, // DON_GIA_BH
+  { wch: 12 }, // TYLE_TT_BH
+  { wch: 12 }, // SO_LUONG
+  { wch: 12 }, // DINH_MUC
+  { wch: 24 }, // NHA_THAU
+  { wch: 20 }, // TT_THAU
+  { wch: 12 }, // TU_NGAY_HD
+  { wch: 12 }, // DEN_NGAY_HD
+  { wch: 12 }, // MA_CSKCB
+  { wch: 12 }, // LOAI_THAU
+  { wch: 12 }, // HT_THAU
+  { wch: 16 }, // MA_CSKCB_TBYT
+  { wch: 12 }, // TU_NGAY
+  { wch: 12 }, // DEN_NGAY
+];
+
+export const THIETBI_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
+  [
+    1,
+    "N04.01.001",
+    "Kim tiêm",
+    "Kim dùng cho buồng tiêm 20G x 25mm",
+    "MH-KT-2024",
+    "2400012/ĐKLH/BYT",
+    "Thép không gỉ y tế 304, đầu vát Huber",
+    "1 bộ/túi",
+    "B. Braun Medical AG",
+    "Đức",
+    "Cái",
+    15000,
+    15000,
+    80,
+    770,
+    1,
+    "Công ty CP Dược & TBYT TW",
+    `456/QĐ-BV;G1;N1;${new Date().getFullYear()}`,
+    getCurrentYearStartYmd(),
+    `${new Date().getFullYear()}1231`,
+    "48001",
+    1,
+    1,
+    "",
+    getCurrentYearStartYmd(),
+    "",
+  ],
 ];

@@ -3,6 +3,8 @@ import { Stethoscope, X, Save, DollarSign, FileText, Calendar, Activity } from '
 import type { DmDichVuItem } from '../../../../types';
 import { useToast } from '../../../../context/ToastContext';
 import { ThuocPxListEditor } from './ThuocPxListEditor';
+import { DEFAULT_MA_CSKCB, getTodayYmd } from '../../../../utils/shared/excelXmlShared';
+import { useModalBehavior } from '../../../../hooks/useModalBehavior';
 
 interface DichVuEditModalProps {
   isOpen: boolean;
@@ -25,9 +27,9 @@ const getDefaultDichVuData = (): DmDichVuItem => ({
   qdPdGia: '20240101_01/QĐ-UBND',
   ghiChu: '',
   giaThanhToan: 0,
-  tuNgay: new Date().toISOString().slice(0, 10).replace(/-/g, ''),
+  tuNgay: getTodayYmd(),
   denNgay: '',
-  maCskcb: '01929',
+  maCskcb: DEFAULT_MA_CSKCB,
   dsThuocPx: []
 });
 
@@ -37,6 +39,8 @@ export const DichVuEditModal: React.FC<DichVuEditModalProps> = ({
   onSave,
   initialData
 }) => {
+  useModalBehavior(isOpen, onClose);
+
   if (!isOpen) return null;
 
   return (
@@ -113,8 +117,16 @@ const DichVuEditModalContent: React.FC<DichVuEditModalContentProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 ant-modal-anim">
-      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200">
+    <div
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 ant-modal-anim"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Modal Header */}
         <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
           <div className="flex items-center gap-3">
@@ -354,7 +366,7 @@ const DichVuEditModalContent: React.FC<DichVuEditModalContentProps> = ({
                     <label className="block font-medium text-slate-700 mb-1">Mã CSKCB Chuyển Giao (CGKT)</label>
                     <input
                       type="text"
-                      placeholder="01929..."
+                      placeholder="48001..."
                       value={formData.cskcbCgkt || ''}
                       onChange={(e) => setFormData({ ...formData, cskcbCgkt: e.target.value })}
                       className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg font-mono text-slate-800 focus:border-emerald-500 outline-none"
@@ -365,7 +377,7 @@ const DichVuEditModalContent: React.FC<DichVuEditModalContentProps> = ({
                     <label className="block font-medium text-slate-700 mb-1">Mã CSKCB Làm Cận Lâm Sàng</label>
                     <input
                       type="text"
-                      placeholder="01929..."
+                      placeholder="48001..."
                       value={formData.cskcbCls || ''}
                       onChange={(e) => setFormData({ ...formData, cskcbCls: e.target.value })}
                       className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg font-mono text-slate-800 focus:border-emerald-500 outline-none"

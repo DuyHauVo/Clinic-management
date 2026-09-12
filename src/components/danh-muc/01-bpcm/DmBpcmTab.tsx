@@ -25,7 +25,7 @@ import { useClipboard } from '../../../hooks';
 
 export const DmBpcmTab: React.FC = () => {
   const toast = useToast();
-  const { isCopied, copy: handleCopyText } = useClipboard();
+  const { isKeyCopied, copy: handleCopyText } = useClipboard();
   const [bpcmItems, setBpcmItems] = useState<DmBpcmItem[]>(initialBpcmData);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoadingFile, setIsLoadingFile] = useState(false);
@@ -48,7 +48,7 @@ export const DmBpcmTab: React.FC = () => {
 
     setIsLoadingFile(true);
     try {
-      const result = await parseBpcmExcelFile(file, '01929');
+      const result = await parseBpcmExcelFile(file);
       setBpcmItems(result.items);
       setFileUploadStats(result);
       toast.success(
@@ -66,7 +66,7 @@ export const DmBpcmTab: React.FC = () => {
   const handleSwitchSheet = (sheetName: string) => {
     if (!fileUploadStats?.workbook) return;
     try {
-      const result = parseWorksheet(fileUploadStats.workbook, sheetName, fileUploadStats.fileName, '01929');
+      const result = parseWorksheet(fileUploadStats.workbook, sheetName, fileUploadStats.fileName);
       setBpcmItems(result.items);
       setFileUploadStats(result);
       toast.info(`Đã chuyển sang Sheet "${sheetName}" (${result.items.length} bản ghi)`, 'Chuyển Sheet Dữ Liệu');
@@ -117,7 +117,7 @@ export const DmBpcmTab: React.FC = () => {
       return;
     }
     const xml = generateBpcmXml(bpcmItems);
-    downloadXmlFile(xml, 'DanhMuc01_BPCMKBCB_01929.xml');
+    downloadXmlFile(xml, 'DanhMuc01_BPCMKBCB_48001.xml');
     toast.success('Đã tải xuống file XML Mẫu 01/DM chuẩn Loại hồ sơ 70', 'Xuất File Thành Công');
   };
 
@@ -128,7 +128,7 @@ export const DmBpcmTab: React.FC = () => {
     }
     setIsSendingApi(true);
     try {
-      const res = await sendBpcmToBhxhGateway(bpcmItems, '01929', '01');
+      const res = await sendBpcmToBhxhGateway(bpcmItems);
       setApiResponse(res);
       toast.success(`[Sandbox] Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`, 'Gửi API Thành Công (Mô phỏng)');
     } catch (err: any) {
@@ -206,7 +206,7 @@ export const DmBpcmTab: React.FC = () => {
         base64Content={currentBase64}
         tab={xmlExportTab}
         onTabChange={setXmlExportTab}
-        isCopied={isCopied}
+        isKeyCopied={isKeyCopied}
         onCopy={handleCopyText}
         onExportXml={handleExportXml}
         onSendApi={handleSendBhxhApi}
