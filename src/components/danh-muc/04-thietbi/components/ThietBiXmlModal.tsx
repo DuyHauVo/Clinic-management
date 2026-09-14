@@ -1,7 +1,6 @@
 import React from 'react';
 import type { DmThietBiItem } from '../../../../types';
-import type { SendThietBiGatewayResult } from '../services/thietBiService';
-import { DanhMucXmlModal } from '../../common/DanhMucXmlModal';
+import { XmlExportModal } from '../../../common';
 
 export interface ThietBiXmlModalProps {
   isOpen: boolean;
@@ -16,7 +15,7 @@ export interface ThietBiXmlModalProps {
   onExportXml: () => void;
   onSendApi: () => void;
   isSendingApi: boolean;
-  apiResponse: SendThietBiGatewayResult | null;
+  apiResponse: any;
 }
 
 export const ThietBiXmlModal: React.FC<ThietBiXmlModalProps> = ({
@@ -24,14 +23,14 @@ export const ThietBiXmlModal: React.FC<ThietBiXmlModalProps> = ({
   ...props
 }) => {
   return (
-    <DanhMucXmlModal
+    <XmlExportModal
       {...props}
       title="Cấu Trúc XML & Chuỗi Base64 Ký Số Mẫu 04/DM"
-      loaiHsBadge="Loại HS 11 - GuiDanhMuc04_DMTBYT"
+      loaiHsBadge="Loại HS 72 - GuiDanhMuc04_THIETBIKBCB"
       itemsCount={items.length}
-      itemLabel="trang thiết bị y tế"
-      apiEndpoint="https://egw.baohiemxahoi.gov.vn/api/DanhMucGW/GuiDanhMuc04_DMTBYT"
-      loaiHsCode="11"
+      itemLabel="vật tư / thiết bị"
+      apiEndpoint="https://egw.baohiemxahoi.gov.vn/api/DanhMucGW/GuiDanhMuc04_THIETBIKBCB"
+      loaiHsCode="72"
     />
   );
 };

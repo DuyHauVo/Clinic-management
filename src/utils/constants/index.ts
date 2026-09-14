@@ -5,3 +5,4 @@ export * from './thietBiConstants';
 export * from './dichVuConstants';
 export * from './tbyttHdvConstants';
 export * from './hs01TongHopConstants';
+export * from './hs09DieuChinhConstants';

@@ -6,6 +6,7 @@ import type {
   DmDichVuItem,
   DmTbytThdvItem,
   Hs01TongHopItem,
+  HoSoDieuChinh09Item,
   HoSoTongHop,
   HoSoXuatToan,
   Doctor,
@@ -1157,6 +1158,228 @@ export const initialHoSoXuatToanData: HoSoXuatToan[] = [
     taiLieuDinhKem: [],
     ngayGiaiTrinh: '',
     nguoiGiaiTrinh: ''
+  }
+];
+
+// ============================================================
+// 9. BỘ HỒ SƠ ĐIỀU CHỈNH GIÁM ĐỊNH MẪU 09/BH (LOẠI HS 73)
+// ============================================================
+export const initialHoSoDieuChinh09Data: HoSoDieuChinh09Item[] = [
+  {
+    id: 'hs09-01',
+    stt: 1,
+    ttMau: {
+      mauSo: '09/BH',
+      maCskcb: '48001',
+      nguoiLapBieu: 'BS. CKII. Nguyễn Văn An',
+      thuTruongDv: 'TS. BS. Giám Đốc Bệnh Viện',
+      ngayThangNam: '20260905'
+    },
+    ttXml1: {
+      xml1Id: '100234567',
+      maLk: 'LK4800120260828005',
+      maBn: 'BN-2026-004',
+      hoTen: 'Võ Thanh Tùng',
+      maThe: 'HT4795556667778',
+      ngayVao: '202608280800',
+      ngayRa: '202608281130',
+      kyQt: '202608',
+      trangThai: 1
+    },
+    dsXml1DieuChinh: [
+      {
+        stt: 1,
+        truongTtGoc: 'MA_BENH_CHINH',
+        ttGoc: 'R07.4',
+        truongTtDieuChinh: 'MA_BENH_CHINH',
+        ttDieuChinh: 'I20.9',
+        lyDoDieuChinh: 'Bổ sung mã chẩn đoán cơn đau thắt ngực không xác định theo kết quả men tim và điện tâm đồ'
+      }
+    ],
+    dsChiPhiDieuChinh: [
+      {
+        stt: 1,
+        soBangXml: 3,
+        idCp: '30018892',
+        sttXml: 2,
+        ngayYl: '202608280830',
+        trangThai: 1,
+        truongTtGoc: 'MA_DICH_VU',
+        ttGoc: '03.0001.0001',
+        lyDo: 'Chỉ định trùng lặp điện tâm đồ không rõ lý do',
+        tuChoi: 'ERR_TRUNG_LAP_CLS',
+        truongTtDieuChinh: 'MA_DICH_VU',
+        ttDieuChinh: '03.0001.0001',
+        lyDoDieuChinh: 'Điện tâm đồ lần 2 thực hiện sau 2 giờ do bệnh nhân xuất hiện cơn đau ngực tái phát cấp cứu, có phiếu hội chẩn đính kèm'
+      }
+    ],
+    khoaDieuTri: 'Khoa Hồi Sức Cấp Cứu - Chống Độc',
+    nhomLoi: 'chi_dinh',
+    tienXuatToan: 450000,
+    tienDeNghiThanhToanLai: 450000,
+    tienChapNhanLai: 0,
+    taiLieuDinhKem: ['Phieu_Hoi_Chan_CapCuu.pdf', 'ECG_Lan2_BienDoiST.pdf'],
+    nguoiGiaiTrinh: 'BS. CKII. Nguyễn Văn An',
+    ngayGiaiTrinh: '2026-09-05',
+    trangThai: 'cho_xu_ly',
+    isValid: true,
+    errors: []
+  },
+  {
+    id: 'hs09-02',
+    stt: 2,
+    ttMau: {
+      mauSo: '09/BH',
+      maCskcb: '48001',
+      nguoiLapBieu: 'ThS. BS. Trần Thị Mai',
+      thuTruongDv: 'TS. BS. Giám Đốc Bệnh Viện',
+      ngayThangNam: '20260902'
+    },
+    ttXml1: {
+      xml1Id: '100234568',
+      maLk: 'LK4800120260830012',
+      maBn: 'BN-2026-015',
+      hoTen: 'Trần Văn Hưng',
+      maThe: 'DN4793322114455',
+      ngayVao: '202608300815',
+      ngayRa: '202608301045',
+      kyQt: '202608',
+      trangThai: 1
+    },
+    dsXml1DieuChinh: [],
+    dsChiPhiDieuChinh: [
+      {
+        stt: 1,
+        soBangXml: 2,
+        idCp: '20045612',
+        sttXml: 3,
+        ngayYl: '202608300900',
+        trangThai: 1,
+        truongTtGoc: 'DON_GIA',
+        ttGoc: '18500',
+        lyDo: 'Áp sai giá trúng thầu thuốc Esomeprazole 40mg',
+        tuChoi: 'ERR_VUOT_TRAN_THUOC',
+        truongTtDieuChinh: 'DON_GIA',
+        ttDieuChinh: '14200',
+        lyDoDieuChinh: 'Điều chỉnh đơn giá trúng thầu theo đúng Quyết định 456/QĐ-SYT gói thầu số 01'
+      }
+    ],
+    khoaDieuTri: 'Khoa Khám Bệnh Đa Khoa',
+    nhomLoi: 'gia',
+    tienXuatToan: 285000,
+    tienDeNghiThanhToanLai: 285000,
+    tienChapNhanLai: 285000,
+    taiLieuDinhKem: ['QuyetDinh_TrungThau_456.pdf'],
+    nguoiGiaiTrinh: 'ThS. BS. Trần Thị Mai',
+    ngayGiaiTrinh: '2026-09-02',
+    maGiaoDichBhxh: 'HSDC09BH_48001_20260902_9921',
+    trangThai: 'chap_nhan',
+    isValid: true,
+    errors: []
+  },
+  {
+    id: 'hs09-03',
+    stt: 3,
+    ttMau: {
+      mauSo: '09/BH',
+      maCskcb: '48001',
+      nguoiLapBieu: 'BS. CKII. Phạm Thu Hương',
+      thuTruongDv: 'TS. BS. Giám Đốc Bệnh Viện',
+      ngayThangNam: '20260906'
+    },
+    ttXml1: {
+      xml1Id: '100234569',
+      maLk: 'LK4800120260901019',
+      maBn: 'BN-2026-022',
+      hoTen: 'Lê Thị Thu Thủy',
+      maThe: 'GD4796677889900',
+      ngayVao: '202609010730',
+      ngayRa: '202609011600',
+      kyQt: '202609',
+      trangThai: 1
+    },
+    dsXml1DieuChinh: [
+      {
+        stt: 1,
+        truongTtGoc: 'HO_TEN',
+        ttGoc: 'Lê Thị Thủy',
+        truongTtDieuChinh: 'HO_TEN',
+        ttDieuChinh: 'Lê Thị Thu Thủy',
+        lyDoDieuChinh: 'Khớp đúng họ và tên đệm theo thẻ BHYT và CCCD gắn chip'
+      }
+    ],
+    dsChiPhiDieuChinh: [
+      {
+        stt: 1,
+        soBangXml: 3,
+        idCp: '30099812',
+        sttXml: 4,
+        ngayYl: '202609010930',
+        trangThai: 1,
+        truongTtGoc: 'MA_DICH_VU',
+        ttGoc: '04.0123.0012',
+        lyDo: 'Thiếu phiếu tường trình phẫu thuật và kết quả đông máu',
+        tuChoi: 'ERR_THIEU_CHUNG_TU_CLS',
+        truongTtDieuChinh: 'MA_DICH_VU',
+        ttDieuChinh: '04.0123.0012',
+        lyDoDieuChinh: 'Đã bổ sung phiếu phẫu thuật có chữ ký phẫu thuật viên và kết quả PT, APTT'
+      }
+    ],
+    khoaDieuTri: 'Khoa Ngoại Tổng Hợp',
+    nhomLoi: 'chung_tu',
+    tienXuatToan: 820000,
+    tienDeNghiThanhToanLai: 820000,
+    tienChapNhanLai: 0,
+    taiLieuDinhKem: ['TuongTrinh_PT_Amidan.pdf', 'XN_DongMau_BN022.pdf'],
+    nguoiGiaiTrinh: 'BS. CKII. Phạm Thu Hương',
+    ngayGiaiTrinh: '2026-09-06',
+    trangThai: 'da_lap_bieu',
+    isValid: true,
+    errors: []
+  },
+  {
+    id: 'hs09-04',
+    stt: 4,
+    ttMau: {
+      mauSo: '09/BH',
+      maCskcb: '48001',
+      nguoiLapBieu: 'BS. CKI. Lê Hoàng Minh',
+      thuTruongDv: 'TS. BS. Giám Đốc Bệnh Viện',
+      ngayThangNam: '20260908'
+    },
+    ttXml1: {
+      xml1Id: '100234570',
+      maLk: 'LK4800120260903033',
+      maBn: 'BN-2026-041',
+      hoTen: 'Đỗ Mạnh Cường',
+      maThe: 'DN4791100223344',
+      ngayVao: '202609030800',
+      ngayRa: '202609031130',
+      kyQt: '202609',
+      trangThai: 1
+    },
+    dsXml1DieuChinh: [
+      {
+        stt: 1,
+        truongTtGoc: 'MA_THE',
+        ttGoc: 'DN4791100223344',
+        truongTtDieuChinh: 'MA_THE',
+        ttDieuChinh: 'DN4791100223345',
+        lyDoDieuChinh: 'Cập nhật mã thẻ BHYT mới do cơ quan BHXH gia hạn thẻ mới cho người lao động'
+      }
+    ],
+    dsChiPhiDieuChinh: [],
+    khoaDieuTri: 'Khoa Khám Bệnh Đa Khoa',
+    nhomLoi: 'hanh_chinh',
+    tienXuatToan: 180000,
+    tienDeNghiThanhToanLai: 180000,
+    tienChapNhanLai: 0,
+    taiLieuDinhKem: ['TraCuu_TheBHYT_VssID.pdf'],
+    nguoiGiaiTrinh: 'BS. CKI. Lê Hoàng Minh',
+    ngayGiaiTrinh: '2026-09-08',
+    trangThai: 'cho_xu_ly',
+    isValid: true,
+    errors: []
   }
 ];
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import type { DmNhanLucItem } from '../../../../types';
-import { DanhMucXmlModal } from '../../common/DanhMucXmlModal';
+import { XmlExportModal } from '../../../common';
 
 export interface NhanLucXmlModalProps {
   isOpen: boolean;
@@ -23,7 +23,7 @@ export const NhanLucXmlModal: React.FC<NhanLucXmlModalProps> = ({
   ...props
 }) => {
   return (
-    <DanhMucXmlModal
+    <XmlExportModal
       {...props}
       title="Cấu Trúc XML & Chuỗi Base64 Ký Số Mẫu 02/DM"
       loaiHsBadge="Loại HS 71 - GuiDanhMuc02_NHANLUCKBCB"

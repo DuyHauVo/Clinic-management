@@ -78,6 +78,18 @@ export type {
   SendHs01GatewayResult
 } from '../utils/types/hs01TongHopTypes';
 
+// MẪU 09/BH: Hồ sơ điều chỉnh xử lý xuất toán (Loại HS 73 - GuiHoSoDieuChinh09BH)
+export type {
+  TtMauInfo,
+  TtXml1Info,
+  TtXml1DieuChinhItem,
+  ChiPhiDieuChinhItem,
+  HoSoDieuChinh09Item,
+  ParseHs09ExcelResult,
+  SendHs09GatewayResult,
+  Hs09GatewayCredentials
+} from '../utils/types/hs09DieuChinhTypes';
+
 // ==========================================
 // 2. HỒ SƠ 1: HỒ SƠ TỔNG HỢP CHI PHÍ KCB (MẪU 01/BH)
 // ==========================================

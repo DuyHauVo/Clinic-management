@@ -1,6 +1,6 @@
 import React from 'react';
-import type { DmTbytThdvItem, SendTbytThdvGatewayResult } from '../../../../types';
-import { DanhMucXmlModal } from '../../common/DanhMucXmlModal';
+import type { DmTbytThdvItem } from '../../../../types';
+import { XmlExportModal } from '../../../common';
 
 export interface TbytThdvXmlModalProps {
   isOpen: boolean;
@@ -15,7 +15,7 @@ export interface TbytThdvXmlModalProps {
   onExportXml: () => void;
   onSendApi: () => void;
   isSendingApi: boolean;
-  apiResponse: SendTbytThdvGatewayResult | null;
+  apiResponse: any;
 }
 
 export const TbytThdvXmlModal: React.FC<TbytThdvXmlModalProps> = ({
@@ -23,14 +23,14 @@ export const TbytThdvXmlModal: React.FC<TbytThdvXmlModalProps> = ({
   ...props
 }) => {
   return (
-    <DanhMucXmlModal
+    <XmlExportModal
       {...props}
       title="Cấu Trúc XML & Chuỗi Base64 Ký Số Mẫu 06/DM"
-      loaiHsBadge="Loại HS 72 - GuiDanhMuc06_TBYTTHDV"
+      loaiHsBadge="Loại HS 70/72 - GuiDanhMuc06_TBTHDV"
       itemsCount={items.length}
       itemLabel="thiết bị thực hiện DVKT"
-      apiEndpoint="https://egw.baohiemxahoi.gov.vn/api/DanhMucGW/GuiDanhMuc06_TBYTTHDV"
-      loaiHsCode="72"
+      apiEndpoint="https://egw.baohiemxahoi.gov.vn/api/DanhMucGW/GuiDanhMuc06_TBTHDV"
+      loaiHsCode="70"
     />
   );
 };

@@ -1,6 +1,6 @@
 import React from 'react';
 import type { DmBpcmItem } from '../../../../types';
-import { DanhMucXmlModal } from '../../common/DanhMucXmlModal';
+import { XmlExportModal } from '../../../common';
 
 export interface BpcmXmlModalProps {
   isOpen: boolean;
@@ -23,7 +23,7 @@ export const BpcmXmlModal: React.FC<BpcmXmlModalProps> = ({
   ...props
 }) => {
   return (
-    <DanhMucXmlModal
+    <XmlExportModal
       {...props}
       title="Cấu Trúc XML & Chuỗi Base64 Ký Số Mẫu 01/DM"
       loaiHsBadge="Loại HS 70 - GuiDanhMuc01_BPCMKBCB"

@@ -25,7 +25,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   hoSoTab,
   onNavigate,
-  pendingXuattoanCount = 3,
+  pendingXuattoanCount = 0,
 }) => {
   const toast = useToast();
 
