@@ -20,6 +20,7 @@ import { ThuocTable } from './components/ThuocTable';
 import { ThuocEditModal } from './components/ThuocEditModal';
 import { SchemaMappingModal, SchemaMappingCard } from '../common';
 import { XmlExportModal } from '../../common';
+import { DEFAULT_MA_CSKCB } from '../../../utils/shared/excelXmlShared';
 
 export const DmThuocTab: React.FC = () => {
   const toast = useToast();
@@ -30,7 +31,7 @@ export const DmThuocTab: React.FC = () => {
 
   // Modal States
   const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
-  const [xmlExportTab, setXmlExportTab] = useState<'xml' | 'base64' | 'api'>('xml');
+  const [xmlExportTab, setXmlExportTab] = useState<'xml' | 'base64' | 'api' | 'smartca'>('xml');
   const [isSendingApi, setIsSendingApi] = useState(false);
   const [apiResponse, setApiResponse] = useState<SendThuocGatewayResult | null>(null);
 
@@ -206,7 +207,7 @@ export const DmThuocTab: React.FC = () => {
       <XmlExportModal
         isOpen={isXmlModalOpen}
         onClose={() => setIsXmlModalOpen(false)}
-        title="Cấu Trúc XML & Chuỗi Base64 Ký Số Mẫu 03/DM"
+        title="Cấu Trúc XML & Chuỗi Base64 Ký Số Mẫu 03/DM (Danh Mục Thuốc)"
         loaiHsBadge="Loại HS 10 - GuiDanhMuc03_DMTHUOC"
         itemsCount={thuocItems.length}
         itemLabel="mặt hàng thuốc / chế phẩm máu"
@@ -220,6 +221,8 @@ export const DmThuocTab: React.FC = () => {
         onSendApi={handleSendBhxhApi}
         isSendingApi={isSendingApi}
         apiResponse={apiResponse}
+        customFileName={`DM03_DMTHUOC_${DEFAULT_MA_CSKCB}.xml`}
+        enableSmartCa
       />
 
       <ThuocEditModal

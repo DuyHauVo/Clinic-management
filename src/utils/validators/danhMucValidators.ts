@@ -5,7 +5,7 @@ import type {
   ThietBiValidationInput,
   DichVuValidationInput,
   TbytThdvValidationInput
-} from '../types';
+} from '../../types';
 import { runValidationRules, type ValidationRule } from './base';
 
 export type {

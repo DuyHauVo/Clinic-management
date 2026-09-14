@@ -2,7 +2,7 @@ import type {
   HoSoDieuChinh09Item,
   TtXml1DieuChinhItem,
   ChiPhiDieuChinhItem,
-} from "../types/hs09DieuChinhTypes";
+} from "../../types/hs09DieuChinhTypes";
 import {
   parseNumberCell,
   parseYmdHmDate,
@@ -218,7 +218,7 @@ export function renderHs09ItemXml(
   if (item.dsXml1DieuChinh && item.dsXml1DieuChinh.length > 0) {
     const rows = item.dsXml1DieuChinh
       .map(
-        (dc, idx) => `        <TT_XML1_DC>
+        (dc: TtXml1DieuChinhItem, idx: number) => `        <TT_XML1_DC>
           <STT>${dc.stt || idx + 1}</STT>
           ${tagOrEmpty("TRUONG_TT_GOC", dc.truongTtGoc)}
           ${tagOrEmpty("TT_GOC", dc.ttGoc)}
@@ -236,7 +236,7 @@ export function renderHs09ItemXml(
   if (item.dsChiPhiDieuChinh && item.dsChiPhiDieuChinh.length > 0) {
     const rows = item.dsChiPhiDieuChinh
       .map(
-        (cp, idx) => `        <CHIPHI>
+        (cp: ChiPhiDieuChinhItem, idx: number) => `        <CHIPHI>
           <STT>${cp.stt || idx + 1}</STT>
           <SOBANG_XML>${cp.soBangXml || 0}</SOBANG_XML>
           ${tagOrEmpty("ID_CP", cp.idCp)}

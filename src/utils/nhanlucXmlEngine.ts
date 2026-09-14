@@ -3,7 +3,7 @@ import type { DmNhanLucItem } from "../types";
 import type {
   ParseNhanLucExcelResult,
   SendNhanLucGatewayResult,
-} from "./types/nhanLucTypes";
+} from "../types/nhanLucTypes";
 import {
   NHANLUC_SCHEMA_FIELDS,
   NHANLUC_EXCEL_TEMPLATE_HEADERS,

@@ -36,7 +36,7 @@ export const DmTbDvktTab: React.FC = () => {
 
   // Modal State for Mẫu 06/DM
   const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
-  const [xmlExportTab, setXmlExportTab] = useState<"xml" | "base64" | "api">(
+  const [xmlExportTab, setXmlExportTab] = useState<"xml" | "base64" | "api" | "smartca">(
     "xml",
   );
   const [isSendingApi, setIsSendingApi] = useState(false);

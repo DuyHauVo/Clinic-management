@@ -5,7 +5,7 @@ import type {
   ParseHs09ExcelResult,
   SendHs09GatewayResult,
   ChiPhiDieuChinhItem,
-} from "../../../utils/types/hs09DieuChinhTypes";
+} from "../../../types/hs09DieuChinhTypes";
 import { HS09_SCHEMA_FIELDS } from "../../../utils/constants/hs09DieuChinhConstants";
 import {
   parseHs09ExcelFile,

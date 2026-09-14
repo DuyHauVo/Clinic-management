@@ -14,7 +14,7 @@ import type {
   HoSoDieuChinh09Item,
   ChiPhiDieuChinhItem,
   TtXml1DieuChinhItem
-} from '../../../../utils/types/hs09DieuChinhTypes';
+} from '../../../../types/hs09DieuChinhTypes';
 import { SO_BANG_XML_MAP } from '../../../../utils/constants/hs09DieuChinhConstants';
 import { formatCurrencyVnd, formatYmdHmDisplay } from '../../../../utils/shared/excelXmlShared';
 import { renderHs09ItemXml } from '../../../../utils/parsers/hs09RowParser';

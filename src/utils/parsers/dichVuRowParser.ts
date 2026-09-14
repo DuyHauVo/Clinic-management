@@ -1,4 +1,4 @@
-import type { DmDichVuItem } from "../types/dichVuTypes";
+import type { DmDichVuItem, DmThuocPxItem } from "../../types/dichVuTypes";
 import {
   parseNumberCell,
   parseYmdDate,
@@ -115,13 +115,13 @@ export function renderDichVuItemXml(
 
   // Danh sách thuốc phóng xạ / chất đánh dấu (Lọc bỏ các dòng rỗng)
   const validThuocPx = (item.dsThuocPx || []).filter(
-    (px) => px.maThuoc?.trim() || px.tenThuoc?.trim(),
+    (px: DmThuocPxItem) => px.maThuoc?.trim() || px.tenThuoc?.trim(),
   );
 
   let dsThuocPxXml = "      <DS_THUOCPX/>";
   if (validThuocPx.length > 0) {
     const thuocPxItemsXml = validThuocPx
-      .map((px, pIdx) => {
+      .map((px: DmThuocPxItem, pIdx: number) => {
         const pxStt = px.stt || pIdx + 1;
         return `        <TT_THUOCPX>
           <STT>${pxStt}</STT>

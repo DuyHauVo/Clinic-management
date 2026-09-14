@@ -1,4 +1,4 @@
-import type { DmThuocItem } from "../types/thuocTypes";
+import type { DmThuocItem } from "../../types/thuocTypes";
 import { LOAI_THUOC_LOOKUP } from "../constants/thuocConstants";
 import {
   parseNumberCell,

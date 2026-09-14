@@ -1,4 +1,4 @@
-import type { DmTbytThdvItem } from "../types/tbyttHdvTypes";
+import type { DmTbytThdvItem } from "../../types/tbyttHdvTypes";
 import {
   parseNumberCell,
   parseYmdDate,

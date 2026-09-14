@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 import type { DmBpcmItem } from "../types";
-import type { SheetInfo, ParseExcelResult } from "./types/bpcmTypes";
+import type { SheetInfo, ParseExcelResult } from "../types/bpcmTypes";
 import {
   BPCM_SCHEMA_FIELDS,
   BPCM_EXCEL_TEMPLATE_HEADERS,

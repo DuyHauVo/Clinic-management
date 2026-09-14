@@ -3,7 +3,7 @@ import type {
   DmTbytThdvItem,
   ParseTbytThdvExcelResult,
   SendTbytThdvGatewayResult,
-} from "./types/tbyttHdvTypes";
+} from "../types/tbyttHdvTypes";
 import {
   TBYTTHDV_SCHEMA_FIELDS,
   TBYTTHDV_FIELD_HEURISTICS,

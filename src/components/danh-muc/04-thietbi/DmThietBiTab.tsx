@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import type { DmThietBiItem } from '../../../types';
+import React, { useState, useMemo } from "react";
+import type { DmThietBiItem } from "../../../types";
 import {
   THIETBI_SCHEMA_FIELDS,
   parseThietBiExcelFile,
@@ -10,33 +10,38 @@ import {
   downloadThietBiExcelTemplate,
   sendThietBiToBhxhGateway,
   type ParseThietBiExcelResult,
-  type SendThietBiGatewayResult
-} from './services/thietBiService';
-import { initialThietBiData } from '../../../mock/mockData';
-import { useToast } from '../../../context/ToastContext';
-import { ThietBiStatsCards } from './components/ThietBiStatsCards';
-import { ThietBiDropzone } from './components/ThietBiDropzone';
-import { ThietBiTable } from './components/ThietBiTable';
-import { ThietBiXmlModal } from './components/ThietBiXmlModal';
-import { ThietBiEditModal } from './components/ThietBiEditModal';
-import { SchemaMappingModal } from '../common/SchemaMappingModal';
-import { SchemaMappingCard } from '../common/SchemaMappingCard';
+  type SendThietBiGatewayResult,
+} from "./services/thietBiService";
+import { initialThietBiData } from "../../../mock/mockData";
+import { useToast } from "../../../context/ToastContext";
+import { ThietBiStatsCards } from "./components/ThietBiStatsCards";
+import { ThietBiDropzone } from "./components/ThietBiDropzone";
+import { ThietBiTable } from "./components/ThietBiTable";
+import { ThietBiXmlModal } from "./components/ThietBiXmlModal";
+import { ThietBiEditModal } from "./components/ThietBiEditModal";
+import { SchemaMappingModal } from "../common/SchemaMappingModal";
+import { SchemaMappingCard } from "../common/SchemaMappingCard";
 
-import { useClipboard } from '../../../hooks';
+import { useClipboard } from "../../../hooks";
 
 export const DmThietBiTab: React.FC = () => {
   const toast = useToast();
   const { isKeyCopied, copy: handleCopyText } = useClipboard();
-  const [thietBiItems, setThietBiItems] = useState<DmThietBiItem[]>(initialThietBiData);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [thietBiItems, setThietBiItems] =
+    useState<DmThietBiItem[]>(initialThietBiData);
+  const [searchTerm, setSearchTerm] = useState("");
   const [isLoadingFile, setIsLoadingFile] = useState(false);
-  const [fileUploadStats, setFileUploadStats] = useState<ParseThietBiExcelResult | null>(null);
+  const [fileUploadStats, setFileUploadStats] =
+    useState<ParseThietBiExcelResult | null>(null);
 
   // Modal State for Mẫu 04/DM
   const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
-  const [xmlExportTab, setXmlExportTab] = useState<'xml' | 'base64' | 'api'>('xml');
+  const [xmlExportTab, setXmlExportTab] = useState<
+    "xml" | "base64" | "api" | "smartca"
+  >("xml");
   const [isSendingApi, setIsSendingApi] = useState(false);
-  const [apiResponse, setApiResponse] = useState<SendThietBiGatewayResult | null>(null);
+  const [apiResponse, setApiResponse] =
+    useState<SendThietBiGatewayResult | null>(null);
 
   // Edit / Add Modal State for Mẫu 04/DM
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -57,13 +62,16 @@ export const DmThietBiTab: React.FC = () => {
       setFileUploadStats(result);
       toast.success(
         `Đã nạp thành công ${result.items.length} thiết bị / vật tư từ file "${file.name}"\nSheet: "${result.selectedSheet}"`,
-        'Nạp File Excel TBYT Thành Công'
+        "Nạp File Excel TBYT Thành Công",
       );
     } catch (err: any) {
-      toast.error(err.message || 'Lỗi đọc tệp Excel Thiết bị y tế!', 'Lỗi Đọc File');
+      toast.error(
+        err.message || "Lỗi đọc tệp Excel Thiết bị y tế!",
+        "Lỗi Đọc File",
+      );
     } finally {
       setIsLoadingFile(false);
-      e.target.value = '';
+      e.target.value = "";
     }
   };
 
@@ -76,53 +84,71 @@ export const DmThietBiTab: React.FC = () => {
         sheetName,
         fileUploadStats.availableSheets,
         fileUploadStats.fileName,
-        fileUploadStats.workbook
+        fileUploadStats.workbook,
       );
       setThietBiItems(result.items);
       setFileUploadStats(result);
-      toast.info(`Đã chuyển sang Sheet "${sheetName}" (${result.items.length} thiết bị / vật tư)`, 'Chuyển Sheet Dữ Liệu');
+      toast.info(
+        `Đã chuyển sang Sheet "${sheetName}" (${result.items.length} thiết bị / vật tư)`,
+        "Chuyển Sheet Dữ Liệu",
+      );
     } catch (err: any) {
-      toast.error(`Lỗi khi chuyển sang sheet "${sheetName}": ${err.message}`, 'Lỗi Đọc Sheet');
+      toast.error(
+        `Lỗi khi chuyển sang sheet "${sheetName}": ${err.message}`,
+        "Lỗi Đọc Sheet",
+      );
     }
   };
 
   const handleLoadSampleData = () => {
     setThietBiItems(initialThietBiData);
     setFileUploadStats(null);
-    toast.success('Đã nạp dữ liệu danh mục thiết bị y tế mẫu gồm các vật tư / TBYT chuẩn', 'Nạp Dữ Liệu Mẫu');
+    toast.success(
+      "Đã nạp dữ liệu danh mục thiết bị y tế mẫu gồm các vật tư / TBYT chuẩn",
+      "Nạp Dữ Liệu Mẫu",
+    );
   };
 
   const handleClearData = () => {
     setThietBiItems([]);
     setFileUploadStats(null);
-    toast.info('Đã làm trống danh mục thiết bị y tế', 'Đã Dọn Dẹp');
+    toast.info("Đã làm trống danh mục thiết bị y tế", "Đã Dọn Dẹp");
   };
 
   const handleSaveItem = (item: DmThietBiItem) => {
     if (editingItem) {
-      setThietBiItems(thietBiItems.map((i) => (i.id === editingItem.id ? item : i)));
-      toast.success(`Đã cập nhật thiết bị: ${item.tenVatTu}`, 'Cập Nhật Thành Công');
+      setThietBiItems(
+        thietBiItems.map((i) => (i.id === editingItem.id ? item : i)),
+      );
+      toast.success(
+        `Đã cập nhật thiết bị: ${item.tenVatTu}`,
+        "Cập Nhật Thành Công",
+      );
     } else {
       const newItem: DmThietBiItem = {
         ...item,
         id: `tb-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        stt: thietBiItems.length + 1
+        stt: thietBiItems.length + 1,
       };
       setThietBiItems([...thietBiItems, newItem]);
-      toast.success(`Đã thêm thiết bị: ${item.tenVatTu}`, 'Thêm Thành Công');
+      toast.success(`Đã thêm thiết bị: ${item.tenVatTu}`, "Thêm Thành Công");
     }
     setIsEditModalOpen(false);
     setEditingItem(null);
   };
 
   const handleDeleteItem = (item: DmThietBiItem) => {
-    if (confirm(`Bạn có chắc chắn muốn xóa thiết bị "${item.tenVatTu}" (${item.maVatTu})?`)) {
+    if (
+      confirm(
+        `Bạn có chắc chắn muốn xóa thiết bị "${item.tenVatTu}" (${item.maVatTu})?`,
+      )
+    ) {
       setThietBiItems((prev) =>
         prev
           .filter((i) => i.id !== item.id)
-          .map((i, idx) => ({ ...i, stt: idx + 1 }))
+          .map((i, idx) => ({ ...i, stt: idx + 1 })),
       );
-      toast.info(`Đã xóa thiết bị: ${item.tenVatTu}`, 'Đã Xóa');
+      toast.info(`Đã xóa thiết bị: ${item.tenVatTu}`, "Đã Xóa");
     }
   };
 
@@ -137,7 +163,10 @@ export const DmThietBiTab: React.FC = () => {
 
   const handleExportXml = () => {
     downloadThietBiXmlFile(xmlContent, `DanhMuc04_DMVTYT_${Date.now()}.xml`);
-    toast.success('Đã tải xuống tệp XML Mẫu 04/DM chuẩn Bộ Y tế & BHXH Việt Nam', 'Xuất File Thành Công');
+    toast.success(
+      "Đã tải xuống tệp XML Mẫu 04/DM chuẩn Bộ Y tế & BHXH Việt Nam",
+      "Xuất File Thành Công",
+    );
   };
 
   const handleSendBhxhApi = async () => {
@@ -147,10 +176,10 @@ export const DmThietBiTab: React.FC = () => {
       setApiResponse(res);
       toast.success(
         `Đã gửi thành công ${res.totalRecords} thiết bị / vật tư lên Cổng BHXH (Sandbox)\nMã GD: ${res.maGiaoDich}`,
-        'Gửi Cổng Tiếp Nhận Thành Công'
+        "Gửi Cổng Tiếp Nhận Thành Công",
       );
     } catch (err: any) {
-      toast.error(`Lỗi gửi cổng BHXH: ${err.message}`, 'Lỗi Giao Dịch');
+      toast.error(`Lỗi gửi cổng BHXH: ${err.message}`, "Lỗi Giao Dịch");
     } finally {
       setIsSendingApi(false);
     }
@@ -167,7 +196,7 @@ export const DmThietBiTab: React.FC = () => {
         (i.hangSx && i.hangSx.toLowerCase().includes(q)) ||
         (i.soLuuHanh && i.soLuuHanh.toLowerCase().includes(q)) ||
         (i.maHieu && i.maHieu.toLowerCase().includes(q)) ||
-        (i.nhaThau && i.nhaThau.toLowerCase().includes(q))
+        (i.nhaThau && i.nhaThau.toLowerCase().includes(q)),
     );
   }, [thietBiItems, searchTerm]);
 
@@ -187,11 +216,11 @@ export const DmThietBiTab: React.FC = () => {
         onLoadSample={handleLoadSampleData}
         onClearData={handleClearData}
         onOpenXmlModal={() => {
-          setXmlExportTab('xml');
+          setXmlExportTab("xml");
           setIsXmlModalOpen(true);
         }}
         onOpenApiTab={() => {
-          setXmlExportTab('api');
+          setXmlExportTab("api");
           setIsXmlModalOpen(true);
         }}
         onOpenSchemaModal={() => setIsSchemaModalOpen(true)}
@@ -212,10 +241,12 @@ export const DmThietBiTab: React.FC = () => {
         matchedColumnsMap={
           fileUploadStats
             ? Object.fromEntries(
-                Object.entries(fileUploadStats.detectedHeaders).map(([colIdx, key]) => [
-                  key,
-                  `Cột ${Number(colIdx) + 1} (${key})`
-                ])
+                Object.entries(fileUploadStats.detectedHeaders).map(
+                  ([colIdx, key]) => [
+                    key,
+                    `Cột ${Number(colIdx) + 1} (${key})`,
+                  ],
+                ),
               )
             : {}
         }
@@ -286,10 +317,12 @@ export const DmThietBiTab: React.FC = () => {
         matchedColumnsMap={
           fileUploadStats
             ? Object.fromEntries(
-                Object.entries(fileUploadStats.detectedHeaders).map(([colIdx, key]) => [
-                  key,
-                  `Cột ${Number(colIdx) + 1} (${key})`
-                ])
+                Object.entries(fileUploadStats.detectedHeaders).map(
+                  ([colIdx, key]) => [
+                    key,
+                    `Cột ${Number(colIdx) + 1} (${key})`,
+                  ],
+                ),
               )
             : {}
         }

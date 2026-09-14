@@ -1,5 +1,5 @@
 import { isValidYmdHmDate } from '../shared/excelXmlShared';
-import type { Hs01ValidationInput } from '../types/hs01TongHopTypes';
+import type { Hs01ValidationInput } from '../../types/hs01TongHopTypes';
 import { runValidationRules, type ValidationRule } from './base';
 
 export type { Hs01ValidationInput };

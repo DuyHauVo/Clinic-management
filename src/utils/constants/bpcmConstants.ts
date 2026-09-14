@@ -1,4 +1,4 @@
-import type { BpcmSchemaField } from '../types/bpcmTypes';
+import type { BpcmSchemaField } from '../../types/bpcmTypes';
 import { getCurrentYearStartYmd } from '../shared/excelXmlShared';
 
 export const BPCM_SCHEMA_FIELDS: BpcmSchemaField[] = [

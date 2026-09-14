@@ -1,4 +1,4 @@
-import type { Hs01TongHopItem } from "../types/hs01TongHopTypes";
+import type { Hs01TongHopItem } from "../../types/hs01TongHopTypes";
 import {
   parseNumberCell,
   parseYmdHmDate,

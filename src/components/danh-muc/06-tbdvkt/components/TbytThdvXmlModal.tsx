@@ -8,8 +8,8 @@ export interface TbytThdvXmlModalProps {
   items: DmTbytThdvItem[];
   xmlContent: string;
   base64Content: string;
-  tab: 'xml' | 'base64' | 'api';
-  onTabChange: (tab: 'xml' | 'base64' | 'api') => void;
+  tab: 'xml' | 'base64' | 'api' | 'smartca';
+  onTabChange: (tab: 'xml' | 'base64' | 'api' | 'smartca') => void;
   isKeyCopied?: (key: string) => boolean;
   onCopy?: (text: string, message?: string, key?: string) => void;
   onExportXml: () => void;

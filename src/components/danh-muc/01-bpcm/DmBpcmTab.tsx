@@ -33,7 +33,7 @@ export const DmBpcmTab: React.FC = () => {
 
   // Modal States
   const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
-  const [xmlExportTab, setXmlExportTab] = useState<'xml' | 'base64' | 'api'>('xml');
+  const [xmlExportTab, setXmlExportTab] = useState<'xml' | 'base64' | 'api' | 'smartca'>('xml');
   const [isSendingApi, setIsSendingApi] = useState(false);
   const [apiResponse, setApiResponse] = useState<any>(null);
 

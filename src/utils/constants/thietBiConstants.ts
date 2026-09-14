@@ -1,4 +1,4 @@
-import type { ThietBiSchemaField } from "../types/thietBiTypes";
+import type { ThietBiSchemaField } from "../../types/thietBiTypes";
 import { getCurrentYearStartYmd } from "../shared/excelXmlShared";
 
 export const THIETBI_SCHEMA_FIELDS: ThietBiSchemaField[] = [

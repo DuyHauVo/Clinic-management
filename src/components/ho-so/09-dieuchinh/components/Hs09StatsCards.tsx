@@ -4,7 +4,7 @@ import {
   DollarSign,
   AlertTriangle
 } from 'lucide-react';
-import type { HoSoDieuChinh09Item } from '../../../../utils/types/hs09DieuChinhTypes';
+import type { HoSoDieuChinh09Item } from '../../../../types/hs09DieuChinhTypes';
 import { formatCurrencyVnd } from '../../../../utils/shared/excelXmlShared';
 
 interface Hs09StatsCardsProps {

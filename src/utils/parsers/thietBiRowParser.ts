@@ -1,4 +1,4 @@
-import type { DmThietBiItem } from "../types/thietBiTypes";
+import type { DmThietBiItem } from "../../types/thietBiTypes";
 import {
   parseNumberCell,
   parseYmdDate,

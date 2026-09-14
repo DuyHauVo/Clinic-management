@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FolderOpen } from 'lucide-react';
 import { Hs01TongHopTab } from '../components/ho-so/01-tonghop';
 import { Hs09DieuChinhTab } from '../components/ho-so/09-dieuchinh';
-import type { HoSoDieuChinh09Item } from '../utils/types/hs09DieuChinhTypes';
+import type { HoSoDieuChinh09Item } from '../types/hs09DieuChinhTypes';
 
 type HoSoTab = '01_tonghop' | '09_xuattoan';
 
