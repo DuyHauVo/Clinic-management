@@ -545,13 +545,18 @@ export function getSigningTimeIso(): string {
 }
 
 /**
- * Sinh block chữ ký CHUKYDONVI (XMLDSig) chuẩn HSDANHMUC.
- * Giá trị digest/cert là placeholder cho môi trường sandbox -
- * thay bằng ký số thật (HSM/USB token) khi tích hợp cổng chính thức.
+ * Sinh block chữ ký CHUKYDONVI (W3C XMLDSig) chuẩn BHYT / Quyết định 130.
+ * Nếu có innerSignatureXml (<Signature>...</Signature>) thì bọc vào bên trong,
+ * nếu chưa ký thì để placeholder <CHUKYDONVI>\n  </CHUKYDONVI>.
  */
-export function buildSignatureBlock(): string {
-  return `<CHUKYDONVI>
-  </CHUKYDONVI>`;
+export function buildSignatureBlock(
+  innerSignatureXml?: string,
+  indent = "  ",
+): string {
+  if (innerSignatureXml && innerSignatureXml.trim()) {
+    return `${indent}<CHUKYDONVI>\n${innerSignatureXml}\n${indent}</CHUKYDONVI>`;
+  }
+  return `${indent}<CHUKYDONVI>\n${indent}</CHUKYDONVI>`;
 }
 
 /**

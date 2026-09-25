@@ -4,8 +4,9 @@ import { Navbar } from './components/Navbar';
 import { DanhMucPage } from './pages/DanhMucPage';
 import { HoSoPage } from './pages/HoSoPage';
 import { ToastProvider } from './context/ToastContext';
+import { SmartCaProvider } from './context/SmartCaContext';
 import { initialHoSoDieuChinh09Data } from './mock/mockData';
-import type { HoSoDieuChinh09Item } from './utils/types/hs09DieuChinhTypes';
+import type { HoSoDieuChinh09Item } from './types/hs09DieuChinhTypes';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<MainTabType>('ho-so');
@@ -27,6 +28,7 @@ export const App: React.FC = () => {
 
   return (
     <ToastProvider>
+      <SmartCaProvider>
       <div className="flex min-h-screen w-full bg-[#f1f5f9] text-slate-800 antialiased font-sans">
         {/* Left Sidebar Navigation */}
         <Sidebar
@@ -58,6 +60,7 @@ export const App: React.FC = () => {
           </main>
         </div>
       </div>
+      </SmartCaProvider>
     </ToastProvider>
   );
 };

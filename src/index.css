@@ -50,3 +50,10 @@
 .ant-modal-anim {
   animation: antFadeIn 0.2s cubic-bezier(0.08, 0.82, 0.17, 1);
 }
+
+/* Chống kẹt chuột / I-beam cursor khi bôi đen mã XML/Code */
+.no-drag-select {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+

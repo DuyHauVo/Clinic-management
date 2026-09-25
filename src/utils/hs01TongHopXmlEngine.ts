@@ -3,7 +3,7 @@ import type {
   Hs01TongHopItem,
   ParseHs01ExcelResult,
   SendHs01GatewayResult,
-} from "./types/hs01TongHopTypes";
+} from "../types/hs01TongHopTypes";
 import {
   HS01_SCHEMA_FIELDS,
   HS01_FIELD_HEURISTICS,
@@ -31,6 +31,9 @@ import {
   parseHs01Row,
   renderHs01ItemXml,
 } from "./parsers/hs01TongHopRowParser";
+// ⚠️ ĐIỂM THAY DỮ LIỆU THẬT: chữ ký số SmartCA (tranId/serial/sig)
+// do tab "Ký Số SmartCA" trả về - đính kèm kết quả gửi cổng.
+import type { SmartCaSignatureResult } from "../types/smartcaTypes";
 
 export {
   xmlToBase64,
@@ -243,6 +246,11 @@ export function downloadHs01ExcelTemplate(): void {
 
 /**
  * Gửi hồ sơ tổng hợp Mẫu 01/BH lên Cổng tiếp nhận Giám định BHYT (Sandbox)
+ * @param signature (tùy chọn) chữ ký số SmartCA - khi hồ sơ đã ký ở tab Ký Số SmartCA
+ *
+ * ⚠️ ĐIỂM THAY DỮ LIỆU THẬT: hiện là mô phỏng sandbox. Khi tích hợp cổng EGW
+ * thật, dùng `signature` (tranId, serialNumber, signatures) trong payload
+ * theo đặc tả Cổng BHXH và gọi HTTP thật thay vì setTimeout.
  */
 export async function sendHs01ToBhxhGateway(
   items: Hs01TongHopItem[],
@@ -255,6 +263,7 @@ export async function sendHs01ToBhxhGateway(
     maTinh: string;
     kyQT: string;
   }>,
+  signature?: SmartCaSignatureResult,
   delayMs = 1000,
 ): Promise<SendHs01GatewayResult> {
   const maCskcb = credentials?.maCskcb || DEFAULT_MA_CSKCB;
@@ -266,7 +275,12 @@ export async function sendHs01ToBhxhGateway(
   return {
     maKetQua: "200",
     maGiaoDich,
-    thongDiep: `[Mô phỏng Sandbox] Tiếp nhận thành công ${items.length} hồ sơ tổng hợp Mẫu 01/BH vào Hệ thống Giám định BHYT`,
+    // Ghi nhận chữ ký số vào thông điệp kết quả để tiện kiểm chứng
+    thongDiep:
+      `[Mô phỏng Sandbox] Tiếp nhận thành công ${items.length} hồ sơ tổng hợp Mẫu 01/BH` +
+      (signature
+        ? ` - đã đính kèm chữ ký số SmartCA (tranId: ${signature.tranId})`
+        : " - CHƯA ký số SmartCA"),
     thoiGianTiepNhan: getThoiGianTiepNhan(),
     totalRecords: items.length,
     kyQT,
