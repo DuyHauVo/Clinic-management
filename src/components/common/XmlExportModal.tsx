@@ -346,7 +346,6 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                     itemLabel={itemLabel}
                     onSignedSuccess={handleSignedSuccess}
                     onResetSignature={handleResetSignature}
-                    onViewSignedXml={handleSelectTabXml}
                     onDownloadSignedXml={handleDownloadEffectiveXml}
                   />
                 </div>

@@ -74,6 +74,8 @@ export interface SmartCaCredentialCertInfo {
   certificates: string[]; // base64 DER chain
   validFrom: string;
   validTo: string;
+  rsaModulus?: string;
+  rsaExponent?: string;
 }
 
 export interface SmartCaServicePack {

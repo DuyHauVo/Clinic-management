@@ -3,6 +3,7 @@ import {
   parseNumberCell,
   parseYmdHmDate,
   isValidYmdHmDate,
+  parseGender,
   formatCurrencyDecimals,
   DEFAULT_MA_CSKCB,
   escapeXml,
@@ -31,18 +32,7 @@ export function parseHs01Row(
 
   const stt = parseNumberCell(rowObj["STT"], autoStt);
   const ngaySinh = parseYmdHmDate(rowObj["NGAY_SINH"], "0000");
-
-  const gioiTinhRaw = String(rowObj["GIOI_TINH"] ?? "").trim();
-  let gioiTinh = "";
-  if (gioiTinhRaw === "Nam" || gioiTinhRaw === "1") gioiTinh = "1";
-  else if (
-    gioiTinhRaw === "Nữ" ||
-    gioiTinhRaw === "Nu" ||
-    gioiTinhRaw === "2"
-  )
-    gioiTinh = "2";
-  else if (gioiTinhRaw === "3") gioiTinh = "3";
-  else gioiTinh = gioiTinhRaw;
+  const gioiTinh = parseGender(rowObj["GIOI_TINH"], "3");
 
   const maBenhChinh = String(rowObj["MA_BENH_CHINH"] ?? "")
     .trim()

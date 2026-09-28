@@ -16,6 +16,7 @@ import {
   readExcelFile,
   pickBestSheetName,
   detectHeaderRow,
+  HEADER_SCAN_ROWS,
   generateUUID,
   buildSignatureBlock,
   buildHsDanhMucDocument,
@@ -100,8 +101,8 @@ export function parseWorksheet(
     rawRows,
     matchBpcmSchemaKey,
     3,
-    15,
-    "first",
+    HEADER_SCAN_ROWS,
+    "best",
   );
 
   let headerRowIndex = detectedIdx;
@@ -180,7 +181,7 @@ export async function parseBpcmExcelFile(
   try {
     const workbook = await readExcelFile(file);
 
-    const hintKeywords = ["01", "BPCM", "KHOA", "PHONG", "BANKHAM", "BO_PHAN"];
+    const hintKeywords = ["01BPCM", "BPCM", "BOPHAN", "KHOA", "PHONG", "BANKHAM"];
 
     const targetSheetName =
       preferredSheet && workbook.SheetNames.includes(preferredSheet)

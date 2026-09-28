@@ -5,12 +5,14 @@ import { DanhMucPage } from './pages/DanhMucPage';
 import { HoSoPage } from './pages/HoSoPage';
 import { ToastProvider } from './context/ToastContext';
 import { SmartCaProvider } from './context/SmartCaContext';
+import { GlobalSmartCaSignModal } from './components/common/GlobalSmartCaSignModal';
 import { initialHoSoDieuChinh09Data } from './mock/mockData';
 import type { HoSoDieuChinh09Item } from './types/hs09DieuChinhTypes';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<MainTabType>('ho-so');
   const [hoSoTab, setHoSoTab] = useState<HoSoTabType>('01_tonghop');
+  const [isSignModalOpen, setIsSignModalOpen] = useState(false);
   const [hs09Items, setHs09Items] = useState<HoSoDieuChinh09Item[]>(
     initialHoSoDieuChinh09Data
   );
@@ -40,7 +42,11 @@ export const App: React.FC = () => {
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 bg-[#f1f5f9]">
-          <Navbar activeTab={activeTab} hoSoTab={hoSoTab} />
+          <Navbar
+            activeTab={activeTab}
+            hoSoTab={hoSoTab}
+            onOpenSignModal={() => setIsSignModalOpen(true)}
+          />
 
           <main className="flex-1 p-6 md:p-8 max-w-[1600px] w-full mx-auto">
             {/* 1. DANH MỤC KCB BHYT (6 BIỂU MẪU) */}
@@ -60,6 +66,12 @@ export const App: React.FC = () => {
           </main>
         </div>
       </div>
+
+      {/* Global Modal Ký Số & Liên Thông BHXH */}
+      <GlobalSmartCaSignModal
+        isOpen={isSignModalOpen}
+        onClose={() => setIsSignModalOpen(false)}
+      />
       </SmartCaProvider>
     </ToastProvider>
   );

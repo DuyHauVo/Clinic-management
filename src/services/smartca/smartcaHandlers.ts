@@ -67,6 +67,8 @@ export interface SmartCaSignResponse {
   serialNumber: string;
   issuerDN: string;
   x509Certificate: string;
+  rsaModulus?: string;
+  rsaExponent?: string;
   signedAt: string;
   digestValue: string;
   signedXml?: string;
@@ -87,18 +89,70 @@ const CONFIG = {
   defaultUsername: SMARTCA_DEFAULT_CCCD,
 };
 
-// Chứng thư số mẫu chuẩn của Cơ sở khám chữa bệnh (dùng cho Mock & Sandbox)
+let mockCryptoCache: Promise<{
+  rsaModulus: string;
+  rsaExponent: string;
+  x509Certificate: string;
+}> | null = null;
+
+/**
+ * Sinh cặp khóa RSA 2048-bit động cho môi trường Mock/Sandbox lúc runtime bằng WebCrypto API.
+ * Cache Lazy Singleton 1 lần mỗi phiên, không hardcode bất kỳ private key hay modulus nào trong source.
+ */
+export async function getRuntimeMockCrypto(): Promise<{
+  rsaModulus: string;
+  rsaExponent: string;
+  x509Certificate: string;
+}> {
+  if (!mockCryptoCache) {
+    mockCryptoCache = (async () => {
+      try {
+        if (typeof crypto !== "undefined" && crypto.subtle) {
+          const keyPair = await crypto.subtle.generateKey(
+            {
+              name: "RSASSA-PKCS1-v1_5",
+              modulusLength: 2048,
+              publicExponent: new Uint8Array([1, 0, 1]),
+              hash: "SHA-256",
+            },
+            true,
+            ["sign", "verify"],
+          );
+          const jwk = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
+          const base64UrlToBase64 = (b64u: string) => {
+            let b64 = b64u.replace(/-/g, "+").replace(/_/g, "/");
+            while (b64.length % 4) b64 += "=";
+            return b64;
+          };
+          const modulus = base64UrlToBase64(jwk.n || "");
+          const exponent = base64UrlToBase64(jwk.e || "AQAB");
+          const pseudoCert = btoa(`MOCK_X509_CERTIFICATE_${modulus.slice(0, 32)}_${Date.now()}`);
+          return {
+            rsaModulus: modulus,
+            rsaExponent: exponent,
+            x509Certificate: pseudoCert,
+          };
+        }
+      } catch {
+        // Fallback an toàn nếu môi trường không có crypto.subtle
+      }
+      return {
+        rsaModulus: "",
+        rsaExponent: "AQAB",
+        x509Certificate: "",
+      };
+    })();
+  }
+  return mockCryptoCache;
+}
+
+// Metadata chứng thư số mẫu chuẩn của Cơ sở khám chữa bệnh (dùng cho Mock & Sandbox)
 export const MOCK_CERTIFICATE_CONFIG = {
   subjectDN:
     "C=VN, S=Quảng Nam, L=Thành phố Tam Kỳ, CN=CÔNG TY CP ĐẦU TƯ FQ VIỆT NAM, OID.0.9.2342.19200300.100.1.1=MST:4001266514",
   issuerDN: "VNPT SmartCA RS, VIETNAM POSTS AND TELECOMMUNICATIONS GROUP, C=VN",
   serialNumber: "4001266514_SMARTCA_2026",
   validTo: "2026-11-17 17:00:00",
-  x509Certificate:
-    "MIIFVDCCBDygAwIBAgIQVAEBAScN/1mZywQW2CfiLDANBgkqhkiG9w0BAQsFADBcMQswCQYDVQQGEwJWTjEzMDEGA1UECgwqVklFVE5BTSBQT1NUUyBBTkQgVEVMRUNPTU1VTklDQVRJT05TIEdST1VQMRgwFgYDVQQDDA9WTlBUIFNtYXJ0Q0EgUlMwHhcNMjYwNzE0MDMzMTI5WhcNMjYxMTE3MTcwMDAwWjCBkjELMAkGA1UEBhMCVk4xFDASBgNVBAgMC1F14bqjbmcgTmFtMR4wHAYDVQQHDBVUaMOgbmggcGjhu5EgVGFtIEvhu7MxLTArBgNVBAMMJEPDlE5HIFRZIENQIMSQ4bqmVSBUxq8gRlEgVknhu4ZUIE5BTTEeMBwGCgmSJomT8ixkAQEMDk1TVDo0MDAxMjY2NTE0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4NWTrzr5oAN9FKXJQ0VsQ2ipkistUWEawJCYxTWByu6kHv/uKoeDtXjLtccxpYPon18qvaoKQCbMSeREaoUZAR3gQ/gFVTIT9YofGsMkHvntOK/Jw3lXXHmBjY+brc38FJavZTlfK3vtH3fMgMxQkDKeueuvSQmroYalnMdplQ/Nw2XE/RozuezUJpMEoCiw03tUjS78yPKitp432yWLNxVhYcEsvR22gNYnYDL+0xCchwBaHCAZglyN1ejdf2qpSa2r1qhNGuFz29Ug0hydvwGRn3hN8H3ogVoATsm8etTnffQf7L4jVPQyh5zy+h7dr3YUZx0DZbulmpN9j9y27QIDAQAB",
-  rsaModulus:
-    "4NWTrzr5oAN9FKXJQ0VsQ2ipkistUWEawJCYxTWByu6kHv/uKoeDtXjLtccxpYPon18qvaoKQCbMSeREaoUZAR3gQ/gFVTIT9YofGsMkHvntOK/Jw3lXXHmBjY+brc38FJavZTlfK3vtH3fMgMxQkDKeueuvSQmroYalnMdplQ/Nw2XE/RozuezUJpMEoCiw03tUjS78yPKitp432yWLNxVhYcEsvR22gNYnYDL+0xCchwBaHCAZglyN1ejdf2qpSa2r1qhNGuFz29Ug0hydvwGRn3hN8H3ogVoATsm8etTnffQf7L4jVPQyh5zy+h7dr3YUZx0DZbulmpN9j9y27Q==",
-  rsaExponent: "AQAB",
 };
 
 /**
@@ -157,6 +211,7 @@ export async function initiateSignQ1(
       ],
     });
 
+    const mockCrypto = await getRuntimeMockCrypto();
     return {
       success: true,
       tranId: signRes.tranId,
@@ -164,18 +219,19 @@ export async function initiateSignQ1(
       credentialId: credIds[0],
       status: SMARTCA_TRAN_STATUS.WAITING_FOR_SIGNER_CONFIRM,
       subjectDN:
+        credInfo.cert?.subjectDN ||
         req.signer?.subjectDN ||
         (isUnitSign
-          ? `CN=${signerName.toUpperCase()}, OID.0.9.2342.19200300.100.1.1=MST:${idValue}, C=VN`
+          ? `CN=CƠ SỞ KCB, OID.0.9.2342.19200300.100.1.1=MST:${idValue}, C=VN`
           : `CN=${signerName.toUpperCase()}, TITLE=${roleTitle}, UID=${idValue}, O=PHÒNG KHÁM, C=VN`),
       serialNumber:
         credInfo.cert?.serialNumber ||
         req.signer?.serialNumber ||
         `SMARTCA_${idValue}`,
       issuerDN: MOCK_CERTIFICATE_CONFIG.issuerDN,
-      x509Certificate: MOCK_CERTIFICATE_CONFIG.x509Certificate,
-      rsaModulus: MOCK_CERTIFICATE_CONFIG.rsaModulus,
-      rsaExponent: MOCK_CERTIFICATE_CONFIG.rsaExponent,
+      x509Certificate: mockCrypto.x509Certificate,
+      rsaModulus: mockCrypto.rsaModulus,
+      rsaExponent: mockCrypto.rsaExponent,
       digestValue: req.digestValue,
       signer: req.signer,
     };
@@ -208,7 +264,9 @@ export async function initiateSignQ1(
     }
 
     const credInfo = await realClient.getCredentialInfo(accessToken, credIds[0]);
-    const x509Certificate = credInfo.cert?.certificates?.[0] || MOCK_CERTIFICATE_CONFIG.x509Certificate;
+    const x509Certificate = credInfo.cert?.certificates?.[0] || "";
+    const rsaModulus = credInfo.cert?.rsaModulus;
+    const rsaExponent = credInfo.cert?.rsaExponent || "AQAB";
 
     const signRes = await realClient.signHash(accessToken, {
       credentialId: credIds[0],
@@ -219,10 +277,6 @@ export async function initiateSignQ1(
         },
       ],
     });
-
-    if (!signRes.tranId) {
-      throw new Error("VNPT SmartCA không trả về mã giao dịch ký (tranId).");
-    }
 
     return {
       success: true,
@@ -244,8 +298,8 @@ export async function initiateSignQ1(
         credInfo.cert?.issuerDN ||
         "C=VN,O=VIETNAM POSTS AND TELECOMMUNICATIONS GROUP,CN=VNPT SmartCA RS",
       x509Certificate,
-      rsaModulus: MOCK_CERTIFICATE_CONFIG.rsaModulus,
-      rsaExponent: MOCK_CERTIFICATE_CONFIG.rsaExponent,
+      rsaModulus,
+      rsaExponent,
       digestValue: req.digestValue,
       signer: req.signer,
     };
@@ -300,6 +354,7 @@ export async function checkSignStatusQ1(options: {
         const signatureValue =
           tranInfo.documents?.[0]?.sig || generateMockSignatureValue(digestValue);
 
+        const mockCrypto = await getRuntimeMockCrypto();
         const subjectDN =
           certInfo?.subjectDN ||
           signer?.subjectDN ||
@@ -308,7 +363,9 @@ export async function checkSignStatusQ1(options: {
           certInfo?.serialNumber || signer?.serialNumber || "4001266514_SMARTCA_2026";
         const issuerDN = certInfo?.issuerDN || MOCK_CERTIFICATE_CONFIG.issuerDN;
         const x509Certificate =
-          certInfo?.x509Certificate || MOCK_CERTIFICATE_CONFIG.x509Certificate;
+          certInfo?.x509Certificate || mockCrypto.x509Certificate;
+        const rsaModulus = certInfo?.rsaModulus || mockCrypto.rsaModulus;
+        const rsaExponent = certInfo?.rsaExponent || mockCrypto.rsaExponent;
 
         let signedXml = rawXml;
         if (rawXml) {
@@ -318,8 +375,8 @@ export async function checkSignStatusQ1(options: {
             signatureValue,
             subjectDN,
             x509Certificate,
-            rsaModulus: certInfo?.rsaModulus || MOCK_CERTIFICATE_CONFIG.rsaModulus,
-            rsaExponent: certInfo?.rsaExponent || MOCK_CERTIFICATE_CONFIG.rsaExponent,
+            rsaModulus,
+            rsaExponent,
             signingTime: new Date().toISOString(),
           };
           signedXml = injectSignatureToXml(rawXml, dsigParams);
@@ -335,6 +392,8 @@ export async function checkSignStatusQ1(options: {
           serialNumber,
           issuerDN,
           x509Certificate,
+          rsaModulus,
+          rsaExponent,
           signedAt: new Date().toISOString(),
           digestValue,
           signedXml,
@@ -436,19 +495,25 @@ export async function checkSignStatusQ1(options: {
       const subjectDN = certInfo?.subjectDN || "";
       const serialNumber = certInfo?.serialNumber || "";
       const issuerDN = certInfo?.issuerDN || "VNPT SmartCA RS";
-      const x509Certificate =
-        certInfo?.x509Certificate || MOCK_CERTIFICATE_CONFIG.x509Certificate;
+      const x509Certificate = certInfo?.x509Certificate || "";
+      const rsaModulus = certInfo?.rsaModulus || "";
+      const rsaExponent = certInfo?.rsaExponent || "AQAB";
 
       let signedXml = rawXml;
       if (rawXml) {
+        if (!x509Certificate || !rsaModulus) {
+          throw new Error(
+            "Lỗi chữ ký số Production: Không nhận được X509 Certificate hoặc RSA Modulus từ chứng thư số thực tế của SmartCA.",
+          );
+        }
         const dsigParams: XmlDSigParams = {
           signatureId: `Id-${crypto.randomUUID()}`,
           digestValue,
           signatureValue,
           subjectDN,
           x509Certificate,
-          rsaModulus: certInfo?.rsaModulus || MOCK_CERTIFICATE_CONFIG.rsaModulus,
-          rsaExponent: certInfo?.rsaExponent || MOCK_CERTIFICATE_CONFIG.rsaExponent,
+          rsaModulus,
+          rsaExponent,
           signingTime: new Date().toISOString(),
         };
         signedXml = injectSignatureToXml(rawXml, dsigParams);
@@ -627,7 +692,9 @@ export async function handleSignAndInjectXml(
   error?: string;
 }> {
   try {
-    const { digestValue } = await computeXmlDigest(rawXml);
+    const { digestValue } = await computeXmlDigest(rawXml, {
+      preserveOtherSignatures: true,
+    });
 
     const signResponse = await handleSignQ1({
       digestValue,
@@ -650,8 +717,8 @@ export async function handleSignAndInjectXml(
       signatureValue: signResponse.signatureValue,
       subjectDN: signResponse.subjectDN,
       x509Certificate: signResponse.x509Certificate,
-      rsaModulus: MOCK_CERTIFICATE_CONFIG.rsaModulus,
-      rsaExponent: MOCK_CERTIFICATE_CONFIG.rsaExponent,
+      rsaModulus: signResponse.rsaModulus,
+      rsaExponent: signResponse.rsaExponent,
       signingTime: signResponse.signedAt,
     };
 

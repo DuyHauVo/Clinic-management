@@ -6,6 +6,7 @@ import {
   ShieldAlert,
   FileText,
   Database,
+  ShieldCheck,
 } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 import type { MainTabType, HoSoTabType } from "./Sidebar";
@@ -14,11 +15,13 @@ import { DEFAULT_MA_CSKCB } from "../utils/shared/excelXmlShared";
 interface NavbarProps {
   activeTab?: MainTabType;
   hoSoTab?: HoSoTabType;
+  onOpenSignModal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab = "ho-so",
   hoSoTab = "01_tonghop",
+  onOpenSignModal,
 }) => {
   const toast = useToast();
   const today = new Date().toLocaleDateString("vi-VN", {
@@ -66,7 +69,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </div>
               <span className="text-[11px] text-slate-500 whitespace-nowrap block">
-                Giám sát tổng hợp chi phí KCB BHYT, kiểm tra thẻ và kết xuất XML 130
+                Giám sát tổng hợp chi phí KCB BHYT, kiểm tra thẻ và kết xuất XML
+                130
               </span>
             </div>
           </div>
@@ -85,7 +89,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </div>
               <span className="text-[11px] text-slate-500 whitespace-nowrap block">
-                Tiếp nhận thông báo xuất toán từ Cổng BHXH, lập giải trình và theo dõi thu hồi
+                Tiếp nhận thông báo xuất toán từ Cổng BHXH, lập giải trình và
+                theo dõi thu hồi
               </span>
             </div>
           </div>
@@ -97,7 +102,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-600 font-medium whitespace-nowrap">
           <Building2 size={14} className="text-[#1677ff]" />
           <span>
-            Mã CS: <strong className="font-mono text-slate-900">{DEFAULT_MA_CSKCB}</strong>
+            Mã CS:{" "}
+            <strong className="font-mono text-slate-900">
+              {DEFAULT_MA_CSKCB}
+            </strong>
           </span>
           <span className="text-slate-300">|</span>
           <span className="text-slate-700 font-semibold truncate max-w-xs">
@@ -111,11 +119,22 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Right Gateway Status & Notifications */}
+      {/* Right Gateway Status & Actions */}
       <div className="flex items-center gap-3">
+        {/* Nút Mở Ký Số SmartCA Nhanh */}
+        <button
+          type="button"
+          onClick={onOpenSignModal}
+          className="flex items-center gap-2 px-3.5 py-1.5 bg-blue-50/80 hover:bg-blue-100/80 text-[#1677ff] border border-blue-200 hover:border-blue-400 rounded-full text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+          title="Mở Bảng Ký Số SmartCA & Liên Thông BHXH"
+        >
+          <ShieldCheck size={16} className="text-[#1677ff]" />
+          <span>Ký Số</span>
+        </button>
+
         <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-xs font-semibold text-emerald-700">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>Cổng BHXH: Đã kết nối</span>
+          <span>Cổng BHXH</span>
         </div>
 
         <button
@@ -126,7 +145,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               "Cổng Tiếp Nhận BHXH",
             )
           }
-          className="relative p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-colors"
+          className="relative p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
           title="Thông báo Cổng Giám định"
         >
           <Bell size={17} />
