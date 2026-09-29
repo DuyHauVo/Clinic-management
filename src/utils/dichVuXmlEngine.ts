@@ -3,7 +3,7 @@ import type {
   DmDichVuItem,
   ParseDichVuExcelResult,
   SendDichVuGatewayResult,
-} from "./types/dichVuTypes";
+} from "../types/dichVuTypes";
 import {
   DICHVU_SCHEMA_FIELDS,
   DICHVU_FIELD_HEURISTICS,

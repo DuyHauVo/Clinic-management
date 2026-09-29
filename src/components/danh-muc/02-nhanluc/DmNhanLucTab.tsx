@@ -33,7 +33,7 @@ export const DmNhanLucTab: React.FC = () => {
 
   // Modal State for Mẫu 02/DM
   const [isNhanLucXmlModalOpen, setIsNhanLucXmlModalOpen] = useState(false);
-  const [nhanLucXmlExportTab, setNhanLucXmlExportTab] = useState<'xml' | 'base64' | 'api'>('xml');
+  const [nhanLucXmlExportTab, setNhanLucXmlExportTab] = useState<'xml' | 'base64' | 'api' | 'smartca'>('xml');
   const [isNhanLucSendingApi, setIsNhanLucSendingApi] = useState(false);
   const [nhanLucApiResponse, setNhanLucApiResponse] = useState<any>(null);
 

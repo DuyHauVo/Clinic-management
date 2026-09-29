@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import type { DmNhanLucItem } from '../../types';
+import type { DmNhanLucItem } from './index';
 
 export interface NhanLucSchemaField {
   key: string;

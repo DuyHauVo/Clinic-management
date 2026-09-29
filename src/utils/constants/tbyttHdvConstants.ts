@@ -1,4 +1,4 @@
-import type { TbytThdvSchemaField } from "../types/tbyttHdvTypes";
+import type { TbytThdvSchemaField } from "../../types/tbyttHdvTypes";
 import { getCurrentYearStartYmd } from "../shared/excelXmlShared";
 
 export const TBYTTHDV_SCHEMA_FIELDS: TbytThdvSchemaField[] = [

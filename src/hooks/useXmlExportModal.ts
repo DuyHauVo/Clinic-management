@@ -1,14 +1,14 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useToast } from '../context/ToastContext';
 
 export interface UseXmlExportModalOptions<T, R = any> {
   isOpen: boolean;
   items: T[];
-  defaultTab?: 'xml' | 'base64' | 'api';
+  defaultTab?: 'xml' | 'base64' | 'api' | 'smartca';
   generateXml: (items: T[]) => string;
   generateBase64?: (items: T[], xml?: string) => string;
   downloadFile: (items: T[], xml?: string) => void;
-  sendGateway?: (items: T[]) => Promise<R>;
+  sendGateway?: (items: T[], signature?: any) => Promise<R>;
   downloadSuccessMessage?: string;
   emptyItemsMessage?: string;
   getSendSuccessMessage?: (result: R) => string;
@@ -26,10 +26,10 @@ export function useXmlExportModal<T, R = any>({
   downloadSuccessMessage = 'Đã tải xuống tệp XML thành công!',
   emptyItemsMessage = 'Không có dữ liệu để gửi!',
   getSendSuccessMessage,
-  onSendSuccess
+  onSendSuccess,
 }: UseXmlExportModalOptions<T, R>) {
   const toast = useToast();
-  const [tab, setTab] = useState<'xml' | 'base64' | 'api'>(defaultTab);
+  const [tab, setTab] = useState<'xml' | 'base64' | 'api' | 'smartca'>(defaultTab);
   const [isSending, setIsSending] = useState(false);
   const [sendResult, setSendResult] = useState<R | null>(null);
 
@@ -39,16 +39,22 @@ export function useXmlExportModal<T, R = any>({
     }
   }, [isOpen, defaultTab]);
 
+  const generateXmlRef = useRef(generateXml);
+  generateXmlRef.current = generateXml;
+
+  const generateBase64Ref = useRef(generateBase64);
+  generateBase64Ref.current = generateBase64;
+
   const xmlContent = useMemo(
-    () => (isOpen && items.length > 0 ? generateXml(items) : ''),
-    [isOpen, items, generateXml]
+    () => (isOpen && items.length > 0 ? generateXmlRef.current(items) : ''),
+    [isOpen, items]
   );
 
   const base64Content = useMemo(() => {
     if (!isOpen || !xmlContent) return '';
-    if (generateBase64) return generateBase64(items, xmlContent);
+    if (generateBase64Ref.current) return generateBase64Ref.current(items, xmlContent);
     return '';
-  }, [isOpen, items, xmlContent, generateBase64]);
+  }, [isOpen, items, xmlContent]);
 
   const handleDownloadXml = () => {
     if (items.length === 0) {

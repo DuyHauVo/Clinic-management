@@ -1,24 +1,25 @@
 import type { DmNhanLucItem } from "../../types";
 import {
   parseYmdDate,
+  parseGioiTinh,
+  parseNumberCell,
+  generateUUID,
+  normalizeKey,
   DEFAULT_MA_CSKCB,
   escapeXml,
-  getCurrentYearStartYmd,
 } from "../shared";
 import { validateNhanLucData } from "../validators";
 
-/**
- * Parse giới tính: 1: Nam, 2: Nữ, 3: Chưa xác định
- */
-export function parseGioiTinh(val: unknown): number {
-  const num = Number(val);
-  if ([1, 2, 3].includes(num)) return num;
-
-  const gtStr = String(val ?? "").toLowerCase();
-  if (gtStr.includes("nam") || gtStr === "m") return 1;
-  if (gtStr.includes("nữ") || gtStr.includes("nu") || gtStr === "f") return 2;
-  return 3;
-}
+const CHUC_DANH_RULES: Array<[string, RegExp]> = [
+  ["1", /bacsi|doctor|^bs/],
+  ["2", /ys[iy]|^ys/],
+  ["3", /dieuduong|nurse|^dd/],
+  ["4", /hosinh|^nhs/],
+  ["5", /kythuat|^kt[vy]/],
+  ["6", /tamly/],
+  ["7", /luongy|luongduoc/],
+  ["8", /duoc|pharmacist|^ds/],
+];
 
 /**
  * Parse chức danh nghề nghiệp (1..9)
@@ -28,15 +29,10 @@ export function parseChucDanhNn(val: unknown): string {
   if (/^[1-9]$/.test(rawCd)) return rawCd;
   if (!rawCd) return "9";
 
-  const cdStr = rawCd.toLowerCase();
-  if (cdStr.includes("bác") || cdStr.includes("bs") || cdStr.includes("doctor")) return "1";
-  if (cdStr.includes("y sỹ") || cdStr.includes("y sĩ") || cdStr.includes("ys")) return "2";
-  if (cdStr.includes("điều dưỡng") || cdStr.includes("dd") || cdStr.includes("nurse")) return "3";
-  if (cdStr.includes("hộ sinh")) return "4";
-  if (cdStr.includes("kỹ thuật") || cdStr.includes("kty") || cdStr.includes("ktv")) return "5";
-  if (cdStr.includes("tâm lý")) return "6";
-  if (cdStr.includes("lương y")) return "7";
-  if (cdStr.includes("dược")) return "8";
+  const norm = normalizeKey(rawCd);
+  for (const [code, pattern] of CHUC_DANH_RULES) {
+    if (pattern.test(norm)) return code;
+  }
   return "9";
 }
 
@@ -47,8 +43,8 @@ export function parseThoiGianDk(val: unknown): number {
   const num = Number(val);
   if ([1, 2].includes(num)) return num;
 
-  const tgStr = String(val ?? "").toLowerCase();
-  return tgStr.includes("bán") || tgStr.includes("part") ? 2 : 1;
+  const tgStr = normalizeKey(String(val ?? ""));
+  return tgStr.includes("ban") || tgStr.includes("part") ? 2 : 1;
 }
 
 /**
@@ -57,7 +53,7 @@ export function parseThoiGianDk(val: unknown): number {
  */
 export function parseNhanLucRow(
   rowObj: Record<string, unknown>,
-  rowIndex: number,
+  _rowIndex: number,
   autoStt: number,
   defaultMaCskcb = DEFAULT_MA_CSKCB,
 ): DmNhanLucItem | null {
@@ -69,7 +65,7 @@ export function parseNhanLucRow(
     return null;
   }
 
-  const stt = Number(rowObj["STT"]) || autoStt;
+  const stt = parseNumberCell(rowObj["STT"], autoStt);
   const maKhoa = String(rowObj["MA_KHOA"] ?? "").trim();
   const tenKhoa = String(rowObj["TEN_KHOA"] ?? "").trim();
   const gioiTinh = parseGioiTinh(rowObj["GIOI_TINH"]);
@@ -85,13 +81,13 @@ export function parseNhanLucRow(
   const vbPhancong = rowObj["VB_PHANCONG"] ? String(rowObj["VB_PHANCONG"]).trim() : undefined;
 
   const thoigianDk = parseThoiGianDk(rowObj["THOIGIAN_DK"]);
-  const thoigianNgay = rowObj["THOIGIAN_NGAY"] ? String(rowObj["THOIGIAN_NGAY"]).trim() : "0730-1630";
-  const thoigianTuan = rowObj["THOIGIAN_TUAN"] ? String(rowObj["THOIGIAN_TUAN"]).trim() : "T2T3T4T5T6";
+  const thoigianNgay = rowObj["THOIGIAN_NGAY"] ? String(rowObj["THOIGIAN_NGAY"]).trim() : undefined;
+  const thoigianTuan = rowObj["THOIGIAN_TUAN"] ? String(rowObj["THOIGIAN_TUAN"]).trim() : undefined;
   const cskcbKhac = rowObj["CSKCB_KHAC"] ? String(rowObj["CSKCB_KHAC"]).trim() : undefined;
   const cskcbCgkt = rowObj["CSKCB_CGKT"] ? String(rowObj["CSKCB_CGKT"]).trim() : undefined;
   const qdCgkt = rowObj["QD_CGKT"] ? String(rowObj["QD_CGKT"]).trim() : undefined;
 
-  const tuNgay = parseYmdDate(rowObj["TU_NGAY"]) || getCurrentYearStartYmd();
+  const tuNgay = parseYmdDate(rowObj["TU_NGAY"]) || "";
   const denNgay = parseYmdDate(rowObj["DEN_NGAY"]);
   const maCskcb = String(rowObj["MA_CSKCB"] || defaultMaCskcb).trim() || defaultMaCskcb;
 
@@ -105,7 +101,7 @@ export function parseNhanLucRow(
   });
 
   return {
-    id: `nl_${stt}_${Date.now()}_${rowIndex}_${Math.random().toString(36).substring(2, 6)}`,
+    id: `nl_${generateUUID()}`,
     stt,
     maKhoa,
     tenKhoa,
@@ -166,7 +162,7 @@ export function renderNhanLucItemXml(
       <CSKCB_KHAC>${escapeXml(item.cskcbKhac || "")}</CSKCB_KHAC>
       <CSKCB_CGKT>${escapeXml(item.cskcbCgkt || "")}</CSKCB_CGKT>
       <QD_CGKT>${escapeXml(item.qdCgkt || "")}</QD_CGKT>
-      <TU_NGAY>${escapeXml(item.tuNgay || getCurrentYearStartYmd())}</TU_NGAY>
+      <TU_NGAY>${escapeXml(item.tuNgay || "")}</TU_NGAY>
       <DEN_NGAY>${escapeXml(item.denNgay || "")}</DEN_NGAY>
       <MA_CSKCB>${escapeXml(cskcb)}</MA_CSKCB>
     </DMNHANLUCKBCB>`;

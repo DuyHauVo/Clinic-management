@@ -1,5 +1,5 @@
 import React from 'react';
-import type { HoSoDieuChinh09Item, SendHs09GatewayResult } from '../../../../utils/types/hs09DieuChinhTypes';
+import type { HoSoDieuChinh09Item, SendHs09GatewayResult } from '../../../../types/hs09DieuChinhTypes';
 import {
   generateHs09Xml,
   downloadHs09XmlFile,
@@ -13,9 +13,28 @@ export interface Hs09XmlModalProps {
   isOpen: boolean;
   onClose: () => void;
   items: HoSoDieuChinh09Item[];
-  activeTab?: 'xml' | 'base64' | 'api';
+  activeTab?: 'xml' | 'base64' | 'api' | 'smartca';
   onSendSuccess?: (result: SendHs09GatewayResult) => void;
 }
+
+// ==========================================
+// CÁC HÀM XỬ LÝ DỮ LIỆU HS09 (Dễ maintain & tái sử dụng)
+// ==========================================
+const generateHs09Base64Handler = (_items: HoSoDieuChinh09Item[], xml?: string) => {
+  return xml ? xmlToBase64(xml) : '';
+};
+
+const downloadHs09FileHandler = (items: HoSoDieuChinh09Item[], xml?: string) => {
+  downloadHs09XmlFile(xml || items);
+};
+
+const sendHs09GatewayHandler = (items: HoSoDieuChinh09Item[]) => {
+  return sendHs09ToBhxhGateway(items);
+};
+
+const getHs09SendSuccessMessage = (res: SendHs09GatewayResult) => {
+  return `Tiếp nhận thành công ${res.totalRecords} hồ sơ điều chỉnh 09/BH!\nMã giao dịch: ${res.maGiaoDich}`;
+};
 
 export const Hs09XmlModal: React.FC<Hs09XmlModalProps> = ({
   isOpen,
@@ -38,13 +57,12 @@ export const Hs09XmlModal: React.FC<Hs09XmlModalProps> = ({
     items,
     defaultTab: activeTab,
     generateXml: generateHs09Xml,
-    generateBase64: (_it, xml) => (xml ? xmlToBase64(xml) : ''),
-    downloadFile: (it, xml) => downloadHs09XmlFile(xml || it),
-    sendGateway: (it) => sendHs09ToBhxhGateway(it),
+    generateBase64: generateHs09Base64Handler,
+    downloadFile: downloadHs09FileHandler,
+    sendGateway: sendHs09GatewayHandler,
     downloadSuccessMessage: 'Đã tải xuống tệp XML Hồ sơ điều chỉnh Mẫu 09/BH thành công!',
     emptyItemsMessage: 'Không có hồ sơ điều chỉnh nào để gửi!',
-    getSendSuccessMessage: (res) =>
-      `Tiếp nhận thành công ${res.totalRecords} hồ sơ điều chỉnh 09/BH!\nMã giao dịch: ${res.maGiaoDich}`,
+    getSendSuccessMessage: getHs09SendSuccessMessage,
     onSendSuccess
   });
 

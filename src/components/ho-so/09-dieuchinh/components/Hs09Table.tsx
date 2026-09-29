@@ -18,7 +18,7 @@ import type {
   HoSoDieuChinh09Item,
   ChiPhiDieuChinhItem,
   TtXml1DieuChinhItem,
-} from "../../../../utils/types/hs09DieuChinhTypes";
+} from "../../../../types/hs09DieuChinhTypes";
 import {
   SO_BANG_XML_MAP,
   NHOM_LOI_XUAT_TOAN_MAP,

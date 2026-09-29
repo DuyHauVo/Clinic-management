@@ -1,4 +1,4 @@
-import type { DichVuSchemaField } from "../types/dichVuTypes";
+import type { DichVuSchemaField } from "../../types/dichVuTypes";
 import { getCurrentYearStartYmd } from "../shared/excelXmlShared";
 
 export const DICHVU_SCHEMA_FIELDS: DichVuSchemaField[] = [

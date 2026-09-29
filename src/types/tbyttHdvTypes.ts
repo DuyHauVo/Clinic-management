@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import type { GatewaySendResult } from '../shared/excelXmlShared';
+import type { GatewaySendResult } from '../utils/shared/excelXmlShared';
 
 export interface DmTbytThdvItem {
   id?: string;

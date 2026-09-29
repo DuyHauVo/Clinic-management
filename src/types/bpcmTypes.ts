@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import type { DmBpcmItem } from '../../types';
+import type { DmBpcmItem } from './index';
 
 export interface BpcmSchemaField {
   key: string;

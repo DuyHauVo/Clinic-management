@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import type { DmBpcmItem } from '../../../types';
+import React, { useState, useMemo } from "react";
+import type { DmBpcmItem } from "../../../types";
 import {
   BPCM_SCHEMA_FIELDS,
   parseBpcmExcelFile,
@@ -9,31 +9,34 @@ import {
   downloadXmlFile,
   downloadBpcmExcelTemplate,
   sendBpcmToBhxhGateway,
-  type ParseExcelResult
-} from './services/bpcmService';
-import { initialBpcmData } from '../../../mock/mockData';
-import { useToast } from '../../../context/ToastContext';
-import { BpcmStatsCards } from './components/BpcmStatsCards';
-import { BpcmDropzone } from './components/BpcmDropzone';
-import { BpcmTable } from './components/BpcmTable';
-import { BpcmXmlModal } from './components/BpcmXmlModal';
-import { BpcmEditModal } from './components/BpcmEditModal';
-import { SchemaMappingModal } from '../common/SchemaMappingModal';
-import { SchemaMappingCard } from '../common/SchemaMappingCard';
+  type ParseExcelResult,
+} from "./services/bpcmService";
+import { initialBpcmData } from "../../../mock/mockData";
+import { useToast } from "../../../context/ToastContext";
+import { BpcmStatsCards } from "./components/BpcmStatsCards";
+import { BpcmDropzone } from "./components/BpcmDropzone";
+import { BpcmTable } from "./components/BpcmTable";
+import { BpcmXmlModal } from "./components/BpcmXmlModal";
+import { BpcmEditModal } from "./components/BpcmEditModal";
+import { SchemaMappingModal } from "../common/SchemaMappingModal";
+import { SchemaMappingCard } from "../common/SchemaMappingCard";
 
-import { useClipboard } from '../../../hooks';
+import { useClipboard } from "../../../hooks";
 
 export const DmBpcmTab: React.FC = () => {
   const toast = useToast();
   const { isKeyCopied, copy: handleCopyText } = useClipboard();
   const [bpcmItems, setBpcmItems] = useState<DmBpcmItem[]>(initialBpcmData);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [isLoadingFile, setIsLoadingFile] = useState(false);
-  const [fileUploadStats, setFileUploadStats] = useState<ParseExcelResult | null>(null);
+  const [fileUploadStats, setFileUploadStats] =
+    useState<ParseExcelResult | null>(null);
 
   // Modal States
   const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
-  const [xmlExportTab, setXmlExportTab] = useState<'xml' | 'base64' | 'api'>('xml');
+  const [xmlExportTab, setXmlExportTab] = useState<
+    "xml" | "base64" | "api" | "smartca"
+  >("xml");
   const [isSendingApi, setIsSendingApi] = useState(false);
   const [apiResponse, setApiResponse] = useState<any>(null);
 
@@ -53,86 +56,112 @@ export const DmBpcmTab: React.FC = () => {
       setFileUploadStats(result);
       toast.success(
         `Đã nạp thành công ${result.items.length} bản ghi từ tệp "${file.name}"\nSheet: "${result.selectedSheet}"`,
-        'Nạp File Excel Thành Công'
+        "Nạp File Excel Thành Công",
       );
     } catch (err: any) {
-      toast.error(err.message || 'Lỗi đọc tệp Excel!', 'Lỗi Đọc File');
+      toast.error(err.message || "Lỗi đọc tệp Excel!", "Lỗi Đọc File");
     } finally {
       setIsLoadingFile(false);
-      e.target.value = '';
+      e.target.value = "";
     }
   };
 
   const handleSwitchSheet = (sheetName: string) => {
     if (!fileUploadStats?.workbook) return;
     try {
-      const result = parseWorksheet(fileUploadStats.workbook, sheetName, fileUploadStats.fileName);
+      const result = parseWorksheet(
+        fileUploadStats.workbook,
+        sheetName,
+        fileUploadStats.fileName,
+      );
       setBpcmItems(result.items);
       setFileUploadStats(result);
-      toast.info(`Đã chuyển sang Sheet "${sheetName}" (${result.items.length} bản ghi)`, 'Chuyển Sheet Dữ Liệu');
+      toast.info(
+        `Đã chuyển sang Sheet "${sheetName}" (${result.items.length} bản ghi)`,
+        "Chuyển Sheet Dữ Liệu",
+      );
     } catch (err: any) {
-      toast.error(`Lỗi khi chuyển sang sheet "${sheetName}": ${err.message}`, 'Lỗi Đọc Sheet');
+      toast.error(
+        `Lỗi khi chuyển sang sheet "${sheetName}": ${err.message}`,
+        "Lỗi Đọc Sheet",
+      );
     }
   };
 
   const handleLoadSampleData = () => {
     setBpcmItems(initialBpcmData);
     setFileUploadStats(null);
-    toast.success('Đã nạp dữ liệu danh mục BPCM mẫu chuẩn', 'Nạp Dữ Liệu Mẫu');
+    toast.success("Đã nạp dữ liệu danh mục BPCM mẫu chuẩn", "Nạp Dữ Liệu Mẫu");
   };
 
   const handleClearData = () => {
     setBpcmItems([]);
     setFileUploadStats(null);
-    toast.info('Đã làm trống bảng dữ liệu BPCM', 'Đã Dọn Dẹp');
+    toast.info("Đã làm trống bảng dữ liệu BPCM", "Đã Dọn Dẹp");
   };
 
   const handleSaveItem = (item: DmBpcmItem) => {
     if (editingItem) {
       setBpcmItems(bpcmItems.map((i) => (i.id === editingItem.id ? item : i)));
-      toast.success(`Đã cập nhật khoa phòng: ${item.tenKhoa}`, 'Cập Nhật Thành Công');
+      toast.success(
+        `Đã cập nhật khoa phòng: ${item.tenKhoa}`,
+        "Cập Nhật Thành Công",
+      );
     } else {
       const newItem = {
         ...item,
         id: `bpcm-user-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        stt: bpcmItems.length + 1
+        stt: bpcmItems.length + 1,
       };
       setBpcmItems([...bpcmItems, newItem]);
-      toast.success(`Đã thêm mới khoa phòng: ${item.tenKhoa}`, 'Thêm Thành Công');
+      toast.success(
+        `Đã thêm mới khoa phòng: ${item.tenKhoa}`,
+        "Thêm Thành Công",
+      );
     }
     setIsEditModalOpen(false);
     setEditingItem(null);
   };
 
   const handleDeleteItem = (item: DmBpcmItem) => {
-    if (confirm(`Bạn có chắc chắn muốn xóa khoa/bàn khám "${item.tenKhoa}" (${item.maKhoa})?`)) {
+    if (
+      confirm(
+        `Bạn có chắc chắn muốn xóa khoa/bàn khám "${item.tenKhoa}" (${item.maKhoa})?`,
+      )
+    ) {
       setBpcmItems(bpcmItems.filter((i) => i.id !== item.id));
-      toast.info(`Đã xóa: ${item.tenKhoa}`, 'Đã Xóa');
+      toast.info(`Đã xóa: ${item.tenKhoa}`, "Đã Xóa");
     }
   };
 
   const handleExportXml = () => {
     if (bpcmItems.length === 0) {
-      toast.warning('Chưa có dữ liệu BPCM để xuất XML!', 'Dữ Liệu Trống');
+      toast.warning("Chưa có dữ liệu BPCM để xuất XML!", "Dữ Liệu Trống");
       return;
     }
     const xml = generateBpcmXml(bpcmItems);
-    downloadXmlFile(xml, 'DanhMuc01_BPCMKBCB_48001.xml');
-    toast.success('Đã tải xuống file XML Mẫu 01/DM chuẩn Loại hồ sơ 70', 'Xuất File Thành Công');
+    downloadXmlFile(xml, "DanhMuc01_BPCMKBCB_48939.xml");
+    toast.success(
+      "Đã tải xuống file XML Mẫu 01/DM chuẩn Loại hồ sơ 70",
+      "Xuất File Thành Công",
+    );
   };
 
   const handleSendBhxhApi = async () => {
     if (bpcmItems.length === 0) {
-      toast.warning('Chưa có dữ liệu BPCM để gửi cổng BHXH!', 'Dữ Liệu Trống');
+      toast.warning("Chưa có dữ liệu BPCM để gửi cổng BHXH!", "Dữ Liệu Trống");
       return;
     }
     setIsSendingApi(true);
     try {
       const res = await sendBpcmToBhxhGateway(bpcmItems);
       setApiResponse(res);
-      toast.success(`[Sandbox] Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`, 'Gửi API Thành Công (Mô phỏng)');
+      toast.success(
+        `[Sandbox] Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`,
+        "Gửi API Thành Công (Mô phỏng)",
+      );
     } catch (err: any) {
-      toast.error(err.message || 'Lỗi kết nối Cổng BHXH', 'Gửi Thất Bại');
+      toast.error(err.message || "Lỗi kết nối Cổng BHXH", "Gửi Thất Bại");
     } finally {
       setIsSendingApi(false);
     }
@@ -142,11 +171,17 @@ export const DmBpcmTab: React.FC = () => {
     (i) =>
       i.tenKhoa.toLowerCase().includes(searchTerm.toLowerCase()) ||
       i.maKhoa.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      i.maCskcb.toLowerCase().includes(searchTerm.toLowerCase())
+      i.maCskcb.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  const currentXml = useMemo(() => (bpcmItems.length > 0 ? generateBpcmXml(bpcmItems) : ''), [bpcmItems]);
-  const currentBase64 = useMemo(() => (currentXml ? xmlToBase64(currentXml) : ''), [currentXml]);
+  const currentXml = useMemo(
+    () => (bpcmItems.length > 0 ? generateBpcmXml(bpcmItems) : ""),
+    [bpcmItems],
+  );
+  const currentBase64 = useMemo(
+    () => (currentXml ? xmlToBase64(currentXml) : ""),
+    [currentXml],
+  );
 
   return (
     <div className="space-y-6">
@@ -164,7 +199,7 @@ export const DmBpcmTab: React.FC = () => {
         onOpenXmlModal={() => setIsXmlModalOpen(true)}
         onOpenApiTab={() => {
           setIsXmlModalOpen(true);
-          setXmlExportTab('api');
+          setXmlExportTab("api");
         }}
         onOpenSchemaModal={() => setIsSchemaModalOpen(true)}
         onAddNew={() => {
@@ -178,7 +213,9 @@ export const DmBpcmTab: React.FC = () => {
         title="Đối Soát Khớp Cột Chuẩn Mẫu 01/DM (Bộ Phận Chuyên Môn)"
         loaiHsBadge="Loại HS 70 - 11 Trường"
         schemaFields={BPCM_SCHEMA_FIELDS}
-        matchedKeys={fileUploadStats?.matchedFields || BPCM_SCHEMA_FIELDS.map((f) => f.key)}
+        matchedKeys={
+          fileUploadStats?.matchedFields || BPCM_SCHEMA_FIELDS.map((f) => f.key)
+        }
         matchedColumnsMap={fileUploadStats?.matchedColumnsMap || {}}
         sheetName={fileUploadStats?.selectedSheet}
         fileName={fileUploadStats?.fileName}
@@ -231,7 +268,9 @@ export const DmBpcmTab: React.FC = () => {
         title="Mẫu 01/DM: Bộ Phận Chuyên Môn (Khoa, Phòng, Bàn Khám & Giường Bệnh)"
         loaiHsBadge="Loại HS 70 - 11 Trường"
         schemaFields={BPCM_SCHEMA_FIELDS}
-        matchedKeys={fileUploadStats?.matchedFields || BPCM_SCHEMA_FIELDS.map(f => f.key)}
+        matchedKeys={
+          fileUploadStats?.matchedFields || BPCM_SCHEMA_FIELDS.map((f) => f.key)
+        }
         matchedColumnsMap={fileUploadStats?.matchedColumnsMap || {}}
         sheetName={fileUploadStats?.selectedSheet}
         fileName={fileUploadStats?.fileName}
@@ -240,4 +279,3 @@ export const DmBpcmTab: React.FC = () => {
     </div>
   );
 };
-

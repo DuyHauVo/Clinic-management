@@ -3,7 +3,7 @@ import type {
   DmThietBiItem,
   ParseThietBiExcelResult,
   SendThietBiGatewayResult,
-} from "./types/thietBiTypes";
+} from "../types/thietBiTypes";
 import {
   THIETBI_SCHEMA_FIELDS,
   THIETBI_FIELD_HEURISTICS,

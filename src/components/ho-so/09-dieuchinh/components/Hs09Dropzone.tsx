@@ -1,6 +1,6 @@
 import React from 'react';
 import { CheckCircle2 } from 'lucide-react';
-import type { ParseHs09ExcelResult } from '../../../../utils/types/hs09DieuChinhTypes';
+import type { ParseHs09ExcelResult } from '../../../../types/hs09DieuChinhTypes';
 import { DanhMucDropzone } from '../../../danh-muc/common';
 import { HS09_SCHEMA_FIELDS } from '../../../../utils/constants/hs09DieuChinhConstants';
 

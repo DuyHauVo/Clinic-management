@@ -1,4 +1,4 @@
-import type { NhanLucSchemaField } from '../types/nhanLucTypes';
+import type { NhanLucSchemaField } from '../../types/nhanLucTypes';
 import { getCurrentYearStartYmd } from '../shared/excelXmlShared';
 
 export const CHUC_DANH_DICT: Record<string, string> = {

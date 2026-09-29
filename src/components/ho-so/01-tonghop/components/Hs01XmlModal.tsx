@@ -14,9 +14,32 @@ export interface Hs01XmlModalProps {
   isOpen: boolean;
   onClose: () => void;
   items: Hs01TongHopItem[];
-  activeTab?: 'xml' | 'base64' | 'api';
+  activeTab?: 'xml' | 'base64' | 'api' | 'smartca';
   onSendSuccess?: (result: SendHs01GatewayResult) => void;
 }
+
+// ==========================================
+// CÁC HÀM XỬ LÝ DỮ LIỆU HS01 (Dễ maintain & tái sử dụng)
+// ==========================================
+const generateHs01XmlHandler = (items: Hs01TongHopItem[]) => {
+  return generateHs01Xml(items, DEFAULT_MA_CSKCB);
+};
+
+const generateHs01Base64Handler = (_items: Hs01TongHopItem[], xml?: string) => {
+  return xml ? xmlToBase64(xml) : '';
+};
+
+const downloadHs01FileHandler = (items: Hs01TongHopItem[]) => {
+  downloadHs01XmlFile(items, DEFAULT_MA_CSKCB);
+};
+
+const sendHs01GatewayHandler = (items: Hs01TongHopItem[]) => {
+  return sendHs01ToBhxhGateway(items);
+};
+
+const getHs01SendSuccessMessage = (res: SendHs01GatewayResult) => {
+  return `Tiếp nhận thành công ${res.totalRecords} hồ sơ tổng hợp 01/BH!\nMã giao dịch: ${res.maGiaoDich}`;
+};
 
 export const Hs01XmlModal: React.FC<Hs01XmlModalProps> = ({
   isOpen,
@@ -38,14 +61,13 @@ export const Hs01XmlModal: React.FC<Hs01XmlModalProps> = ({
     isOpen,
     items,
     defaultTab: activeTab,
-    generateXml: (it) => generateHs01Xml(it, DEFAULT_MA_CSKCB),
-    generateBase64: (_it, xml) => (xml ? xmlToBase64(xml) : ''),
-    downloadFile: (it) => downloadHs01XmlFile(it, DEFAULT_MA_CSKCB),
-    sendGateway: (it) => sendHs01ToBhxhGateway(it),
+    generateXml: generateHs01XmlHandler,
+    generateBase64: generateHs01Base64Handler,
+    downloadFile: downloadHs01FileHandler,
+    sendGateway: sendHs01GatewayHandler,
     downloadSuccessMessage: 'Đã tải xuống tệp XML Mẫu 01/BH thành công!',
     emptyItemsMessage: 'Không có hồ sơ nào để gửi!',
-    getSendSuccessMessage: (res) =>
-      `Tiếp nhận thành công ${res.totalRecords} hồ sơ tổng hợp 01/BH!\nMã giao dịch: ${res.maGiaoDich}`,
+    getSendSuccessMessage: getHs01SendSuccessMessage,
     onSendSuccess
   });
 

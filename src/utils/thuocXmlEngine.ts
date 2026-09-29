@@ -3,7 +3,7 @@ import type {
   DmThuocItem,
   ParseThuocExcelResult,
   SendThuocGatewayResult,
-} from "./types/thuocTypes";
+} from "../types/thuocTypes";
 import {
   THUOC_SCHEMA_FIELDS,
   THUOC_EXCEL_TEMPLATE_HEADERS,

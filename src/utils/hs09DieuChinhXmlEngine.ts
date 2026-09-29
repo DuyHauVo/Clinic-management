@@ -4,7 +4,7 @@ import type {
   ParseHs09ExcelResult,
   SendHs09GatewayResult,
   Hs09GatewayCredentials,
-} from "./types/hs09DieuChinhTypes";
+} from "../types/hs09DieuChinhTypes";
 import {
   HS09_SCHEMA_FIELDS,
   HS09_FIELD_HEURISTICS,

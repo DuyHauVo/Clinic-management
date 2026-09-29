@@ -5,7 +5,7 @@ import type {
   TtXml1DieuChinhItem,
   ChiPhiDieuChinhItem,
   TrangThaiXuLy09
-} from '../../../../utils/types/hs09DieuChinhTypes';
+} from '../../../../types/hs09DieuChinhTypes';
 import { DEFAULT_MA_CSKCB, getTodayYmd } from '../../../../utils/shared/excelXmlShared';
 import { useToast } from '../../../../context/ToastContext';
 import { FormField } from '../../../common';

@@ -3,7 +3,7 @@ import type { DmNhanLucItem } from "../types";
 import type {
   ParseNhanLucExcelResult,
   SendNhanLucGatewayResult,
-} from "./types/nhanLucTypes";
+} from "../types/nhanLucTypes";
 import {
   NHANLUC_SCHEMA_FIELDS,
   NHANLUC_EXCEL_TEMPLATE_HEADERS,
@@ -12,13 +12,7 @@ import {
   NHANLUC_EXCEL_TEMPLATE_SAMPLES,
   NHANLUC_FIELD_HEURISTICS,
 } from "./constants/nhanLucConstants";
-import {
-  parseNhanLucRow,
-  renderNhanLucItemXml,
-  parseGioiTinh,
-  parseChucDanhNn,
-  parseThoiGianDk,
-} from "./parsers";
+import { parseNhanLucRow, renderNhanLucItemXml } from "./parsers";
 import {
   createSchemaKeyMatcher,
   readExcelFile,
@@ -35,15 +29,7 @@ import {
 } from "./shared";
 
 // Re-export để giữ nguyên API công khai cũ
-export {
-  xmlToBase64,
-  downloadXmlFile,
-  parseNhanLucRow,
-  renderNhanLucItemXml,
-  parseGioiTinh,
-  parseChucDanhNn,
-  parseThoiGianDk,
-};
+export { xmlToBase64, downloadXmlFile, parseNhanLucRow, renderNhanLucItemXml };
 
 const matchNhanLucSchemaKey = createSchemaKeyMatcher(
   NHANLUC_SCHEMA_FIELDS,

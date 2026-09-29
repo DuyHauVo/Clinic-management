@@ -55,40 +55,16 @@ export interface DmNhanLucItem {
 }
 
 
-export type { DmThuocItem, ParseThuocExcelResult, SendThuocGatewayResult } from '../utils/types/thuocTypes';
+export * from './bpcmTypes';
+export * from './nhanLucTypes';
+export * from './thuocTypes';
+export * from './thietBiTypes';
+export * from './dichVuTypes';
+export * from './tbyttHdvTypes';
+export * from './hs01TongHopTypes';
+export * from './hs09DieuChinhTypes';
+export * from './smartcaTypes';
 
-// 04/DM: Danh mục thiết bị y tế (Loại 11 - GuiDanhMuc04_DMVTYT)
-export type { DmThietBiItem } from '../utils/types/thietBiTypes';
-
-// 05/DM: Dịch vụ kỹ thuật KCB BHYT (Loại 12 - GuiDanhMuc05_DVKT)
-export type { DmDichVuItem, DmThuocPxItem, ParseDichVuExcelResult, SendDichVuGatewayResult } from '../utils/types/dichVuTypes';
-
-
-// 06/DM: Danh mục thiết bị y tế để thực hiện DVKT (Loại HS 72 - GuiDanhMuc06_DMTBYT)
-export type {
-  DmTbytThdvItem,
-  ParseTbytThdvExcelResult,
-  SendTbytThdvGatewayResult
-} from '../utils/types/tbyttHdvTypes';
-
-// MẪU 01/BH: Hồ sơ tổng hợp KCB BHYT (Loại HS 5 - GuiHoSoTongHop01BH)
-export type {
-  Hs01TongHopItem,
-  ParseHs01ExcelResult,
-  SendHs01GatewayResult
-} from '../utils/types/hs01TongHopTypes';
-
-// MẪU 09/BH: Hồ sơ điều chỉnh xử lý xuất toán (Loại HS 73 - GuiHoSoDieuChinh09BH)
-export type {
-  TtMauInfo,
-  TtXml1Info,
-  TtXml1DieuChinhItem,
-  ChiPhiDieuChinhItem,
-  HoSoDieuChinh09Item,
-  ParseHs09ExcelResult,
-  SendHs09GatewayResult,
-  Hs09GatewayCredentials
-} from '../utils/types/hs09DieuChinhTypes';
 
 // ==========================================
 // 2. HỒ SƠ 1: HỒ SƠ TỔNG HỢP CHI PHÍ KCB (MẪU 01/BH)
