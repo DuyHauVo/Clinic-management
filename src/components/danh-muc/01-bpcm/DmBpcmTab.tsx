@@ -1,14 +1,10 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import type { DmBpcmItem } from "../../../types";
 import {
   BPCM_SCHEMA_FIELDS,
   parseBpcmExcelFile,
   parseWorksheet,
-  generateBpcmXml,
-  xmlToBase64,
-  downloadXmlFile,
   downloadBpcmExcelTemplate,
-  sendBpcmToBhxhGateway,
   type ParseExcelResult,
 } from "./services/bpcmService";
 import { initialBpcmData } from "../../../mock/mockData";
@@ -20,12 +16,10 @@ import { BpcmXmlModal } from "./components/BpcmXmlModal";
 import { BpcmEditModal } from "./components/BpcmEditModal";
 import { SchemaMappingModal } from "../common/SchemaMappingModal";
 import { SchemaMappingCard } from "../common/SchemaMappingCard";
-
-import { useClipboard } from "../../../hooks";
+import { useSchemaMappingProps } from "../../../hooks";
 
 export const DmBpcmTab: React.FC = () => {
   const toast = useToast();
-  const { isKeyCopied, copy: handleCopyText } = useClipboard();
   const [bpcmItems, setBpcmItems] = useState<DmBpcmItem[]>(initialBpcmData);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoadingFile, setIsLoadingFile] = useState(false);
@@ -34,12 +28,7 @@ export const DmBpcmTab: React.FC = () => {
 
   // Modal States
   const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
-  const [xmlExportTab, setXmlExportTab] = useState<
-    "xml" | "base64" | "api" | "smartca"
-  >("xml");
-  const [isSendingApi, setIsSendingApi] = useState(false);
-  const [apiResponse, setApiResponse] = useState<any>(null);
-
+  const [xmlModalTab, setXmlModalTab] = useState<"xml" | "base64" | "api">("xml");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<DmBpcmItem | null>(null);
 
@@ -124,47 +113,17 @@ export const DmBpcmTab: React.FC = () => {
   };
 
   const handleDeleteItem = (item: DmBpcmItem) => {
-    if (
-      confirm(
-        `Bạn có chắc chắn muốn xóa khoa/bàn khám "${item.tenKhoa}" (${item.maKhoa})?`,
-      )
-    ) {
-      setBpcmItems(bpcmItems.filter((i) => i.id !== item.id));
-      toast.info(`Đã xóa: ${item.tenKhoa}`, "Đã Xóa");
-    }
-  };
-
-  const handleExportXml = () => {
-    if (bpcmItems.length === 0) {
-      toast.warning("Chưa có dữ liệu BPCM để xuất XML!", "Dữ Liệu Trống");
-      return;
-    }
-    const xml = generateBpcmXml(bpcmItems);
-    downloadXmlFile(xml, "DanhMuc01_BPCMKBCB_48939.xml");
-    toast.success(
-      "Đã tải xuống file XML Mẫu 01/DM chuẩn Loại hồ sơ 70",
-      "Xuất File Thành Công",
-    );
-  };
-
-  const handleSendBhxhApi = async () => {
-    if (bpcmItems.length === 0) {
-      toast.warning("Chưa có dữ liệu BPCM để gửi cổng BHXH!", "Dữ Liệu Trống");
-      return;
-    }
-    setIsSendingApi(true);
-    try {
-      const res = await sendBpcmToBhxhGateway(bpcmItems);
-      setApiResponse(res);
-      toast.success(
-        `[Sandbox] Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`,
-        "Gửi API Thành Công (Mô phỏng)",
-      );
-    } catch (err: any) {
-      toast.error(err.message || "Lỗi kết nối Cổng BHXH", "Gửi Thất Bại");
-    } finally {
-      setIsSendingApi(false);
-    }
+    toast.showConfirm({
+      title: "Xác nhận xóa khoa/bàn khám",
+      content: `Bạn có chắc chắn muốn xóa khoa/bàn khám "${item.tenKhoa}" (${item.maKhoa})?`,
+      danger: true,
+      okText: "Xóa",
+      cancelText: "Hủy",
+      onOk: () => {
+        setBpcmItems((prev) => prev.filter((i) => i.id !== item.id));
+        toast.info(`Đã xóa: ${item.tenKhoa}`, "Đã Xóa");
+      },
+    });
   };
 
   const filteredItems = bpcmItems.filter(
@@ -174,14 +133,7 @@ export const DmBpcmTab: React.FC = () => {
       i.maCskcb.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  const currentXml = useMemo(
-    () => (bpcmItems.length > 0 ? generateBpcmXml(bpcmItems) : ""),
-    [bpcmItems],
-  );
-  const currentBase64 = useMemo(
-    () => (currentXml ? xmlToBase64(currentXml) : ""),
-    [currentXml],
-  );
+  const schemaProps = useSchemaMappingProps(BPCM_SCHEMA_FIELDS, fileUploadStats);
 
   return (
     <div className="space-y-6">
@@ -196,10 +148,13 @@ export const DmBpcmTab: React.FC = () => {
         onDownloadTemplate={downloadBpcmExcelTemplate}
         onLoadSample={handleLoadSampleData}
         onClearData={handleClearData}
-        onOpenXmlModal={() => setIsXmlModalOpen(true)}
-        onOpenApiTab={() => {
+        onOpenXmlModal={() => {
+          setXmlModalTab("xml");
           setIsXmlModalOpen(true);
-          setXmlExportTab("api");
+        }}
+        onOpenApiTab={() => {
+          setXmlModalTab("api");
+          setIsXmlModalOpen(true);
         }}
         onOpenSchemaModal={() => setIsSchemaModalOpen(true)}
         onAddNew={() => {
@@ -212,14 +167,7 @@ export const DmBpcmTab: React.FC = () => {
       <SchemaMappingCard
         title="Đối Soát Khớp Cột Chuẩn Mẫu 01/DM (Bộ Phận Chuyên Môn)"
         loaiHsBadge="Loại HS 70 - 11 Trường"
-        schemaFields={BPCM_SCHEMA_FIELDS}
-        matchedKeys={
-          fileUploadStats?.matchedFields || BPCM_SCHEMA_FIELDS.map((f) => f.key)
-        }
-        matchedColumnsMap={fileUploadStats?.matchedColumnsMap || {}}
-        sheetName={fileUploadStats?.selectedSheet}
-        fileName={fileUploadStats?.fileName}
-        totalRows={fileUploadStats?.totalRows}
+        {...schemaProps}
         defaultExpanded={!!fileUploadStats}
       />
 
@@ -239,16 +187,8 @@ export const DmBpcmTab: React.FC = () => {
         isOpen={isXmlModalOpen}
         onClose={() => setIsXmlModalOpen(false)}
         items={bpcmItems}
-        xmlContent={currentXml}
-        base64Content={currentBase64}
-        tab={xmlExportTab}
-        onTabChange={setXmlExportTab}
-        isKeyCopied={isKeyCopied}
-        onCopy={handleCopyText}
-        onExportXml={handleExportXml}
-        onSendApi={handleSendBhxhApi}
-        isSendingApi={isSendingApi}
-        apiResponse={apiResponse}
+        defaultTab={xmlModalTab}
+        fileUploadStats={fileUploadStats}
       />
 
       <BpcmEditModal
@@ -267,14 +207,7 @@ export const DmBpcmTab: React.FC = () => {
         onClose={() => setIsSchemaModalOpen(false)}
         title="Mẫu 01/DM: Bộ Phận Chuyên Môn (Khoa, Phòng, Bàn Khám & Giường Bệnh)"
         loaiHsBadge="Loại HS 70 - 11 Trường"
-        schemaFields={BPCM_SCHEMA_FIELDS}
-        matchedKeys={
-          fileUploadStats?.matchedFields || BPCM_SCHEMA_FIELDS.map((f) => f.key)
-        }
-        matchedColumnsMap={fileUploadStats?.matchedColumnsMap || {}}
-        sheetName={fileUploadStats?.selectedSheet}
-        fileName={fileUploadStats?.fileName}
-        totalRows={fileUploadStats?.totalRows}
+        {...schemaProps}
       />
     </div>
   );

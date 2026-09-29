@@ -4,13 +4,8 @@ import {
   THIETBI_SCHEMA_FIELDS,
   parseThietBiExcelFile,
   parseThietBiWorksheet,
-  generateThietBiXml,
-  xmlToBase64,
-  downloadThietBiXmlFile,
   downloadThietBiExcelTemplate,
-  sendThietBiToBhxhGateway,
   type ParseThietBiExcelResult,
-  type SendThietBiGatewayResult,
 } from "./services/thietBiService";
 import { initialThietBiData } from "../../../mock/mockData";
 import { useToast } from "../../../context/ToastContext";
@@ -21,12 +16,10 @@ import { ThietBiXmlModal } from "./components/ThietBiXmlModal";
 import { ThietBiEditModal } from "./components/ThietBiEditModal";
 import { SchemaMappingModal } from "../common/SchemaMappingModal";
 import { SchemaMappingCard } from "../common/SchemaMappingCard";
-
-import { useClipboard } from "../../../hooks";
+import { useSchemaMappingProps } from "../../../hooks";
 
 export const DmThietBiTab: React.FC = () => {
   const toast = useToast();
-  const { isKeyCopied, copy: handleCopyText } = useClipboard();
   const [thietBiItems, setThietBiItems] =
     useState<DmThietBiItem[]>(initialThietBiData);
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,12 +29,9 @@ export const DmThietBiTab: React.FC = () => {
 
   // Modal State for Mẫu 04/DM
   const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
-  const [xmlExportTab, setXmlExportTab] = useState<
+  const [xmlModalTab, setXmlModalTab] = useState<
     "xml" | "base64" | "api" | "smartca"
   >("xml");
-  const [isSendingApi, setIsSendingApi] = useState(false);
-  const [apiResponse, setApiResponse] =
-    useState<SendThietBiGatewayResult | null>(null);
 
   // Edit / Add Modal State for Mẫu 04/DM
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -138,53 +128,24 @@ export const DmThietBiTab: React.FC = () => {
   };
 
   const handleDeleteItem = (item: DmThietBiItem) => {
-    if (
-      confirm(
-        `Bạn có chắc chắn muốn xóa thiết bị "${item.tenVatTu}" (${item.maVatTu})?`,
-      )
-    ) {
-      setThietBiItems((prev) =>
-        prev
-          .filter((i) => i.id !== item.id)
-          .map((i, idx) => ({ ...i, stt: idx + 1 })),
-      );
-      toast.info(`Đã xóa thiết bị: ${item.tenVatTu}`, "Đã Xóa");
-    }
+    toast.showConfirm({
+      title: "Xác nhận xóa thiết bị",
+      content: `Bạn có chắc chắn muốn xóa thiết bị "${item.tenVatTu}" (${item.maVatTu})?`,
+      danger: true,
+      okText: "Xóa",
+      cancelText: "Hủy",
+      onOk: () => {
+        setThietBiItems((prev) =>
+          prev
+            .filter((i) => i.id !== item.id)
+            .map((i, idx) => ({ ...i, stt: idx + 1 })),
+        );
+        toast.info(`Đã xóa thiết bị: ${item.tenVatTu}`, "Đã Xóa");
+      },
+    });
   };
 
   // XML & Base64 Generation
-  const xmlContent = useMemo(() => {
-    return generateThietBiXml(thietBiItems);
-  }, [thietBiItems]);
-
-  const base64Content = useMemo(() => {
-    return xmlToBase64(xmlContent);
-  }, [xmlContent]);
-
-  const handleExportXml = () => {
-    downloadThietBiXmlFile(xmlContent, `DanhMuc04_DMVTYT_${Date.now()}.xml`);
-    toast.success(
-      "Đã tải xuống tệp XML Mẫu 04/DM chuẩn Bộ Y tế & BHXH Việt Nam",
-      "Xuất File Thành Công",
-    );
-  };
-
-  const handleSendBhxhApi = async () => {
-    setIsSendingApi(true);
-    try {
-      const res = await sendThietBiToBhxhGateway(thietBiItems);
-      setApiResponse(res);
-      toast.success(
-        `Đã gửi thành công ${res.totalRecords} thiết bị / vật tư lên Cổng BHXH (Sandbox)\nMã GD: ${res.maGiaoDich}`,
-        "Gửi Cổng Tiếp Nhận Thành Công",
-      );
-    } catch (err: any) {
-      toast.error(`Lỗi gửi cổng BHXH: ${err.message}`, "Lỗi Giao Dịch");
-    } finally {
-      setIsSendingApi(false);
-    }
-  };
-
   const filteredItems = useMemo(() => {
     const q = searchTerm.toLowerCase().trim();
     if (!q) return thietBiItems;
@@ -199,6 +160,11 @@ export const DmThietBiTab: React.FC = () => {
         (i.nhaThau && i.nhaThau.toLowerCase().includes(q)),
     );
   }, [thietBiItems, searchTerm]);
+
+  const schemaProps = useSchemaMappingProps(
+    THIETBI_SCHEMA_FIELDS,
+    fileUploadStats,
+  );
 
   return (
     <div className="space-y-6">
@@ -216,11 +182,11 @@ export const DmThietBiTab: React.FC = () => {
         onLoadSample={handleLoadSampleData}
         onClearData={handleClearData}
         onOpenXmlModal={() => {
-          setXmlExportTab("xml");
+          setXmlModalTab("xml");
           setIsXmlModalOpen(true);
         }}
         onOpenApiTab={() => {
-          setXmlExportTab("api");
+          setXmlModalTab("api");
           setIsXmlModalOpen(true);
         }}
         onOpenSchemaModal={() => setIsSchemaModalOpen(true)}
@@ -232,27 +198,7 @@ export const DmThietBiTab: React.FC = () => {
 
       {/* 3. Schema Mapping Inspection Card */}
       <SchemaMappingCard
-        schemaFields={THIETBI_SCHEMA_FIELDS}
-        matchedKeys={
-          fileUploadStats
-            ? Object.values(fileUploadStats.detectedHeaders)
-            : THIETBI_SCHEMA_FIELDS.map((f) => f.key)
-        }
-        matchedColumnsMap={
-          fileUploadStats
-            ? Object.fromEntries(
-                Object.entries(fileUploadStats.detectedHeaders).map(
-                  ([colIdx, key]) => [
-                    key,
-                    `Cột ${Number(colIdx) + 1} (${key})`,
-                  ],
-                ),
-              )
-            : {}
-        }
-        sheetName={fileUploadStats?.selectedSheet}
-        fileName={fileUploadStats?.fileName}
-        totalRows={fileUploadStats?.totalRows}
+        {...schemaProps}
         loaiHsBadge="Loại HS 11 - 26 Trường"
         title="Đặc Tả Cấu Trúc 26 Trường Danh Mục Thiết Bị Y Tế (Mẫu 04/DM - Loại HS 11)"
         defaultExpanded={!!fileUploadStats}
@@ -290,16 +236,8 @@ export const DmThietBiTab: React.FC = () => {
         isOpen={isXmlModalOpen}
         onClose={() => setIsXmlModalOpen(false)}
         items={thietBiItems}
-        xmlContent={xmlContent}
-        base64Content={base64Content}
-        tab={xmlExportTab}
-        onTabChange={setXmlExportTab}
-        isKeyCopied={isKeyCopied}
-        onCopy={handleCopyText}
-        onExportXml={handleExportXml}
-        onSendApi={handleSendBhxhApi}
-        isSendingApi={isSendingApi}
-        apiResponse={apiResponse}
+        defaultTab={xmlModalTab}
+        fileUploadStats={fileUploadStats}
       />
 
       {/* 7. Schema Mapping Inspector Modal */}
@@ -308,27 +246,7 @@ export const DmThietBiTab: React.FC = () => {
         onClose={() => setIsSchemaModalOpen(false)}
         title="Mẫu 04/DM: Danh Mục Thiết Bị Y Tế Áp Dụng Thanh Toán BHYT"
         loaiHsBadge="Loại HS 11 - 26 Trường"
-        schemaFields={THIETBI_SCHEMA_FIELDS}
-        matchedKeys={
-          fileUploadStats
-            ? Object.values(fileUploadStats.detectedHeaders)
-            : THIETBI_SCHEMA_FIELDS.map((f) => f.key)
-        }
-        matchedColumnsMap={
-          fileUploadStats
-            ? Object.fromEntries(
-                Object.entries(fileUploadStats.detectedHeaders).map(
-                  ([colIdx, key]) => [
-                    key,
-                    `Cột ${Number(colIdx) + 1} (${key})`,
-                  ],
-                ),
-              )
-            : {}
-        }
-        sheetName={fileUploadStats?.selectedSheet}
-        fileName={fileUploadStats?.fileName}
-        totalRows={fileUploadStats?.totalRows}
+        {...schemaProps}
       />
     </div>
   );

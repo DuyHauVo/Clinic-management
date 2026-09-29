@@ -248,6 +248,7 @@ export function getDocOptionsList(
   fileName: string,
   itemsCount: number = 1,
   itemLabel: string = "bản ghi",
+  sourceFileName?: string,
 ): DocSignOptionGroup[] {
   return [
     {
@@ -258,7 +259,9 @@ export function getDocOptionsList(
           code: "HIỆN TẠI",
           badge: "Tài liệu mở",
           title: `[Tài liệu hiện hành] ${fileName}`,
-          desc: `Dữ liệu đang thao tác (${itemsCount || 1} ${itemLabel})`,
+          desc: sourceFileName
+            ? `Dữ liệu đang thao tác từ tệp "${sourceFileName}" (${itemsCount || 1} ${itemLabel})`
+            : `Dữ liệu đang thao tác (${itemsCount || 1} ${itemLabel})`,
         },
       ],
     },

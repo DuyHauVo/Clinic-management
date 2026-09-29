@@ -106,6 +106,14 @@ export const SignedResultView: React.FC<SignedResultViewProps> = ({
                     {sig.signingTime || "N/A"}
                   </span>
                 </div>
+                {sig.digestValue && (
+                  <div className="sm:col-span-2">
+                    <b className="text-slate-500">Mã băm (Digest):</b>{" "}
+                    <span className="font-mono text-slate-900 select-all break-all">
+                      {sig.digestValue}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -147,6 +155,14 @@ export const SignedResultView: React.FC<SignedResultViewProps> = ({
                 {signatureInfo.signingTime || new Date().toLocaleString("vi-VN")}
               </span>
             </div>
+            {signatureInfo.digestValue && (
+              <div className="sm:col-span-2">
+                <b className="text-slate-500">Mã băm SHA-256 (Digest):</b>{" "}
+                <span className="font-mono text-slate-900 select-all break-all">
+                  {signatureInfo.digestValue}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}

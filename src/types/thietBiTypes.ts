@@ -1,5 +1,4 @@
-import * as XLSX from 'xlsx';
-import type { GatewaySendResult } from '../utils/shared/excelXmlShared';
+import type { GatewaySendResult, DanhMucParseResult } from '../utils/shared';
 
 export interface DmThietBiItem {
   id?: string;
@@ -54,17 +53,6 @@ export interface ThietBiSchemaField {
   example?: string;
 }
 
-export interface ParseThietBiExcelResult {
-  items: DmThietBiItem[];
-  totalRows: number;
-  validRows: number;
-  invalidRows: number;
-  detectedHeaders: { [colIndex: number]: string };
-  missingRequiredFields: string[];
-  availableSheets: string[];
-  selectedSheet: string;
-  fileName: string;
-  workbook?: XLSX.WorkBook;
-}
+export type ParseThietBiExcelResult = DanhMucParseResult<DmThietBiItem>;
 
 export type SendThietBiGatewayResult = GatewaySendResult;

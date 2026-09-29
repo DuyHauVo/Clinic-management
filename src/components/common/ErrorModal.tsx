@@ -9,6 +9,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { useModalBehavior } from '../../hooks/useModalBehavior';
+import { copyTextToClipboard } from '../../utils/shared/excelXmlShared';
 
 export interface ErrorModalProps {
   isOpen: boolean;
@@ -80,7 +81,11 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
 
-  useModalBehavior(isOpen, onClose);
+  const {
+    handleBackdropMouseDown,
+    handleBackdropClick,
+    handleStopPropagation,
+  } = useModalBehavior(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -107,31 +112,9 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({
         logText += `  ${idx + 1}. ${r}\n`;
       });
     }
-    navigator.clipboard.writeText(logText);
+    copyTextToClipboard(logText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  // Ref theo dõi điểm bắt đầu mousedown trên backdrop
-  const isBackdropMouseDownRef = React.useRef(false);
-
-  const handleBackdropMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      isBackdropMouseDownRef.current = true;
-    } else {
-      isBackdropMouseDownRef.current = false;
-    }
-  };
-
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget && isBackdropMouseDownRef.current) {
-      onClose();
-    }
-    isBackdropMouseDownRef.current = false;
-  };
-
-  const handleStopPropagation = (e: React.MouseEvent) => {
-    e.stopPropagation();
   };
 
   return (

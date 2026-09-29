@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSmartCa } from "../context/SmartCaContext";
 import { useToast } from "../context/ToastContext";
+import { useClipboard } from "./useClipboard";
 import { computeXmlDigest } from "../utils/xmlDsigEngine";
 import {
   initiateSignQ1,
@@ -65,30 +66,26 @@ export function useSmartCaSignQ1({
     digestValue: string;
     hexDigest: string;
   } | null>(null);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const { copiedKey, copy } = useClipboard();
 
   // Timers
   const pollingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const lastCalculatedXmlRef = useRef<string>("");
-
-  // Tính SHA-256 Digest của XML
+  // Tính SHA-256 Digest của XML (tính duy nhất tại đây)
   useEffect(() => {
     let isCancelled = false;
     if (effectiveXmlToSign) {
-      if (lastCalculatedXmlRef.current === effectiveXmlToSign) {
-        return;
-      }
-      lastCalculatedXmlRef.current = effectiveXmlToSign;
       computeXmlDigest(effectiveXmlToSign, { preserveOtherSignatures: true })
         .then((res) => {
-          if (!isCancelled) setDigestInfo(res);
+          if (!isCancelled) {
+            setDigestInfo(res);
+          }
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error("Lỗi tính mã băm SHA-256 XML:", err);
           if (!isCancelled) setDigestInfo(null);
         });
     } else {
-      lastCalculatedXmlRef.current = "";
       setDigestInfo(null);
     }
     return () => {
@@ -105,9 +102,7 @@ export function useSmartCaSignQ1({
   }, []);
 
   const handleCopy = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 2000);
+    copy(text, "Đã sao chép vào khay nhớ tạm", key);
   };
 
   const handleIdentityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -147,55 +142,80 @@ export function useSmartCaSignQ1({
   };
 
   /**
-   * Polling tự động mỗi 2 giây
+   * Xử lý kiểm tra trạng thái giao dịch ký số (dùng chung cho Polling và Kiểm tra ngay)
    */
-  const startPollingTransaction = (
-    tranId: string,
-    accessToken: string,
-    digestValue: string,
-    signerProfile: SignerProfile,
-  ) => {
-    if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
-
-    pollingTimerRef.current = setInterval(async () => {
+  const checkTransactionStatus = useCallback(
+    async (
+      tran: SmartCaQ1InitiateResponse,
+      isManualCheck = false,
+    ): Promise<boolean> => {
       try {
         const checkRes = await checkSignStatusQ1({
-          tranId,
-          accessToken,
-          digestValue,
+          tranId: tran.tranId,
+          accessToken: tran.accessToken,
+          digestValue: tran.digestValue,
           rawXml: effectiveXmlToSign,
           certInfo: {
-            subjectDN: signerProfile.subjectDN,
-            serialNumber: signerProfile.serialNumber,
-            issuerDN: "VNPT SmartCA RS",
-            x509Certificate: "",
+            subjectDN: tran.subjectDN,
+            serialNumber: tran.serialNumber,
+            issuerDN: tran.issuerDN || "VNPT SmartCA RS",
+            x509Certificate: tran.x509Certificate || "",
+            rsaModulus: tran.rsaModulus,
+            rsaExponent: tran.rsaExponent,
           },
-          signer: signerProfile,
+          signer: tran.signer,
         });
 
         if (checkRes.success && checkRes.signedXml) {
           handleCancelWaiting();
+          toast.success("Ký số thành công!", "Hoàn Tất Ký");
           onSignedSuccess(checkRes.signedXml, checkRes);
-          return;
+          return true;
         }
 
         if (checkRes.status === SMARTCA_TRAN_STATUS.EXPIRED) {
           handleCancelWaiting();
-          toast.error(checkRes.error || "Giao dịch ký số đã hết hạn trên App SmartCA.", "Hết Hạn");
-          return;
+          toast.error(
+            checkRes.error || "Giao dịch ký số đã hết hạn trên App SmartCA.",
+            "Hết Hạn",
+          );
+          return true;
         }
 
         if (checkRes.status === SMARTCA_TRAN_STATUS.SIGNER_REJECTED) {
           handleCancelWaiting();
           toast.warning(
-            checkRes.error || "Người dùng đã từ chối xác nhận ký số trên App VNPT SmartCA.",
+            checkRes.error ||
+              "Người dùng đã từ chối xác nhận ký số trên App VNPT SmartCA.",
             "Từ Chối Ký",
           );
-          return;
+          return true;
         }
-      } catch (pollErr: unknown) {
-        console.warn("Polling error:", pollErr);
+
+        return false;
+      } catch (err: unknown) {
+        if (isManualCheck) {
+          toast.error(
+            err instanceof Error ? err.message : "Lỗi kiểm tra trạng thái",
+            "Lỗi Kiểm Tra",
+          );
+        } else {
+          console.warn("Polling error:", err);
+        }
+        return false;
       }
+    },
+    [effectiveXmlToSign, handleCancelWaiting, onSignedSuccess, toast],
+  );
+
+  /**
+   * Polling tự động mỗi 2 giây
+   */
+  const startPollingTransaction = (tran: SmartCaQ1InitiateResponse) => {
+    if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
+
+    pollingTimerRef.current = setInterval(async () => {
+      await checkTransactionStatus(tran, false);
     }, 2000);
   };
 
@@ -270,9 +290,13 @@ export function useSmartCaSignQ1({
     };
 
     try {
-      const { digestValue } = await computeXmlDigest(effectiveXmlToSign, {
-        preserveOtherSignatures: true,
-      });
+      const digestValue =
+        digestInfo?.digestValue ||
+        (
+          await computeXmlDigest(effectiveXmlToSign, {
+            preserveOtherSignatures: true,
+          })
+        ).digestValue;
 
       const initResponse = await initiateSignQ1({
         username: trimmedIdentity,
@@ -310,12 +334,7 @@ export function useSmartCaSignQ1({
         });
       }, 1000);
 
-      startPollingTransaction(
-        initResponse.tranId,
-        initResponse.accessToken,
-        digestValue,
-        dynamicSigner,
-      );
+      startPollingTransaction(initResponse);
     } catch (err: unknown) {
       const errorMsg =
         err instanceof Error ? err.message : "Có lỗi xảy ra khi khởi tạo ký số Q1";
@@ -326,37 +345,7 @@ export function useSmartCaSignQ1({
 
   const handleCheckNow = async () => {
     if (!waitingTransaction) return;
-    try {
-      const checkRes = await checkSignStatusQ1({
-        tranId: waitingTransaction.tranId,
-        accessToken: waitingTransaction.accessToken,
-        digestValue: waitingTransaction.digestValue,
-        rawXml: effectiveXmlToSign,
-        certInfo: {
-          subjectDN: waitingTransaction.subjectDN,
-          serialNumber: waitingTransaction.serialNumber,
-          issuerDN: waitingTransaction.issuerDN,
-          x509Certificate: waitingTransaction.x509Certificate,
-          rsaModulus: waitingTransaction.rsaModulus,
-          rsaExponent: waitingTransaction.rsaExponent,
-        },
-        signer: waitingTransaction.signer,
-      });
-
-      if (checkRes.success && checkRes.signedXml) {
-        handleCancelWaiting();
-        toast.success("Ký số thành công!", "Hoàn Tất Ký");
-        onSignedSuccess(checkRes.signedXml, checkRes);
-      } else if (checkRes.status === SMARTCA_TRAN_STATUS.EXPIRED) {
-        handleCancelWaiting();
-        toast.error(checkRes.error || "Giao dịch đã hết hạn.", "Hết Hạn");
-      } else if (checkRes.status === SMARTCA_TRAN_STATUS.SIGNER_REJECTED) {
-        handleCancelWaiting();
-        toast.warning(checkRes.error || "Người dùng đã từ chối ký.", "Từ Chối Ký");
-      }
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Lỗi kiểm tra trạng thái", "Lỗi Kiểm Tra");
-    }
+    await checkTransactionStatus(waitingTransaction, true);
   };
 
   const handleSimulateAppConfirm = async () => {

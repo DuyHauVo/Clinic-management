@@ -1,5 +1,4 @@
-import * as XLSX from 'xlsx';
-import type { GatewaySendResult } from '../utils/shared/excelXmlShared';
+import type { GatewaySendResult, DanhMucParseResult } from '../utils/shared';
 
 export interface DmTbytThdvItem {
   id?: string;
@@ -37,17 +36,6 @@ export interface TbytThdvSchemaField {
   example?: string;
 }
 
-export interface ParseTbytThdvExcelResult {
-  items: DmTbytThdvItem[];
-  totalRows: number;
-  validRows: number;
-  invalidRows: number;
-  detectedHeaders: { [colIndex: number]: string };
-  missingRequiredFields: string[];
-  availableSheets: string[];
-  selectedSheet: string;
-  fileName: string;
-  workbook?: XLSX.WorkBook;
-}
+export type ParseTbytThdvExcelResult = DanhMucParseResult<DmTbytThdvItem>;
 
 export type SendTbytThdvGatewayResult = GatewaySendResult;

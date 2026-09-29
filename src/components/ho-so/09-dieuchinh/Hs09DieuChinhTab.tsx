@@ -24,10 +24,8 @@ import {
 } from "./components";
 import { SchemaMappingModal } from "../../danh-muc/common/SchemaMappingModal";
 import { SchemaMappingCard } from "../../danh-muc/common/SchemaMappingCard";
-import {
-  getTodayIsoDate,
-  type SharedSchemaField,
-} from "../../../utils/shared/excelXmlShared";
+import { useSchemaMappingProps } from "../../../hooks";
+import { getTodayIsoDate } from "../../../utils/shared/excelXmlShared";
 
 interface Hs09DieuChinhTabProps {
   items?: HoSoDieuChinh09Item[];
@@ -68,7 +66,7 @@ export const Hs09DieuChinhTab: React.FC<Hs09DieuChinhTabProps> = ({
 
   // Modals
   const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
-  const [xmlExportTab, setXmlExportTab] = useState<"xml" | "base64" | "api">(
+  const [xmlModalTab, setXmlModalTab] = useState<"xml" | "base64" | "api">(
     "xml",
   );
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -154,18 +152,21 @@ export const Hs09DieuChinhTab: React.FC<Hs09DieuChinhTabProps> = ({
   };
 
   const handleClearData = () => {
-    if (
-      window.confirm(
-        "Bạn có chắc chắn muốn xóa toàn bộ danh sách hồ sơ 09/BH hiện tại?",
-      )
-    ) {
-      setItems([]);
-      setFileUploadStats(null);
-      toast.warning(
-        "Đã xóa toàn bộ dữ liệu bảng hồ sơ điều chỉnh",
-        "Xóa Dữ Liệu",
-      );
-    }
+    toast.showConfirm({
+      title: "Xác nhận xóa toàn bộ hồ sơ",
+      content: "Bạn có chắc chắn muốn xóa toàn bộ danh sách hồ sơ 09/BH hiện tại?",
+      danger: true,
+      okText: "Xóa tất cả",
+      cancelText: "Hủy",
+      onOk: () => {
+        setItems([]);
+        setFileUploadStats(null);
+        toast.warning(
+          "Đã xóa toàn bộ dữ liệu bảng hồ sơ điều chỉnh",
+          "Xóa Dữ Liệu",
+        );
+      },
+    });
   };
 
   // CRUD
@@ -180,17 +181,20 @@ export const Hs09DieuChinhTab: React.FC<Hs09DieuChinhTabProps> = ({
   };
 
   const handleDelete = (item: HoSoDieuChinh09Item) => {
-    if (
-      window.confirm(
-        `Bạn có chắc chắn muốn xóa hồ sơ điều chỉnh của bệnh nhân "${item.ttXml1.hoTen}" (LK: ${item.ttXml1.maLk})?`,
-      )
-    ) {
-      setItems((prev) => prev.filter((i) => i.id !== item.id));
-      toast.success(
-        `Đã xóa hồ sơ điều chỉnh LK "${item.ttXml1.maLk}"`,
-        "Xóa Hồ Sơ",
-      );
-    }
+    toast.showConfirm({
+      title: "Xác nhận xóa hồ sơ",
+      content: `Bạn có chắc chắn muốn xóa hồ sơ điều chỉnh của bệnh nhân "${item.ttXml1.hoTen}" (LK: ${item.ttXml1.maLk})?`,
+      danger: true,
+      okText: "Xóa",
+      cancelText: "Hủy",
+      onOk: () => {
+        setItems((prev) => prev.filter((i) => i.id !== item.id));
+        toast.success(
+          `Đã xóa hồ sơ điều chỉnh LK "${item.ttXml1.maLk}"`,
+          "Xóa Hồ Sơ",
+        );
+      },
+    });
   };
 
   const handleSaveItem = (savedItem: HoSoDieuChinh09Item) => {
@@ -278,24 +282,7 @@ export const Hs09DieuChinhTab: React.FC<Hs09DieuChinhTabProps> = ({
     });
   }, [items, searchTerm, filterNhomLoi, filterSoBangXml, filterTrangThai]);
 
-  // Memoize matched headers for schema inspection
-  const { matchedKeys, matchedColumnsMap } = useMemo(() => {
-    if (!fileUploadStats) {
-      return {
-        matchedKeys: HS09_SCHEMA_FIELDS.map((f: SharedSchemaField) => f.key),
-        matchedColumnsMap: {} as Record<string, string>,
-      };
-    }
-    return {
-      matchedKeys: Object.values(fileUploadStats.detectedHeaders),
-      matchedColumnsMap: Object.fromEntries(
-        Object.entries(fileUploadStats.detectedHeaders).map(([colIdx, key]) => [
-          key,
-          `Cột ${Number(colIdx) + 1} (${key})`,
-        ]),
-      ),
-    };
-  }, [fileUploadStats]);
+  const schemaProps = useSchemaMappingProps(HS09_SCHEMA_FIELDS, fileUploadStats);
 
   return (
     <div className="space-y-6">
@@ -313,11 +300,11 @@ export const Hs09DieuChinhTab: React.FC<Hs09DieuChinhTabProps> = ({
         onLoadSample={handleLoadSample}
         onClearData={handleClearData}
         onOpenXmlModal={() => {
-          setXmlExportTab("xml");
+          setXmlModalTab("xml");
           setIsXmlModalOpen(true);
         }}
         onOpenApiTab={() => {
-          setXmlExportTab("api");
+          setXmlModalTab("api");
           setIsXmlModalOpen(true);
         }}
         onOpenSchemaModal={() => setIsSchemaModalOpen(true)}
@@ -326,12 +313,7 @@ export const Hs09DieuChinhTab: React.FC<Hs09DieuChinhTabProps> = ({
 
       {/* 3. Schema Mapping Card / Inspector */}
       <SchemaMappingCard
-        schemaFields={HS09_SCHEMA_FIELDS}
-        matchedKeys={matchedKeys}
-        matchedColumnsMap={matchedColumnsMap}
-        sheetName={fileUploadStats?.selectedSheet}
-        fileName={fileUploadStats?.fileName}
-        totalRows={fileUploadStats?.totalRows}
+        {...schemaProps}
         loaiHsBadge="Loại HS 73 - GuiHoSoDieuChinh09BH"
         title="Đặc Tả Cấu Trúc Hồ Sơ Điều Chỉnh Giám Định Mẫu 09/BH (XML <HOSO_DIEUCHINH_GD> - Loại HS 73)"
         defaultExpanded={!!fileUploadStats}
@@ -376,20 +358,16 @@ export const Hs09DieuChinhTab: React.FC<Hs09DieuChinhTabProps> = ({
         isOpen={isXmlModalOpen}
         onClose={() => setIsXmlModalOpen(false)}
         items={items}
-        activeTab={xmlExportTab}
+        defaultTab={xmlModalTab}
         onSendSuccess={handleSendSuccess}
+        fileUploadStats={fileUploadStats}
       />
 
       {/* Schema Mapping Modal */}
       <SchemaMappingModal
         isOpen={isSchemaModalOpen}
         onClose={() => setIsSchemaModalOpen(false)}
-        schemaFields={HS09_SCHEMA_FIELDS}
-        matchedKeys={matchedKeys}
-        matchedColumnsMap={matchedColumnsMap}
-        sheetName={fileUploadStats?.selectedSheet}
-        fileName={fileUploadStats?.fileName}
-        totalRows={fileUploadStats?.totalRows}
+        {...schemaProps}
         loaiHsBadge="Loại HS 73 - Mẫu 09/BH"
         title="Đặc Tả Kỹ Thuật Hồ Sơ Điều Chỉnh Xử Lý Xuất Toán 09/BH (XML <HOSO_DIEUCHINH_GD>)"
       />

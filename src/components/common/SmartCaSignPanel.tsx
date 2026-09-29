@@ -3,6 +3,7 @@ import { SmartCaErrorModal } from "./ErrorModal";
 import { extractXmlSignature } from "../../utils/xmlDsigEngine";
 import { useSmartCaSignQ1 } from "../../hooks/useSmartCaSignQ1";
 import type { DocSignOptionType } from "../../types/tt25ChungTuTypes";
+import { downloadXmlFile } from "../../utils/shared";
 import {
   DocTypeSelector,
   XmlPreviewModal,
@@ -14,6 +15,8 @@ import {
 import type { SignerProfile } from "../../types/smartcaTypes";
 import type { SmartCaSignResponse } from "../../services/smartca/smartcaHandlers";
 
+import type { SourceFileUploadInfo } from "./XmlExportModal";
+
 export interface SmartCaSignPanelProps {
   xmlContent: string;
   signedXml?: string;
@@ -21,6 +24,8 @@ export interface SmartCaSignPanelProps {
   itemsCount?: number;
   itemLabel?: string;
   signers?: SignerProfile[];
+  signatureInfo?: ReturnType<typeof extractXmlSignature>;
+  sourceFileInfo?: SourceFileUploadInfo | null;
   onSignedSuccess: (
     signedXml: string,
     signResponse: SmartCaSignResponse,
@@ -35,6 +40,8 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
   fileName,
   itemsCount,
   itemLabel = "bản ghi",
+  signatureInfo: externalSignatureInfo,
+  sourceFileInfo,
   onSignedSuccess,
   onResetSignature,
   onDownloadSignedXml,
@@ -53,21 +60,26 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
   // 2. Tính toán XML hiệu lực cần ký (chỉ có khi đã nạp file hoặc có dữ liệu thực tế)
   const effectiveXmlToSign = useMemo(() => {
     if (uploadedCustomXml) return uploadedCustomXml;
-    if (selectedDocType === "CURRENT") return xmlContent;
+    if (selectedDocType === "CURRENT") return xmlContent || signedXml || "";
     return "";
-  }, [selectedDocType, xmlContent, uploadedCustomXml]);
+  }, [selectedDocType, xmlContent, uploadedCustomXml, signedXml]);
 
   // State ký nối tiếp (Countersign)
   const [isCountersigning, setIsCountersigning] = useState(false);
 
-  // Tên file hiệu lực hiển thị (có cache useMemo, chỉ hiển thị khi đã nạp file từ máy tính)
-  const effectiveFileName = useMemo(
-    () =>
-      uploadedFileName
-        ? `${uploadedFileName.replace(/\.[^/.]+$/, "")}.xml`
-        : "",
-    [uploadedFileName],
-  );
+  // Tên file hiệu lực hiển thị (ưu tiên file tải lên, sau đó fileName từ props hoặc template)
+  const effectiveFileName = useMemo(() => {
+    if (uploadedFileName) {
+      return `${uploadedFileName.replace(/\.[^/.]+$/, "")}.xml`;
+    }
+    if (fileName) {
+      return fileName;
+    }
+    if (selectedDocType && selectedDocType !== "CURRENT") {
+      return `${selectedDocType}_Template.xml`;
+    }
+    return "TepTin_KySo.xml";
+  }, [uploadedFileName, fileName, selectedDocType]);
 
   // XML đưa vào quy trình ký: nếu đang ở chế độ đồng ký thì ký tiếp trên bản đã có chữ ký
   const actualXmlForHook = useMemo(() => {
@@ -79,8 +91,11 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
 
   // Trích xuất chữ ký số nếu đã ký
   const signatureInfo = useMemo(() => {
+    if (!uploadedCustomXml && selectedDocType === "CURRENT" && externalSignatureInfo) {
+      return externalSignatureInfo;
+    }
     return extractXmlSignature(signedXml || effectiveXmlToSign);
-  }, [signedXml, effectiveXmlToSign]);
+  }, [uploadedCustomXml, selectedDocType, externalSignatureInfo, signedXml, effectiveXmlToSign]);
 
   const isSigned = signatureInfo.hasSignature && !isCountersigning;
 
@@ -132,15 +147,7 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
   const handleDefaultDownloadSignedXml = () => {
     const content = signedXml || effectiveXmlToSign;
     if (!content) return;
-    const blob = new Blob([content], { type: "application/xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = effectiveFileName || "Signed_Document.xml";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    downloadXmlFile(content, effectiveFileName || "Signed_Document.xml");
   };
 
   return (
@@ -153,6 +160,7 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
         selectedDocType={selectedDocType}
         isSigned={isSigned}
         hasFile={Boolean(effectiveXmlToSign)}
+        sourceFileInfo={sourceFileInfo}
         onSelectDocType={(type) => {
           setSelectedDocType(type);
           if (isSigned) onResetSignature();
@@ -186,7 +194,9 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
         effectiveFileName={effectiveFileName}
         isSigned={isSigned}
         isWaiting={Boolean(waitingTransaction)}
-        digestValue={digestInfo?.digestValue}
+        digestValue={
+          isSigned ? signatureInfo.digestValue : digestInfo?.digestValue
+        }
         copiedKey={copiedKey}
         onCopyDigest={(digest) => handleCopy(digest, "digest")}
       />
@@ -203,7 +213,9 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
           onCopySignedXml={() =>
             handleCopy(signedXml || effectiveXmlToSign, "signedXml")
           }
-          onDownloadSignedXml={onDownloadSignedXml || handleDefaultDownloadSignedXml}
+          onDownloadSignedXml={
+            onDownloadSignedXml || handleDefaultDownloadSignedXml
+          }
           onResetAndResign={handleResetAndResign}
           onCountersign={() => setIsCountersigning(true)}
         />

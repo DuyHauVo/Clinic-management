@@ -1,7 +1,7 @@
-import React from 'react';
-import { CheckCircle2 } from 'lucide-react';
-import type { ParseNhanLucExcelResult } from '../services/nhanLucService';
-import { DanhMucDropzone } from '../../common';
+import React from "react";
+import { CheckCircle2 } from "lucide-react";
+import type { ParseNhanLucExcelResult } from "../services/nhanLucService";
+import { DanhMucDropzone } from "../../common";
 
 interface NhanLucDropzoneProps {
   isLoadingFile: boolean;
@@ -30,7 +30,7 @@ export const NhanLucDropzone: React.FC<NhanLucDropzoneProps> = ({
   onOpenXmlModal,
   onOpenApiTab,
   onOpenSchemaModal,
-  onAddNew
+  onAddNew,
 }) => {
   return (
     <DanhMucDropzone
@@ -39,15 +39,18 @@ export const NhanLucDropzone: React.FC<NhanLucDropzoneProps> = ({
       loadingTitle="Đang đọc và bóc tách file Excel Nhân lực..."
       title="Nạp Tệp Excel Danh Mục Nhân Lực (Mẫu 02/DM) Từ Máy Tính"
       description={
-        <>Kéo thả hoặc nhấp để chọn file (.xlsx, .xls). Tự động đối soát 24 trường thông tin chuẩn BHXH Việt Nam.</>
+        <>
+          Kéo thả hoặc nhấp để chọn file (.xlsx, .xls). Tự động đối soát 24
+          trường thông tin chuẩn BHXH Việt Nam.
+        </>
       }
       uploadStats={
         fileUploadStats
           ? {
-              selectedSheet: fileUploadStats.selectedSheet || '',
+              selectedSheet: fileUploadStats.selectedSheet || "",
               totalRows: fileUploadStats.totalRows,
-              rowUnitLabel: 'nhân sự',
-              matchedColumnsCount: fileUploadStats.recognizedColumns.length,
+              rowUnitLabel: "nhân sự",
+              matchedColumnsCount: fileUploadStats.matchedFields.length,
               totalColumnsCount: 24,
               fileName: fileUploadStats.fileName,
               availableSheets: fileUploadStats.sheets,

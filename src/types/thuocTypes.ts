@@ -1,9 +1,5 @@
-import type * as XLSX from 'xlsx';
+import type { DanhMucParseResult } from "../utils/shared";
 
-/**
- * 03/DM: Danh Mục Thuốc, Máu, Chế Phẩm Máu BHYT (Loại hồ sơ 10)
- * Quyết định 130/QĐ-BYT & Quyết định 3176/QĐ-BYT
- */
 export interface DmThuocItem {
   id: string;
   stt: number; // 1. STT
@@ -43,8 +39,6 @@ export interface DmThuocItem {
   maCskcbThuoc?: string; // 35. MA_CSKCB_THUOC - C.XXXXX (nếu điều chuyển từ viện khác)
   tuNgay: string; // 36. TU_NGAY (bắt buộc) - Ngày áp dụng (YYYYMMDD)
   denNgay?: string; // 37. DEN_NGAY - Ngày ngừng áp dụng (YYYYMMDD)
-
-  // Trạng thái đối soát UI
   isValid?: boolean;
   errors?: string[];
 }
@@ -60,21 +54,7 @@ export interface ThuocValidationInput {
   denNgay?: string;
 }
 
-export interface ParseThuocExcelResult {
-  fileName: string;
-  selectedSheet: string;
-  availableSheets: string[];
-  sheets?: Array<{ name: string; rowCount: number; isBestMatch?: boolean }>;
-  totalRows: number;
-  validRows: number;
-  invalidRows: number;
-  items: DmThuocItem[];
-  missingRequiredColumns: string[];
-  matchedFields: string[];
-  matchedColumnsMap: { [schemaKey: string]: string };
-  isMultiSheet: boolean;
-  workbook?: XLSX.WorkBook;
-}
+export type ParseThuocExcelResult = DanhMucParseResult<DmThuocItem>;
 
 export interface SendThuocGatewayResult {
   maKetQua: string;

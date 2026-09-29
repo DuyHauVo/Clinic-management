@@ -23,7 +23,7 @@ interface SchemaMappingModalProps {
   onClose: () => void;
   title: string;
   loaiHsBadge: string;
-  schemaFields: SchemaFieldDef[];
+  schemaFields: readonly SchemaFieldDef[];
   matchedKeys: string[]; // List of schema field keys that were matched
   matchedColumnsMap?: { [schemaKey: string]: string }; // schemaKey -> Excel column name
   sheetName?: string;
