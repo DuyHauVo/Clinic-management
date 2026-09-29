@@ -4,13 +4,8 @@ import {
   TBYTTHDV_SCHEMA_FIELDS,
   parseTbytThdvExcelFile,
   parseTbytThdvWorksheet,
-  generateTbytThdvXml,
-  xmlToBase64,
-  downloadTbytThdvXmlFile,
   downloadTbytThdvExcelTemplate,
-  sendTbytThdvToBhxhGateway,
   type ParseTbytThdvExcelResult,
-  type SendTbytThdvGatewayResult,
 } from "./services/tbyttHdvService";
 import { initialTbytThdvData } from "../../../mock/mockData";
 import { useToast } from "../../../context/ToastContext";
@@ -21,11 +16,10 @@ import { TbytThdvXmlModal } from "./components/TbytThdvXmlModal";
 import { TbytThdvEditModal } from "./components/TbytThdvEditModal";
 import { SchemaMappingModal } from "../common/SchemaMappingModal";
 import { SchemaMappingCard } from "../common/SchemaMappingCard";
-import { useClipboard } from "../../../hooks";
+import { useSchemaMappingProps } from "../../../hooks";
 
 export const DmTbDvktTab: React.FC = () => {
   const toast = useToast();
-  const { isKeyCopied, copy: handleCopyText } = useClipboard();
   const [tbytItems, setTbytItems] = useState<DmTbytThdvItem[]>(() => [
     ...initialTbytThdvData,
   ]);
@@ -36,12 +30,9 @@ export const DmTbDvktTab: React.FC = () => {
 
   // Modal State for Mẫu 06/DM
   const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
-  const [xmlExportTab, setXmlExportTab] = useState<"xml" | "base64" | "api" | "smartca">(
+  const [xmlModalTab, setXmlModalTab] = useState<"xml" | "base64" | "api" | "smartca">(
     "xml",
   );
-  const [isSendingApi, setIsSendingApi] = useState(false);
-  const [apiResponse, setApiResponse] =
-    useState<SendTbytThdvGatewayResult | null>(null);
 
   // Edit / Add Modal State for Mẫu 06/DM
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -140,53 +131,24 @@ export const DmTbDvktTab: React.FC = () => {
   };
 
   const handleDeleteItem = (item: DmTbytThdvItem) => {
-    if (
-      confirm(
-        `Bạn có chắc chắn muốn xóa thiết bị "${item.tenTb}" (Mã máy: ${item.maMay})?`,
-      )
-    ) {
-      setTbytItems((prev) =>
-        prev
-          .filter((i) => i.id !== item.id)
-          .map((i, idx) => ({ ...i, stt: idx + 1 })),
-      );
-      toast.info(`Đã xóa thiết bị: ${item.tenTb}`, "Đã Xóa");
-    }
+    toast.showConfirm({
+      title: "Xác nhận xóa thiết bị",
+      content: `Bạn có chắc chắn muốn xóa thiết bị "${item.tenTb}" (Mã máy: ${item.maMay})?`,
+      danger: true,
+      okText: "Xóa",
+      cancelText: "Hủy",
+      onOk: () => {
+        setTbytItems((prev) =>
+          prev
+            .filter((i) => i.id !== item.id)
+            .map((i, idx) => ({ ...i, stt: idx + 1 })),
+        );
+        toast.info(`Đã xóa thiết bị: ${item.tenTb}`, "Đã Xóa");
+      },
+    });
   };
 
   // XML & Base64 Generation
-  const xmlContent = useMemo(() => {
-    return generateTbytThdvXml(tbytItems);
-  }, [tbytItems]);
-
-  const base64Content = useMemo(() => {
-    return xmlToBase64(xmlContent);
-  }, [xmlContent]);
-
-  const handleExportXml = () => {
-    downloadTbytThdvXmlFile(xmlContent, `DanhMuc06_DMTBYT_${Date.now()}.xml`);
-    toast.success(
-      "Đã tải xuống tệp XML Mẫu 06/DM chuẩn Bộ Y tế & BHXH Việt Nam",
-      "Xuất File Thành Công",
-    );
-  };
-
-  const handleSendBhxhApi = async () => {
-    setIsSendingApi(true);
-    try {
-      const res = await sendTbytThdvToBhxhGateway(tbytItems);
-      setApiResponse(res);
-      toast.success(
-        `Đã gửi thành công ${res.totalRecords} thiết bị lên Cổng BHXH (Sandbox)\nMã GD: ${res.maGiaoDich}`,
-        "Gửi Cổng Tiếp Nhận Thành Công",
-      );
-    } catch (err: any) {
-      toast.error(`Lỗi gửi cổng BHXH: ${err.message}`, "Lỗi Giao Dịch");
-    } finally {
-      setIsSendingApi(false);
-    }
-  };
-
   const filteredItems = useMemo(() => {
     const q = searchTerm.toLowerCase().trim();
     if (!q) return tbytItems;
@@ -202,21 +164,7 @@ export const DmTbDvktTab: React.FC = () => {
     );
   }, [tbytItems, searchTerm]);
 
-  const matchedKeys = useMemo(() => {
-    return fileUploadStats
-      ? Object.values(fileUploadStats.detectedHeaders)
-      : TBYTTHDV_SCHEMA_FIELDS.map((f) => f.key);
-  }, [fileUploadStats]);
-
-  const matchedColumnsMap = useMemo(() => {
-    return fileUploadStats
-      ? Object.fromEntries(
-          Object.entries(fileUploadStats.detectedHeaders).map(
-            ([colIdx, key]) => [key, `Cột ${Number(colIdx) + 1} (${key})`],
-          ),
-        )
-      : {};
-  }, [fileUploadStats]);
+  const schemaProps = useSchemaMappingProps(TBYTTHDV_SCHEMA_FIELDS, fileUploadStats);
 
   return (
     <div className="space-y-6">
@@ -234,11 +182,11 @@ export const DmTbDvktTab: React.FC = () => {
         onLoadSample={handleLoadSampleData}
         onClearData={handleClearData}
         onOpenXmlModal={() => {
-          setXmlExportTab("xml");
+          setXmlModalTab("xml");
           setIsXmlModalOpen(true);
         }}
         onOpenApiTab={() => {
-          setXmlExportTab("api");
+          setXmlModalTab("api");
           setIsXmlModalOpen(true);
         }}
         onOpenSchemaModal={() => setIsSchemaModalOpen(true)}
@@ -250,12 +198,7 @@ export const DmTbDvktTab: React.FC = () => {
 
       {/* 3. Schema Mapping Inspection Card */}
       <SchemaMappingCard
-        schemaFields={TBYTTHDV_SCHEMA_FIELDS}
-        matchedKeys={matchedKeys}
-        matchedColumnsMap={matchedColumnsMap}
-        sheetName={fileUploadStats?.selectedSheet}
-        fileName={fileUploadStats?.fileName}
-        totalRows={fileUploadStats?.totalRows}
+        {...schemaProps}
         loaiHsBadge="Loại HS 72 - 14 Trường"
         title="Đặc Tả Cấu Trúc 14 Trường Danh Mục Thiết Bị Y Tế Thực Hiện DVKT (Mẫu 06/DM - Loại HS 72)"
         defaultExpanded={!!fileUploadStats}
@@ -293,16 +236,8 @@ export const DmTbDvktTab: React.FC = () => {
         isOpen={isXmlModalOpen}
         onClose={() => setIsXmlModalOpen(false)}
         items={tbytItems}
-        xmlContent={xmlContent}
-        base64Content={base64Content}
-        tab={xmlExportTab}
-        onTabChange={setXmlExportTab}
-        isKeyCopied={isKeyCopied}
-        onCopy={handleCopyText}
-        onExportXml={handleExportXml}
-        onSendApi={handleSendBhxhApi}
-        isSendingApi={isSendingApi}
-        apiResponse={apiResponse}
+        defaultTab={xmlModalTab}
+        fileUploadStats={fileUploadStats}
       />
 
       {/* 7. Schema Mapping Inspector Modal */}
@@ -311,12 +246,7 @@ export const DmTbDvktTab: React.FC = () => {
         onClose={() => setIsSchemaModalOpen(false)}
         title="Mẫu 06/DM: Danh Mục Thiết Bị Y Tế Thực Hiện Dịch Vụ Kỹ Thuật"
         loaiHsBadge="Loại HS 72 - 14 Trường"
-        schemaFields={TBYTTHDV_SCHEMA_FIELDS}
-        matchedKeys={matchedKeys}
-        matchedColumnsMap={matchedColumnsMap}
-        sheetName={fileUploadStats?.selectedSheet}
-        fileName={fileUploadStats?.fileName}
-        totalRows={fileUploadStats?.totalRows}
+        {...schemaProps}
       />
     </div>
   );

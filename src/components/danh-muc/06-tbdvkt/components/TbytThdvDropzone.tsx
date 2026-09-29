@@ -50,7 +50,7 @@ export const TbytThdvDropzone: React.FC<TbytThdvDropzoneProps> = ({
               selectedSheet: fileUploadStats.selectedSheet,
               totalRows: fileUploadStats.totalRows,
               rowUnitLabel: 'thiết bị',
-              matchedColumnsCount: Object.keys(fileUploadStats.detectedHeaders).length,
+              matchedColumnsCount: fileUploadStats.matchedFields.length,
               totalColumnsCount: totalSchemaFields,
               fileName: fileUploadStats.fileName,
               availableSheets: fileUploadStats.availableSheets,

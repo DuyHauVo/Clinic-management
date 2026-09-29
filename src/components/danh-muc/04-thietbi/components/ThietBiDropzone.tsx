@@ -47,7 +47,7 @@ export const ThietBiDropzone: React.FC<ThietBiDropzoneProps> = ({
               selectedSheet: fileUploadStats.selectedSheet,
               totalRows: fileUploadStats.totalRows,
               rowUnitLabel: 'thiết bị / vật tư',
-              matchedColumnsCount: Object.keys(fileUploadStats.detectedHeaders).length,
+              matchedColumnsCount: fileUploadStats.matchedFields.length,
               totalColumnsCount: 28,
               fileName: fileUploadStats.fileName,
               availableSheets: fileUploadStats.availableSheets,

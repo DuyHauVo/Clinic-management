@@ -18,8 +18,6 @@ export const DigestInfoCard: React.FC<DigestInfoCardProps> = ({
   copiedKey,
   onCopyDigest,
 }) => {
-  const hasFile = Boolean(effectiveFileName);
-
   return (
     <div className="p-3.5 bg-slate-50/60 border border-slate-200 rounded-xl space-y-2">
       <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
@@ -59,11 +57,11 @@ export const DigestInfoCard: React.FC<DigestInfoCardProps> = ({
         </span>
         <div className="flex items-center gap-1.5 min-w-0">
           <code className="font-mono text-slate-800 text-[11px] bg-white px-2 py-0.5 rounded border border-slate-200 select-all break-all shadow-2xs font-semibold">
-            {hasFile && digestValue
+            {digestValue
               ? digestValue
               : "(Tính mã băm sau khi nạp file lên)"}
           </code>
-          {hasFile && digestValue && (
+          {digestValue && (
             <button
               type="button"
               onClick={() => onCopyDigest(digestValue)}

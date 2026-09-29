@@ -4,13 +4,8 @@ import {
   DICHVU_SCHEMA_FIELDS,
   parseDichVuExcelFile,
   parseDichVuWorksheet,
-  generateDichVuXml,
-  xmlToBase64,
-  downloadDichVuXmlFile,
   generateDichVuTemplate,
-  sendDichVuToBhxhGateway,
   type ParseDichVuExcelResult,
-  type SendDichVuGatewayResult,
 } from "./services/dichVuService";
 import { initialDichVuData } from "../../../mock/mockData";
 import { useToast } from "../../../context/ToastContext";
@@ -24,12 +19,10 @@ import {
 } from "./components";
 import { SchemaMappingModal } from "../common/SchemaMappingModal";
 import { SchemaMappingCard } from "../common/SchemaMappingCard";
-
-import { useClipboard } from "../../../hooks";
+import { useSchemaMappingProps } from "../../../hooks";
 
 export const DmDichVuTab: React.FC = () => {
   const toast = useToast();
-  const { isKeyCopied, copy: handleCopyText } = useClipboard();
   const [dichVuItems, setDichVuItems] =
     useState<DmDichVuItem[]>(initialDichVuData);
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,12 +32,9 @@ export const DmDichVuTab: React.FC = () => {
 
   // Modal State for Mẫu 05/DM
   const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
-  const [xmlExportTab, setXmlExportTab] = useState<"xml" | "base64" | "api" | "smartca">(
-    "xml",
-  );
-  const [isSendingApi, setIsSendingApi] = useState(false);
-  const [apiResponse, setApiResponse] =
-    useState<SendDichVuGatewayResult | null>(null);
+  const [xmlModalTab, setXmlModalTab] = useState<
+    "xml" | "base64" | "api" | "smartca"
+  >("xml");
 
   // Edit / Add Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -146,18 +136,21 @@ export const DmDichVuTab: React.FC = () => {
   };
 
   const handleDeleteItem = (item: DmDichVuItem) => {
-    if (
-      confirm(
-        `Bạn có chắc chắn muốn xóa dịch vụ "${item.tenDichVu}" (${item.maDichVu})?`,
-      )
-    ) {
-      setDichVuItems((prev) =>
-        prev
-          .filter((i) => i.id !== item.id)
-          .map((i, idx) => ({ ...i, stt: idx + 1 })),
-      );
-      toast.info(`Đã xóa dịch vụ: ${item.tenDichVu}`, "Đã Xóa");
-    }
+    toast.showConfirm({
+      title: "Xác nhận xóa dịch vụ",
+      content: `Bạn có chắc chắn muốn xóa dịch vụ "${item.tenDichVu}" (${item.maDichVu})?`,
+      danger: true,
+      okText: "Xóa",
+      cancelText: "Hủy",
+      onOk: () => {
+        setDichVuItems((prev) =>
+          prev
+            .filter((i) => i.id !== item.id)
+            .map((i, idx) => ({ ...i, stt: idx + 1 })),
+        );
+        toast.info(`Đã xóa dịch vụ: ${item.tenDichVu}`, "Đã Xóa");
+      },
+    });
   };
 
   const handleOpenThuocPxModal = (item: DmDichVuItem) => {
@@ -189,39 +182,6 @@ export const DmDichVuTab: React.FC = () => {
     );
   };
 
-  // XML & Base64 Generation
-  const xmlContent = useMemo(() => {
-    return generateDichVuXml(dichVuItems);
-  }, [dichVuItems]);
-
-  const base64Content = useMemo(() => {
-    return xmlToBase64(xmlContent);
-  }, [xmlContent]);
-
-  const handleExportXml = () => {
-    downloadDichVuXmlFile(dichVuItems, `DanhMuc05_DVKT_${Date.now()}.xml`);
-    toast.success(
-      "Đã tải xuống tệp XML Mẫu 05/DM chuẩn QĐ 3176/QĐ-BYT & BHXH Việt Nam",
-      "Xuất File Thành Công",
-    );
-  };
-
-  const handleSendBhxhApi = async () => {
-    setIsSendingApi(true);
-    try {
-      const res = await sendDichVuToBhxhGateway(dichVuItems);
-      setApiResponse(res);
-      toast.success(
-        `Đã gửi thành công ${res.totalRecords} dịch vụ kỹ thuật lên Cổng BHXH (Sandbox)\nMã GD: ${res.maGiaoDich}`,
-        "Gửi Cổng Tiếp Nhận Thành Công",
-      );
-    } catch (err: any) {
-      toast.error(`Lỗi gửi cổng BHXH: ${err.message}`, "Lỗi Giao Dịch");
-    } finally {
-      setIsSendingApi(false);
-    }
-  };
-
   const filteredItems = useMemo(() => {
     const q = searchTerm.toLowerCase().trim();
     if (!q) return dichVuItems;
@@ -236,6 +196,8 @@ export const DmDichVuTab: React.FC = () => {
         (i.ghiChu && i.ghiChu.toLowerCase().includes(q)),
     );
   }, [dichVuItems, searchTerm]);
+
+  const schemaProps = useSchemaMappingProps(DICHVU_SCHEMA_FIELDS, fileUploadStats);
 
   return (
     <div className="space-y-6">
@@ -253,11 +215,11 @@ export const DmDichVuTab: React.FC = () => {
         onLoadSample={handleLoadSampleData}
         onClearData={handleClearData}
         onOpenXmlModal={() => {
-          setXmlExportTab("xml");
+          setXmlModalTab("xml");
           setIsXmlModalOpen(true);
         }}
         onOpenApiTab={() => {
-          setXmlExportTab("api");
+          setXmlModalTab("api");
           setIsXmlModalOpen(true);
         }}
         onOpenSchemaModal={() => setIsSchemaModalOpen(true)}
@@ -269,27 +231,7 @@ export const DmDichVuTab: React.FC = () => {
 
       {/* 3. Schema Mapping Inspection Card */}
       <SchemaMappingCard
-        schemaFields={DICHVU_SCHEMA_FIELDS}
-        matchedKeys={
-          fileUploadStats
-            ? Object.values(fileUploadStats.detectedHeaders)
-            : DICHVU_SCHEMA_FIELDS.map((f: { key: string }) => f.key)
-        }
-        matchedColumnsMap={
-          fileUploadStats
-            ? Object.fromEntries(
-                Object.entries(fileUploadStats.detectedHeaders).map(
-                  ([colIdx, key]) => [
-                    key,
-                    `Cột ${Number(colIdx) + 1} (${key})`,
-                  ],
-                ),
-              )
-            : {}
-        }
-        sheetName={fileUploadStats?.selectedSheet}
-        fileName={fileUploadStats?.fileName}
-        totalRows={fileUploadStats?.totalRows}
+        {...schemaProps}
         loaiHsBadge="Loại HS 12 - 16 Trường"
         title="Đặc Tả Cấu Trúc 16 Trường Danh Mục Dịch Vụ KBCB (Mẫu 05/DM - Loại HS 12)"
         defaultExpanded={!!fileUploadStats}
@@ -343,16 +285,8 @@ export const DmDichVuTab: React.FC = () => {
         isOpen={isXmlModalOpen}
         onClose={() => setIsXmlModalOpen(false)}
         items={dichVuItems}
-        xmlContent={xmlContent}
-        base64Content={base64Content}
-        tab={xmlExportTab}
-        onTabChange={setXmlExportTab}
-        isKeyCopied={isKeyCopied}
-        onCopy={handleCopyText}
-        onExportXml={handleExportXml}
-        onSendApi={handleSendBhxhApi}
-        isSendingApi={isSendingApi}
-        apiResponse={apiResponse}
+        defaultTab={xmlModalTab}
+        fileUploadStats={fileUploadStats}
       />
 
       {/* 8. 16 Standard Fields Schema Mapping Inspector Modal */}
@@ -361,27 +295,7 @@ export const DmDichVuTab: React.FC = () => {
         onClose={() => setIsSchemaModalOpen(false)}
         title="Mẫu 05/DM: Danh Mục Dịch Vụ Khám Bệnh, Chữa Bệnh Áp Dụng BHYT"
         loaiHsBadge="Loại HS 12 - 16 Trường"
-        schemaFields={DICHVU_SCHEMA_FIELDS}
-        matchedKeys={
-          fileUploadStats
-            ? Object.values(fileUploadStats.detectedHeaders)
-            : DICHVU_SCHEMA_FIELDS.map((f: { key: string }) => f.key)
-        }
-        matchedColumnsMap={
-          fileUploadStats
-            ? Object.fromEntries(
-                Object.entries(fileUploadStats.detectedHeaders).map(
-                  ([colIdx, key]) => [
-                    key,
-                    `Cột ${Number(colIdx) + 1} (${key})`,
-                  ],
-                ),
-              )
-            : {}
-        }
-        sheetName={fileUploadStats?.selectedSheet}
-        fileName={fileUploadStats?.fileName}
-        totalRows={fileUploadStats?.totalRows}
+        {...schemaProps}
       />
     </div>
   );

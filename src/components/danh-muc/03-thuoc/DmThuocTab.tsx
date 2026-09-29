@@ -1,16 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import type { DmThuocItem } from '../../../types';
 import {
   THUOC_SCHEMA_FIELDS,
   parseThuocExcelFile,
   parseThuocWorksheet,
-  generateThuocXml,
-  xmlToBase64,
-  downloadThuocXmlFile,
   downloadThuocExcelTemplate,
-  sendThuocToBhxhGateway,
-  type ParseThuocExcelResult,
-  type SendThuocGatewayResult
+  type ParseThuocExcelResult
 } from './services/thuocService';
 import { initialThuocData } from '../../../mock/mockData';
 import { useToast } from '../../../context/ToastContext';
@@ -18,9 +13,9 @@ import { ThuocStatsCards } from './components/ThuocStatsCards';
 import { ThuocDropzone } from './components/ThuocDropzone';
 import { ThuocTable } from './components/ThuocTable';
 import { ThuocEditModal } from './components/ThuocEditModal';
+import { ThuocXmlModal } from './components/ThuocXmlModal';
 import { SchemaMappingModal, SchemaMappingCard } from '../common';
-import { XmlExportModal } from '../../common';
-import { DEFAULT_MA_CSKCB } from '../../../utils/shared/excelXmlShared';
+import { useSchemaMappingProps } from '../../../hooks';
 
 export const DmThuocTab: React.FC = () => {
   const toast = useToast();
@@ -31,9 +26,7 @@ export const DmThuocTab: React.FC = () => {
 
   // Modal States
   const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
-  const [xmlExportTab, setXmlExportTab] = useState<'xml' | 'base64' | 'api' | 'smartca'>('xml');
-  const [isSendingApi, setIsSendingApi] = useState(false);
-  const [apiResponse, setApiResponse] = useState<SendThuocGatewayResult | null>(null);
+  const [xmlModalTab, setXmlModalTab] = useState<'xml' | 'base64' | 'api' | 'smartca'>('xml');
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<DmThuocItem | null>(null);
@@ -104,40 +97,20 @@ export const DmThuocTab: React.FC = () => {
   };
 
   const handleDeleteItem = (item: DmThuocItem) => {
-    if (confirm(`Bạn có chắc chắn muốn xóa thuốc "${item.tenThuoc}" (${item.maThuoc})?`)) {
-      const updated = thuocItems
-        .filter((i) => i.id !== item.id)
-        .map((i, idx) => ({ ...i, stt: idx + 1 }));
-      setThuocItems(updated);
-      toast.info(`Đã xóa: ${item.tenThuoc}`, 'Đã Xóa');
-    }
-  };
-
-  const handleExportXml = () => {
-    if (thuocItems.length === 0) {
-      toast.warning('Chưa có dữ liệu thuốc để xuất XML!', 'Dữ Liệu Trống');
-      return;
-    }
-    const xml = generateThuocXml(thuocItems);
-    downloadThuocXmlFile(xml);
-    toast.success('Đã tải xuống file XML Mẫu 03/DM chuẩn Loại hồ sơ 10', 'Xuất File Thành Công');
-  };
-
-  const handleSendBhxhApi = async () => {
-    if (thuocItems.length === 0) {
-      toast.warning('Chưa có dữ liệu thuốc để gửi cổng BHXH!', 'Dữ Liệu Trống');
-      return;
-    }
-    setIsSendingApi(true);
-    try {
-      const res = await sendThuocToBhxhGateway(thuocItems);
-      setApiResponse(res);
-      toast.success(`[Sandbox] Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`, 'Gửi API Thành Công (Mô phỏng)');
-    } catch (err: any) {
-      toast.error(err.message || 'Lỗi kết nối Cổng BHXH', 'Gửi Thất Bại');
-    } finally {
-      setIsSendingApi(false);
-    }
+    toast.showConfirm({
+      title: 'Xác nhận xóa thuốc',
+      content: `Bạn có chắc chắn muốn xóa thuốc "${item.tenThuoc}" (${item.maThuoc})?`,
+      danger: true,
+      okText: 'Xóa',
+      cancelText: 'Hủy',
+      onOk: () => {
+        const updated = thuocItems
+          .filter((i) => i.id !== item.id)
+          .map((i, idx) => ({ ...i, stt: idx + 1 }));
+        setThuocItems(updated);
+        toast.info(`Đã xóa: ${item.tenThuoc}`, 'Đã Xóa');
+      },
+    });
   };
 
   const filteredItems = thuocItems.filter((i) => {
@@ -151,8 +124,7 @@ export const DmThuocTab: React.FC = () => {
     );
   });
 
-  const currentXml = useMemo(() => (thuocItems.length > 0 ? generateThuocXml(thuocItems) : ''), [thuocItems]);
-  const currentBase64 = useMemo(() => (currentXml ? xmlToBase64(currentXml) : ''), [currentXml]);
+  const schemaProps = useSchemaMappingProps(THUOC_SCHEMA_FIELDS, fileUploadStats);
 
   return (
     <div className="space-y-6">
@@ -167,10 +139,13 @@ export const DmThuocTab: React.FC = () => {
         onDownloadTemplate={downloadThuocExcelTemplate}
         onLoadSample={handleLoadSampleData}
         onClearData={handleClearData}
-        onOpenXmlModal={() => setIsXmlModalOpen(true)}
+        onOpenXmlModal={() => {
+          setIsXmlModalOpen(true);
+          setXmlModalTab('xml');
+        }}
         onOpenApiTab={() => {
           setIsXmlModalOpen(true);
-          setXmlExportTab('api');
+          setXmlModalTab('api');
         }}
         onOpenSchemaModal={() => setIsSchemaModalOpen(true)}
         onAddNew={() => {
@@ -183,12 +158,7 @@ export const DmThuocTab: React.FC = () => {
       <SchemaMappingCard
         title="Đối Soát Khớp Cột Chuẩn Mẫu 03/DM (Thuốc, Máu & Chế Phẩm Máu)"
         loaiHsBadge="Loại HS 10 - 37 Trường"
-        schemaFields={THUOC_SCHEMA_FIELDS}
-        matchedKeys={fileUploadStats?.matchedFields || THUOC_SCHEMA_FIELDS.map((f) => f.key)}
-        matchedColumnsMap={fileUploadStats?.matchedColumnsMap || {}}
-        sheetName={fileUploadStats?.selectedSheet}
-        fileName={fileUploadStats?.fileName}
-        totalRows={fileUploadStats?.totalRows}
+        {...schemaProps}
         defaultExpanded={!!fileUploadStats}
       />
 
@@ -204,25 +174,12 @@ export const DmThuocTab: React.FC = () => {
         onDelete={handleDeleteItem}
       />
 
-      <XmlExportModal
+      <ThuocXmlModal
         isOpen={isXmlModalOpen}
         onClose={() => setIsXmlModalOpen(false)}
-        title="Cấu Trúc XML & Chuỗi Base64 Ký Số Mẫu 03/DM (Danh Mục Thuốc)"
-        loaiHsBadge="Loại HS 10 - GuiDanhMuc03_DMTHUOC"
-        itemsCount={thuocItems.length}
-        itemLabel="mặt hàng thuốc / chế phẩm máu"
-        xmlContent={currentXml}
-        base64Content={currentBase64}
-        apiEndpoint="https://egw.baohiemxahoi.gov.vn/api/DanhMucGW/GuiDanhMuc03_DMTHUOC"
-        loaiHsCode="10"
-        tab={xmlExportTab}
-        onTabChange={setXmlExportTab}
-        onExportXml={handleExportXml}
-        onSendApi={handleSendBhxhApi}
-        isSendingApi={isSendingApi}
-        apiResponse={apiResponse}
-        customFileName={`DM03_DMTHUOC_${DEFAULT_MA_CSKCB}.xml`}
-        enableSmartCa
+        items={thuocItems}
+        defaultTab={xmlModalTab}
+        fileUploadStats={fileUploadStats}
       />
 
       <ThuocEditModal
@@ -242,12 +199,7 @@ export const DmThuocTab: React.FC = () => {
         onClose={() => setIsSchemaModalOpen(false)}
         title="Mẫu 03/DM: Danh Mục Thuốc, Máu & Chế Phẩm Máu BHYT"
         loaiHsBadge="Loại HS 10 - 37 Trường"
-        schemaFields={THUOC_SCHEMA_FIELDS}
-        matchedKeys={fileUploadStats?.matchedFields || THUOC_SCHEMA_FIELDS.map((f) => f.key)}
-        matchedColumnsMap={fileUploadStats?.matchedColumnsMap || {}}
-        sheetName={fileUploadStats?.selectedSheet}
-        fileName={fileUploadStats?.fileName}
-        totalRows={fileUploadStats?.totalRows}
+        {...schemaProps}
       />
     </div>
   );

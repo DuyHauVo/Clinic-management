@@ -18,6 +18,7 @@ import {
   type SmartCaTransactionInfo,
   type SmartCaClient,
 } from '../../types/smartcaTypes';
+import { SMARTCA_MOCK_SIGNATURE_VALUE } from './smartcaConfig';
 
 const MOCK_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 giờ
 const MOCK_EXPIRY_AFTER_MS = 5 * 60 * 1000; // hết hạn sau 5 phút như SmartCA thật
@@ -232,10 +233,7 @@ export class MockSmartCaClient implements SmartCaClient {
     }
     tran.status = SMARTCA_TRAN_STATUS.SUCCESS;
     tran.confirmedAt = Date.now();
-    tran.signatures = tran.documents.map(
-      () =>
-        'roeBokGItwTuObPRrnZkmvu8vpTLzLMz7Vx01nlHcKCn+bTElXK0KM7PixT17kScDy4hD2agfoDjzNb1AZ+LiYBBgni01JPpTIRcTmpQJmSYcZKbO0dVSuY4FLg9bGHWkGAsTj7nN0HbxUMfuEui4vBGrW0N0G54hEHOboPpz44DIRkyS5cKiRWcMiMuZTAZHjtOS6tB0HK6RW8okkVKHn/IGX97fnXyJ4J40BoDicolX7oR1okb+K7bUGqYUDwpGehqcCAzIHUCJVZQ0BaFn7eNa0MYuH98H7+Phzv6tmL7SJaFACY+qGXm+247c1KXF+a4WVJaZI/NvToc1k0iHQ==',
-    );
+    tran.signatures = tran.documents.map(() => SMARTCA_MOCK_SIGNATURE_VALUE);
   }
 
   /** Đưa giao dịch về trạng thái từ chối (kịch bản kiểm thử 4002) */

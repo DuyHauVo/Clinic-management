@@ -47,7 +47,7 @@ export const DichVuDropzone: React.FC<DichVuDropzoneProps> = ({
               selectedSheet: fileUploadStats.selectedSheet,
               totalRows: fileUploadStats.totalRows,
               rowUnitLabel: 'dịch vụ kỹ thuật',
-              matchedColumnsCount: Object.keys(fileUploadStats.detectedHeaders).length,
+              matchedColumnsCount: fileUploadStats.matchedFields.length,
               totalColumnsCount: 37,
               fileName: fileUploadStats.fileName,
               availableSheets: fileUploadStats.availableSheets,

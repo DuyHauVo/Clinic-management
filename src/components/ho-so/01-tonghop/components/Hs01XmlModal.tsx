@@ -10,12 +10,16 @@ import { XmlExportModal } from '../../../common';
 import { useXmlExportModal } from '../../../../hooks';
 import { DEFAULT_MA_CSKCB } from '../../../../utils/shared/excelXmlShared';
 
+import type { SourceFileUploadInfo } from '../../../common';
+
 export interface Hs01XmlModalProps {
   isOpen: boolean;
   onClose: () => void;
   items: Hs01TongHopItem[];
+  defaultTab?: 'xml' | 'base64' | 'api' | 'smartca';
   activeTab?: 'xml' | 'base64' | 'api' | 'smartca';
   onSendSuccess?: (result: SendHs01GatewayResult) => void;
+  fileUploadStats?: SourceFileUploadInfo | null;
 }
 
 // ==========================================
@@ -45,8 +49,10 @@ export const Hs01XmlModal: React.FC<Hs01XmlModalProps> = ({
   isOpen,
   onClose,
   items,
+  defaultTab,
   activeTab = 'xml',
-  onSendSuccess
+  onSendSuccess,
+  fileUploadStats,
 }) => {
   const {
     tab,
@@ -60,7 +66,7 @@ export const Hs01XmlModal: React.FC<Hs01XmlModalProps> = ({
   } = useXmlExportModal<Hs01TongHopItem, SendHs01GatewayResult>({
     isOpen,
     items,
-    defaultTab: activeTab,
+    defaultTab: defaultTab || activeTab,
     generateXml: generateHs01XmlHandler,
     generateBase64: generateHs01Base64Handler,
     downloadFile: downloadHs01FileHandler,
@@ -89,6 +95,7 @@ export const Hs01XmlModal: React.FC<Hs01XmlModalProps> = ({
       onSendApi={handleSendGateway}
       isSendingApi={isSending}
       apiResponse={sendResult}
+      sourceFileInfo={fileUploadStats}
     />
   );
 };

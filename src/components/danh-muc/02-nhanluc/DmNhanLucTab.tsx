@@ -1,14 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import type { DmNhanLucItem } from '../../../types';
 import {
   NHANLUC_SCHEMA_FIELDS,
   parseNhanLucExcelFile,
   parseNhanLucWorksheet,
-  generateNhanLucXml,
-  xmlToBase64,
-  downloadNhanLucXmlFile,
   downloadNhanLucExcelTemplate,
-  sendNhanLucToBhxhGateway,
   type ParseNhanLucExcelResult
 } from './services/nhanLucService';
 import { initialNhanLucData } from '../../../mock/mockData';
@@ -20,12 +16,10 @@ import { NhanLucXmlModal } from './components/NhanLucXmlModal';
 import { NhanLucEditModal } from './components/NhanLucEditModal';
 import { SchemaMappingModal } from '../common/SchemaMappingModal';
 import { SchemaMappingCard } from '../common/SchemaMappingCard';
-
-import { useClipboard } from '../../../hooks';
+import { useSchemaMappingProps } from '../../../hooks';
 
 export const DmNhanLucTab: React.FC = () => {
   const toast = useToast();
-  const { isKeyCopied: isNhanLucKeyCopied, copy: handleNhanLucCopyText } = useClipboard();
   const [nhanLucItems, setNhanLucItems] = useState<DmNhanLucItem[]>(initialNhanLucData);
   const [searchNhanLuc, setSearchNhanLuc] = useState('');
   const [isLoadingNhanLucFile, setIsLoadingNhanLucFile] = useState(false);
@@ -33,9 +27,7 @@ export const DmNhanLucTab: React.FC = () => {
 
   // Modal State for Mẫu 02/DM
   const [isNhanLucXmlModalOpen, setIsNhanLucXmlModalOpen] = useState(false);
-  const [nhanLucXmlExportTab, setNhanLucXmlExportTab] = useState<'xml' | 'base64' | 'api' | 'smartca'>('xml');
-  const [isNhanLucSendingApi, setIsNhanLucSendingApi] = useState(false);
-  const [nhanLucApiResponse, setNhanLucApiResponse] = useState<any>(null);
+  const [xmlModalTab, setXmlModalTab] = useState<'xml' | 'base64' | 'api'>('xml');
 
   // Edit / Add Modal State for Mẫu 02/DM
   const [isNhanLucEditModalOpen, setIsNhanLucEditModalOpen] = useState(false);
@@ -115,37 +107,17 @@ export const DmNhanLucTab: React.FC = () => {
   };
 
   const handleDeleteNhanLucItem = (item: DmNhanLucItem) => {
-    if (confirm(`Bạn có chắc chắn muốn xóa nhân sự "${item.hoTen}" (${item.soDinhDanh})?`)) {
-      setNhanLucItems(nhanLucItems.filter((i) => i.id !== item.id));
-      toast.info(`Đã xóa nhân sự: ${item.hoTen}`, 'Đã Xóa');
-    }
-  };
-
-  const handleNhanLucExportXml = () => {
-    if (nhanLucItems.length === 0) {
-      toast.warning('Chưa có dữ liệu nhân lực để xuất XML!', 'Dữ Liệu Trống');
-      return;
-    }
-    const xml = generateNhanLucXml(nhanLucItems);
-    downloadNhanLucXmlFile(xml);
-    toast.success('Đã tải xuống file XML Mẫu 02/DM chuẩn Loại hồ sơ 71', 'Xuất File Thành Công');
-  };
-
-  const handleNhanLucSendBhxhApi = async () => {
-    if (nhanLucItems.length === 0) {
-      toast.warning('Chưa có dữ liệu để gửi cổng BHXH!', 'Dữ Liệu Trống');
-      return;
-    }
-    setIsNhanLucSendingApi(true);
-    try {
-      const res = await sendNhanLucToBhxhGateway(nhanLucItems);
-      setNhanLucApiResponse(res);
-      toast.success(`[Sandbox] Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`, 'Gửi API Thành Công (Mô phỏng)');
-    } catch (err: any) {
-      toast.error(err.message || 'Lỗi kết nối Cổng BHXH', 'Gửi Thất Bại');
-    } finally {
-      setIsNhanLucSendingApi(false);
-    }
+    toast.showConfirm({
+      title: 'Xác nhận xóa nhân sự',
+      content: `Bạn có chắc chắn muốn xóa nhân sự "${item.hoTen}" (${item.soDinhDanh})?`,
+      danger: true,
+      okText: 'Xóa',
+      cancelText: 'Hủy',
+      onOk: () => {
+        setNhanLucItems((prev) => prev.filter((i) => i.id !== item.id));
+        toast.info(`Đã xóa nhân sự: ${item.hoTen}`, 'Đã Xóa');
+      },
+    });
   };
 
   const filteredNhanLucItems = nhanLucItems.filter((i) => {
@@ -159,8 +131,7 @@ export const DmNhanLucTab: React.FC = () => {
     );
   });
 
-  const currentNhanLucXml = useMemo(() => (nhanLucItems.length > 0 ? generateNhanLucXml(nhanLucItems) : ''), [nhanLucItems]);
-  const currentNhanLucBase64 = useMemo(() => (currentNhanLucXml ? xmlToBase64(currentNhanLucXml) : ''), [currentNhanLucXml]);
+  const schemaProps = useSchemaMappingProps(NHANLUC_SCHEMA_FIELDS, nhanLucFileUploadStats);
 
   return (
     <div className="space-y-6">
@@ -175,10 +146,13 @@ export const DmNhanLucTab: React.FC = () => {
         onDownloadTemplate={downloadNhanLucExcelTemplate}
         onLoadSample={handleNhanLucLoadSampleData}
         onClearData={handleNhanLucClearData}
-        onOpenXmlModal={() => setIsNhanLucXmlModalOpen(true)}
+        onOpenXmlModal={() => {
+          setIsNhanLucXmlModalOpen(true);
+          setXmlModalTab('xml');
+        }}
         onOpenApiTab={() => {
           setIsNhanLucXmlModalOpen(true);
-          setNhanLucXmlExportTab('api');
+          setXmlModalTab('api');
         }}
         onOpenSchemaModal={() => setIsNhanLucSchemaModalOpen(true)}
         onAddNew={() => {
@@ -191,20 +165,7 @@ export const DmNhanLucTab: React.FC = () => {
       <SchemaMappingCard
         title="Đối Soát Khớp Cột Chuẩn Mẫu 02/DM (Nhân Lực KCB BHYT)"
         loaiHsBadge="Loại HS 71 - 24 Trường"
-        schemaFields={NHANLUC_SCHEMA_FIELDS}
-        matchedKeys={
-          nhanLucFileUploadStats
-            ? nhanLucFileUploadStats.recognizedColumns.map((c) => c.key)
-            : NHANLUC_SCHEMA_FIELDS.map((f) => f.key)
-        }
-        matchedColumnsMap={
-          nhanLucFileUploadStats
-            ? Object.fromEntries(nhanLucFileUploadStats.recognizedColumns.map((c) => [c.key, c.colName]))
-            : {}
-        }
-        sheetName={nhanLucFileUploadStats?.selectedSheet || nhanLucFileUploadStats?.sheetName}
-        fileName={nhanLucFileUploadStats?.fileName}
-        totalRows={nhanLucFileUploadStats?.totalRows}
+        {...schemaProps}
         defaultExpanded={!!nhanLucFileUploadStats}
       />
 
@@ -224,16 +185,8 @@ export const DmNhanLucTab: React.FC = () => {
         isOpen={isNhanLucXmlModalOpen}
         onClose={() => setIsNhanLucXmlModalOpen(false)}
         items={nhanLucItems}
-        xmlContent={currentNhanLucXml}
-        base64Content={currentNhanLucBase64}
-        tab={nhanLucXmlExportTab}
-        onTabChange={setNhanLucXmlExportTab}
-        isKeyCopied={isNhanLucKeyCopied}
-        onCopy={handleNhanLucCopyText}
-        onExportXml={handleNhanLucExportXml}
-        onSendApi={handleNhanLucSendBhxhApi}
-        isSendingApi={isNhanLucSendingApi}
-        apiResponse={nhanLucApiResponse}
+        defaultTab={xmlModalTab}
+        fileUploadStats={nhanLucFileUploadStats}
       />
 
       <NhanLucEditModal
@@ -252,20 +205,7 @@ export const DmNhanLucTab: React.FC = () => {
         onClose={() => setIsNhanLucSchemaModalOpen(false)}
         title="Mẫu 02/DM: Danh Mục Nhân Lực KCB BHYT (Cán Bộ & Bác Sỹ)"
         loaiHsBadge="Loại HS 71 - 24 Trường"
-        schemaFields={NHANLUC_SCHEMA_FIELDS}
-        matchedKeys={
-          nhanLucFileUploadStats
-            ? nhanLucFileUploadStats.recognizedColumns.map((c) => c.key)
-            : NHANLUC_SCHEMA_FIELDS.map((f) => f.key)
-        }
-        matchedColumnsMap={
-          nhanLucFileUploadStats
-            ? Object.fromEntries(nhanLucFileUploadStats.recognizedColumns.map((c) => [c.key, c.colName]))
-            : {}
-        }
-        sheetName={nhanLucFileUploadStats?.selectedSheet || nhanLucFileUploadStats?.sheetName}
-        fileName={nhanLucFileUploadStats?.fileName}
-        totalRows={nhanLucFileUploadStats?.totalRows}
+        {...schemaProps}
       />
     </div>
   );

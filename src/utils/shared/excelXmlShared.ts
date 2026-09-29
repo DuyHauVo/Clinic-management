@@ -1,13 +1,5 @@
 import * as XLSX from "xlsx";
-
-// ============================================================
 // 1. CHUẨN HÓA & SO KHỚP TÊN CỘT EXCEL
-// ============================================================
-
-/**
- * Chuẩn hóa chuỗi/tên cột/từ khóa (bỏ dấu tiếng Việt, ký tự đặc biệt, chữ thường [a-z0-9])
- * dùng làm hàm chuẩn hóa cốt lõi trên toàn hệ thống.
- */
 export function normalizeKey(str: string): string {
   if (!str) return "";
   return String(str)
@@ -38,11 +30,6 @@ export interface SharedSchemaField {
 
 export type SchemaKeyMatcher = (colHeader: string) => string | null;
 
-/**
- * Tạo hàm so khớp tên cột -> schema key dùng cho mọi danh mục.
- * Tiền xử lý Map tra cứu O(1) và heuristic theo thứ tự ưu tiên.
- * Mỗi ô chỉ trả về đúng MỘT schema key (một cột = một trường).
- */
 export function createSchemaKeyMatcher(
   fields: SharedSchemaField[],
   heuristics: Array<[RegExp | string, string]>,
@@ -82,15 +69,7 @@ export function createSchemaKeyMatcher(
     return null;
   };
 }
-
-// ============================================================
 // 2. PARSE GIÁ TRỊ Ô EXCEL
-// ============================================================
-
-/**
- * Lấy giá trị ô Excel nguyên bản (giữ nguyên Date object, number, boolean, string)
- * từ Map các cột với danh sách bí danh (aliases). Tra cứu O(1) trên từng alias đã chuẩn hóa.
- */
 export function getRowCell(map: Map<string, any>, aliases: string[]): unknown {
   const isValidValue = (val: unknown) =>
     val !== undefined && val !== null && String(val).trim() !== "";
@@ -104,11 +83,6 @@ export function getRowCell(map: Map<string, any>, aliases: string[]): unknown {
 
   return undefined;
 }
-
-/**
- * Lấy giá trị ô Excel từ Map các cột với danh sách bí danh (aliases).
- * Nếu ô là Date object, chuyển đổi an toàn sang YYYYMMDD thay vì Date.toString().
- */
 export function getRowVal(
   map: Map<string, any>,
   aliases: string[],
@@ -123,8 +97,6 @@ export function getRowVal(
   return str === "" ? fallback : str;
 }
 
-// ---------- Giới tính: một bảng tra dùng chung ----------
-// Quy ước hệ thống: "0" = Nữ (chuẩn database/phần mềm phòng khám quy ước IsMale=0 hoặc bit 0)
 const GENDER_MAP: Record<string, "1" | "2" | "3"> = {
   "2": "2",
   nu: "2",
@@ -149,13 +121,8 @@ function lookupGender(val: unknown): "1" | "2" | "3" | "" {
   return GENDER_MAP[normalizeKey(String(val))] ?? "";
 }
 
-/**
- * Parse giới tính không bắt buộc (1: Nam, 2: Nữ, 3: Khác/Chưa xác định).
- * Ô trống hoặc không nhận ra -> "" (không tự gán mặc định).
- */
 export const parseOptionalGender = (val: unknown): string => lookupGender(val);
 
-/** Parse giới tính chuẩn BHYT/TT25, có giá trị mặc định khi trống/không nhận ra. */
 export function parseGender(
   val: unknown,
   defaultVal: "1" | "2" | "3" = "1",
@@ -163,14 +130,9 @@ export function parseGender(
   return lookupGender(val) || defaultVal;
 }
 
-/** Giới tính dạng số (1, 2, 3) */
 export const parseGioiTinh = (val: unknown): number =>
   parseInt(parseGender(val, "3"), 10);
 
-/**
- * Xác định loại giấy tờ tùy thân theo chuẩn BHXH.
- * Nếu đã có mã hợp lệ (0..7) thì giữ nguyên, nếu có số CCCD thì mặc định "1".
- */
 export function resolveLoaiGiayTo(
   rawLoaiGiayTo: string,
   soCccd: string,
@@ -182,10 +144,6 @@ export function resolveLoaiGiayTo(
   return soCccd && soCccd.trim() !== "" ? "1" : "";
 }
 
-/**
- * Parse cờ nhị phân (0 hoặc 1).
- * Ô trống trả về "", 0/false/không trả về "0", 1/true/có/x/v trả về "1".
- */
 export function parseExactBinaryFlag(raw: unknown): string {
   if (raw === undefined || raw === null) return "";
   const str = String(raw).trim();
@@ -196,10 +154,6 @@ export function parseExactBinaryFlag(raw: unknown): string {
   return str;
 }
 
-/**
- * Parse số từ ô Excel ("8 bàn", "8,5", "1,000,000", "1.000.000,5"...)
- * Hỗ trợ chuẩn hóa dấu phẩy thập phân kiểu Việt Nam và phân cách hàng nghìn.
- */
 export function parseNumberCell(val: unknown, defaultVal = 0): number {
   if (val === null || val === undefined || val === "") return defaultVal;
   if (typeof val === "number") return isNaN(val) ? defaultVal : val;
@@ -211,11 +165,11 @@ export function parseNumberCell(val: unknown, defaultVal = 0): number {
   const hasDot = str.includes(".");
 
   if (hasComma && !hasDot) {
-    // Có dấu phẩy, không có dấu chấm: nếu có đúng 1 dấu phẩy -> coi là thập phân ("8,5" -> "8.5")
-    // Nếu có nhiều dấu phẩy -> dấu phân cách hàng nghìn ("1,000,000" -> "1000000")
-    str = (str.match(/,/g) || []).length === 1 ? str.replace(",", ".") : str.replace(/,/g, "");
+    str =
+      (str.match(/,/g) || []).length === 1
+        ? str.replace(",", ".")
+        : str.replace(/,/g, "");
   } else if (hasComma && hasDot) {
-    // Có cả hai dấu: dấu chấm là thập phân, bỏ dấu phẩy phân cách ("1,000,000.50" -> "1000000.50")
     str = str.replace(/,/g, "");
   }
 
@@ -224,14 +178,9 @@ export function parseNumberCell(val: unknown, defaultVal = 0): number {
   const num = Number(clean);
   return isNaN(num) ? defaultVal : num;
 }
-
-// ============================================================
 // 2b. NGÀY / NGÀY GIỜ
-// ============================================================
-
 const pad2 = (x: string | number) => String(x).padStart(2, "0");
 
-/** Có phải serial date của Excel (số 20000..60000, không chứa / hoặc -) */
 function isExcelSerial(v: unknown): boolean {
   if (typeof v === "number") return v > 20000 && v < 60000;
   const s = String(v ?? "").trim();
@@ -266,13 +215,6 @@ function excelSerialToParts(n: number): DateTimeParts {
   };
 }
 
-/**
- * Parse ngày tháng về chuỗi YYYYMMDD (8 ký tự). Hỗ trợ:
- * - Date object
- * - Excel serial date (số 20000..60000)
- * - Chuỗi có phân cách: dd/mm/yyyy, yyyy-mm-dd, dd.mm.yyyy, yyyy/mm/dd
- * - Chuỗi 8 chữ số liền (YYYYMMDD) hoặc 4 chữ số năm (YYYY -> YYYY0101)
- */
 export function parseYmdDate(val: unknown, defaultVal = ""): string {
   if (val === null || val === undefined || val === "") return defaultVal;
 
@@ -285,22 +227,24 @@ export function parseYmdDate(val: unknown, defaultVal = ""): string {
 
   if (isExcelSerial(str)) return excelSerialToParts(Number(str)).ymd;
 
-  // Chuỗi ISO hoặc Date.toString() có chứa chữ cái (vd: "Thu Oct 27 2022..." hoặc "2022-10-27T00:00:00.000Z")
   if (/[a-zA-Z]/.test(str)) {
     const parsedDate = new Date(str);
     if (!isNaN(parsedDate.getTime())) {
       return `${parsedDate.getFullYear()}${pad2(parsedDate.getMonth() + 1)}${pad2(parsedDate.getDate())}`;
     }
   }
-
-  // Tách lấy phần ngày nếu chuỗi có kèm giờ (vd "27/10/2022 00:00:00" hoặc "2022-10-27 14:30")
   const dateToken = str.split(/[\sT]+/)[0];
 
   if (/[\/\-.]/.test(dateToken)) {
     const parts = dateToken.split(/[\/\-.]/).map((p) => p.trim());
     if (parts.length === 3) {
       const [a, b, c] = parts;
-      const candidate = a.length === 4 ? `${a}${pad2(b)}${pad2(c)}` : c.length === 4 ? `${c}${pad2(b)}${pad2(a)}` : "";
+      const candidate =
+        a.length === 4
+          ? `${a}${pad2(b)}${pad2(c)}`
+          : c.length === 4
+            ? `${c}${pad2(b)}${pad2(a)}`
+            : "";
       if (candidate && isValidYmdDate(candidate)) return candidate;
     }
   }
@@ -321,7 +265,6 @@ export function parseYmdDate(val: unknown, defaultVal = ""): string {
 /** @deprecated chỉ trả 8 ký tự. Dùng parseYmdDate / parseYmdHmDate / parseYmdHmsDate theo độ dài trường. */
 export const parseExcelDate = parseYmdDate;
 
-/** Tách ngày + giờ + phút + giây từ mọi kiểu đầu vào thường gặp */
 function parseDateTimeParts(val: unknown): DateTimeParts | null {
   if (val === null || val === undefined || val === "") return null;
 
@@ -338,10 +281,8 @@ function parseDateTimeParts(val: unknown): DateTimeParts | null {
   const str = String(val).trim();
   if (!str) return null;
 
-  // Serial Excel: đọc giờ theo UTC, cùng cơ sở với parseYmdDate
   if (isExcelSerial(str)) return excelSerialToParts(Number(str));
 
-  // Chuỗi ISO hoặc toString() có chứa chữ cái
   if (/[a-zA-Z]/.test(str)) {
     const parsedDate = new Date(str);
     if (!isNaN(parsedDate.getTime())) {
@@ -419,63 +360,47 @@ export function parseYmdHmsDate(val: unknown, defaultHms?: string): string {
   if (t.hasTime) return `${t.ymd}${t.h}${t.mi}${t.s}`;
   return defaultHms !== undefined ? `${t.ymd}${defaultHms}` : t.ymd;
 }
-
-/**
- * Kiểm tra chuỗi ngày YYYYMMDD hợp lệ (đúng 8 chữ số và ngày/tháng có thực).
- */
-export function isValidYmdDate(str?: string | null): boolean {
+// Kiểm tra chuỗi ngày giờ  (8 || 12 || 14 ký tự)
+export function isValidYmdDateTime(str?: string | null): boolean {
   if (!str) return false;
   const clean = str.trim();
-  if (!/^\d{8}$/.test(clean)) return false;
+  if (!/^(\d{8}|\d{12}|\d{14})$/.test(clean)) return false;
+
   const y = parseInt(clean.slice(0, 4), 10);
   const m = parseInt(clean.slice(4, 6), 10);
   const d = parseInt(clean.slice(6, 8), 10);
   if (y < 1900 || y > 2100) return false;
   if (m < 1 || m > 12) return false;
-  const daysInMonth = new Date(y, m, 0).getDate();
-  return d >= 1 && d <= daysInMonth;
+  if (d < 1 || d > new Date(y, m, 0).getDate()) return false;
+
+  if (clean.length >= 12) {
+    const h = parseInt(clean.slice(8, 10), 10);
+    const mi = parseInt(clean.slice(10, 12), 10);
+    if (h < 0 || h > 23 || mi < 0 || mi > 59) return false;
+  }
+  if (clean.length === 14) {
+    const s = parseInt(clean.slice(12, 14), 10);
+    if (s < 0 || s > 59) return false;
+  }
+  return true;
 }
 
-/**
- * Kiểm tra chuỗi ngày giờ YYYYMMDDHHmm hợp lệ (đúng 12 chữ số, ngày tháng giờ phút có thực).
- */
-export function isValidYmdHmDate(str?: string | null): boolean {
-  if (!str) return false;
-  const clean = str.trim();
-  if (!/^\d{12}$/.test(clean)) return false;
-  if (!isValidYmdDate(clean.slice(0, 8))) return false;
-  const h = parseInt(clean.slice(8, 10), 10);
-  const mi = parseInt(clean.slice(10, 12), 10);
-  return h >= 0 && h <= 23 && mi >= 0 && mi <= 59;
-}
+/** @deprecated dùng isValidYmdDateTime */
+export const isValidYmdDate = (str?: string | null) =>
+  !!str && str.trim().length === 8 && isValidYmdDateTime(str);
+/** @deprecated dùng isValidYmdDateTime */
+export const isValidYmdHmDate = (str?: string | null) =>
+  !!str && str.trim().length === 12 && isValidYmdDateTime(str);
+/** @deprecated dùng isValidYmdDateTime */
+export const isValidYmdHmsDate = (str?: string | null) =>
+  !!str && str.trim().length === 14 && isValidYmdDateTime(str);
 
-/**
- * Kiểm tra chuỗi ngày giờ YYYYMMDDHHmmss hợp lệ (đúng 14 chữ số).
- */
-export function isValidYmdHmsDate(str?: string | null): boolean {
-  if (!str) return false;
-  const clean = str.trim();
-  if (!/^\d{14}$/.test(clean)) return false;
-  if (!isValidYmdHmDate(clean.slice(0, 12))) return false;
-  const s = parseInt(clean.slice(12, 14), 10);
-  return s >= 0 && s <= 59;
-}
-
-/**
- * Định dạng số tiền thành chuỗi số thập phân có 2 chữ số (.00) theo chuẩn BHXH XML
- */
+// format số tiền
 export function formatCurrencyDecimals(val?: number): string {
   if (val === undefined || val === null || isNaN(val)) return "0.00";
   return val.toFixed(2);
 }
-
-// ============================================================
-// 3. ĐỌC WORKBOOK EXCEL
-// ============================================================
-
-/**
- * Đọc File Excel/CSV thành Workbook (dùng FileReader).
- */
+// ĐỌC WORKBOOK EXCEL
 export function readExcelFile(file: File): Promise<XLSX.WorkBook> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -501,12 +426,6 @@ export function readExcelFile(file: File): Promise<XLSX.WorkBook> {
 export const DEFAULT_MA_CSKCB = "48939";
 export const DEFAULT_MA_TINH = "48";
 
-/**
- * Tự động tìm sheet phù hợp nhất dựa trên heuristic:
- * - So khớp tên sheet với hintKeywords
- * - So khớp số lượng cột detectHeaderRow >= minMatchCount
- * - Ưu tiên sheet có dữ liệu và số cột nhận diện cao nhất
- */
 export function pickBestSheetName(
   workbook: XLSX.WorkBook,
   matchSchemaKey: SchemaKeyMatcher,
@@ -571,15 +490,9 @@ export function pickBestSheetName(
   return availableSheets[0];
 }
 
-/** @deprecated dùng pickBestSheetName */
-export const findBestSheetName = pickBestSheetName;
-
 export const HEADER_SCAN_ROWS = 25;
 
-/**
- * Tìm dòng header (chứa nhiều cột khớp schema nhất) và map cột -> schema key.
- * Trả về -1 nếu không tìm thấy dòng nào đạt ngưỡng.
- */
+// Trả về -1 nếu không tìm thấy dòng nào đạt ngưỡng.
 export function detectHeaderRow(
   rows: unknown[][],
   matchSchemaKey: SchemaKeyMatcher,
@@ -625,13 +538,7 @@ export function detectHeaderRow(
   return { headerRowIndex, colMapping: bestColMapping };
 }
 
-// ============================================================
-// 4. XML & CHỮ SỐ
-// ============================================================
-
-/**
- * Escape ký tự đặc biệt XML.
- */
+// XML & CHỮ SỐ
 export function escapeXml(value: string | number | null | undefined): string {
   if (value === undefined || value === null || value === "") return "";
   return String(value)
@@ -642,9 +549,6 @@ export function escapeXml(value: string | number | null | undefined): string {
     .replace(/'/g, "&apos;");
 }
 
-/**
- * Sinh chuỗi UUID v4 (ưu tiên crypto.randomUUID chuẩn bảo mật, fallback Math.random).
- */
 export function generateUUID(): string {
   if (
     typeof crypto !== "undefined" &&
@@ -658,20 +562,13 @@ export function generateUUID(): string {
     return v.toString(16);
   });
 }
-
-/**
- * Lấy chuỗi timestamp ngày giờ địa phương YYYYMMDDHHmmss (14 ký tự).
- */
+//Lấy ngày giờ theo giờ Việt Nam địa phương
 export function getTimestampYmdHms(date: Date = new Date()): string {
   return (
     `${date.getFullYear()}${pad2(date.getMonth() + 1)}${pad2(date.getDate())}` +
     `${pad2(date.getHours())}${pad2(date.getMinutes())}${pad2(date.getSeconds())}`
   );
 }
-
-/**
- * Lấy ngày hôm nay theo giờ địa phương định dạng YYYYMMDD (8 ký tự).
- */
 export function getTodayYmd(date: Date = new Date()): string {
   return getTimestampYmdHms(date).slice(0, 8);
 }
@@ -679,24 +576,17 @@ export function getTodayYmd(date: Date = new Date()): string {
 /** @deprecated dùng getTodayYmd */
 export const todayYmd = getTodayYmd;
 
-/**
- * Lấy ngày hôm nay theo giờ địa phương định dạng YYYY-MM-DD (10 ký tự).
- */
 export function getTodayIsoDate(date: Date = new Date()): string {
   const ymd = getTodayYmd(date);
   return `${ymd.slice(0, 4)}-${ymd.slice(4, 6)}-${ymd.slice(6, 8)}`;
 }
 
-/**
- * Lấy ngày đầu năm hiện tại theo giờ địa phương định dạng YYYYMMDD (vd: 20260101).
- */
+//Lấy đầu năm hiện tại
 export function getCurrentYearStartYmd(): string {
   return `${new Date().getFullYear()}0101`;
 }
 
-/**
- * Định dạng thời điểm ký chuẩn XML ISO: YYYY-MM-DDTHH:mm:ss (bỏ mili giây & hậu tố Z).
- */
+//Định dạng thời điểm ký chuẩn XML ISO
 export function formatXmlSigningTime(date: Date = new Date()): string {
   const ts = getTimestampYmdHms(date);
   return `${ts.slice(0, 4)}-${ts.slice(4, 6)}-${ts.slice(6, 8)}T${ts.slice(8, 10)}:${ts.slice(10, 12)}:${ts.slice(12, 14)}`;
@@ -720,9 +610,6 @@ export function buildSignatureBlock(
   return `${indent}<CHUKYDONVI />`;
 }
 
-/**
- * Bọc danh sách bản ghi + chữ ký thành tài liệu HSDANHMUC hoàn chỉnh.
- */
 export function buildHsDanhMucDocument(
   datasetContainerXml: string,
   signatureBlock: string,
@@ -734,9 +621,6 @@ ${datasetContainerXml}
 </HSDANHMUC>`;
 }
 
-/**
- * Chuyển chuỗi XML thành Base64 UTF-8 an toàn.
- */
 export function xmlToBase64(xmlString: string): string {
   try {
     const utf8Bytes = new TextEncoder().encode(xmlString);
@@ -751,13 +635,7 @@ export function xmlToBase64(xmlString: string): string {
   }
 }
 
-// ============================================================
 // 5. TIỆN ÍCH CLIPBOARD DÙNG CHUNG
-// ============================================================
-
-/**
- * Fallback sao chép qua phần tử textarea ẩn cho môi trường HTTP / mạng nội bộ bệnh viện.
- */
 function fallbackCopyTextToClipboard(text: string): boolean {
   try {
     const textarea = document.createElement("textarea");
@@ -792,10 +670,7 @@ export async function copyTextToClipboard(text: string): Promise<boolean> {
     return fallbackCopyTextToClipboard(text);
   }
 }
-
-/**
- * Tải file XML xuống máy người dùng.
- */
+//Tải file XML xuống máy người dùng.
 export function downloadXmlFile(xmlContent: string, fileName: string): void {
   const blob = new Blob([xmlContent], {
     type: "application/xml;charset=utf-8",
@@ -810,10 +685,7 @@ export function downloadXmlFile(xmlContent: string, fileName: string): void {
   URL.revokeObjectURL(url);
 }
 
-// ============================================================
-// 6. CỔNG EGW BHXH & ĐỊNH DẠNG HIỂN THỊ UI
-// ============================================================
-
+// CỔNG EGW BHXH & ĐỊNH DẠNG HIỂN THỊ UI
 export interface GatewaySendResult {
   maKetQua: string;
   maGiaoDich: string;
@@ -822,17 +694,12 @@ export interface GatewaySendResult {
   totalRecords: number;
 }
 
-/**
- * Định dạng tiền tệ hiển thị tiếng Việt (vd: 1.500.000 đ)
- */
 export function formatCurrencyVnd(val?: number): string {
   if (val === undefined || val === null || isNaN(val)) return "0 đ";
   return `${Math.round(val).toLocaleString("vi-VN")} đ`;
 }
 
-/**
- * Định dạng chuỗi ngày giờ YYYYMMDDHHmm hoặc YYYYMMDD thành dạng dễ đọc DD/MM/YYYY HH:mm
- */
+//Định dạng chuỗi ngày giờ YYYYMMDDHHmm hoặc YYYYMMDD thành dạng dễ đọc DD/MM/YYYY HH:mm
 export function formatYmdHmDisplay(str?: string): string {
   if (!str) return "-";
   const clean = String(str).replace(/[^0-9]/g, "");
@@ -856,9 +723,6 @@ export function formatYmdHmDisplay(str?: string): string {
 /** @deprecated dùng getTimestampYmdHms */
 export const getThoiGianTiepNhan = getTimestampYmdHms;
 
-/**
- * Mock gửi danh mục lên Cổng EGW BHXH (sandbox).
- */
 export async function mockSendDanhMucToBhxhGateway(
   loaiHs: string,
   recordCount: number,

@@ -20,6 +20,7 @@ import {
 } from "./components";
 import { SchemaMappingModal } from "../../danh-muc/common/SchemaMappingModal";
 import { SchemaMappingCard } from "../../danh-muc/common/SchemaMappingCard";
+import { useSchemaMappingProps } from "../../../hooks";
 import { getTodayIsoDate } from "../../../utils/shared/excelXmlShared";
 
 export const Hs01TongHopTab: React.FC = () => {
@@ -34,7 +35,7 @@ export const Hs01TongHopTab: React.FC = () => {
 
   // Modals
   const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
-  const [xmlExportTab, setXmlExportTab] = useState<"xml" | "base64" | "api">(
+  const [xmlModalTab, setXmlModalTab] = useState<"xml" | "base64" | "api">(
     "xml",
   );
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -112,18 +113,21 @@ export const Hs01TongHopTab: React.FC = () => {
   };
 
   const handleClearData = () => {
-    if (
-      window.confirm(
-        "Bạn có chắc chắn muốn xóa toàn bộ danh sách hồ sơ 01/BH hiện tại?",
-      )
-    ) {
-      setItems([]);
-      setFileUploadStats(null);
-      toast.warning(
-        "Đã xóa toàn bộ dữ liệu bảng hồ sơ tổng hợp",
-        "Xóa Dữ Liệu",
-      );
-    }
+    toast.showConfirm({
+      title: "Xác nhận xóa toàn bộ hồ sơ",
+      content: "Bạn có chắc chắn muốn xóa toàn bộ danh sách hồ sơ 01/BH hiện tại?",
+      danger: true,
+      okText: "Xóa tất cả",
+      cancelText: "Hủy",
+      onOk: () => {
+        setItems([]);
+        setFileUploadStats(null);
+        toast.warning(
+          "Đã xóa toàn bộ dữ liệu bảng hồ sơ tổng hợp",
+          "Xóa Dữ Liệu",
+        );
+      },
+    });
   };
 
   // CRUD
@@ -138,14 +142,17 @@ export const Hs01TongHopTab: React.FC = () => {
   };
 
   const handleDelete = (item: Hs01TongHopItem) => {
-    if (
-      window.confirm(
-        `Bạn có chắc chắn muốn xóa hồ sơ của bệnh nhân "${item.hoTen}"?`,
-      )
-    ) {
-      setItems((prev) => prev.filter((i) => i.id !== item.id));
-      toast.success(`Đã xóa hồ sơ bệnh nhân "${item.hoTen}"`, "Xóa Hồ Sơ");
-    }
+    toast.showConfirm({
+      title: "Xác nhận xóa hồ sơ",
+      content: `Bạn có chắc chắn muốn xóa hồ sơ của bệnh nhân "${item.hoTen}"?`,
+      danger: true,
+      okText: "Xóa",
+      cancelText: "Hủy",
+      onOk: () => {
+        setItems((prev) => prev.filter((i) => i.id !== item.id));
+        toast.success(`Đã xóa hồ sơ bệnh nhân "${item.hoTen}"`, "Xóa Hồ Sơ");
+      },
+    });
   };
 
   const handleSaveItem = (savedItem: Hs01TongHopItem) => {
@@ -214,24 +221,7 @@ export const Hs01TongHopTab: React.FC = () => {
     });
   }, [items, searchTerm, filterLoaiKcb, filterTrangThai]);
 
-  // Memoize matched headers for schema inspection
-  const { matchedKeys, matchedColumnsMap } = useMemo(() => {
-    if (!fileUploadStats) {
-      return {
-        matchedKeys: HS01_SCHEMA_FIELDS.map((f) => f.key),
-        matchedColumnsMap: {} as Record<string, string>,
-      };
-    }
-    return {
-      matchedKeys: Object.values(fileUploadStats.detectedHeaders),
-      matchedColumnsMap: Object.fromEntries(
-        Object.entries(fileUploadStats.detectedHeaders).map(([colIdx, key]) => [
-          key,
-          `Cột ${Number(colIdx) + 1} (${key})`,
-        ]),
-      ),
-    };
-  }, [fileUploadStats]);
+  const schemaProps = useSchemaMappingProps(HS01_SCHEMA_FIELDS, fileUploadStats);
 
   return (
     <div className="space-y-6">
@@ -249,11 +239,11 @@ export const Hs01TongHopTab: React.FC = () => {
         onLoadSample={handleLoadSample}
         onClearData={handleClearData}
         onOpenXmlModal={() => {
-          setXmlExportTab("xml");
+          setXmlModalTab("xml");
           setIsXmlModalOpen(true);
         }}
         onOpenApiTab={() => {
-          setXmlExportTab("api");
+          setXmlModalTab("api");
           setIsXmlModalOpen(true);
         }}
         onOpenSchemaModal={() => setIsSchemaModalOpen(true)}
@@ -262,12 +252,7 @@ export const Hs01TongHopTab: React.FC = () => {
 
       {/* 3. Schema Mapping Card / Inspector */}
       <SchemaMappingCard
-        schemaFields={HS01_SCHEMA_FIELDS}
-        matchedKeys={matchedKeys}
-        matchedColumnsMap={matchedColumnsMap}
-        sheetName={fileUploadStats?.selectedSheet}
-        fileName={fileUploadStats?.fileName}
-        totalRows={fileUploadStats?.totalRows}
+        {...schemaProps}
         loaiHsBadge="Loại HS 5 - 20 Trường"
         title="Đặc Tả Cấu Trúc 20 Trường Hồ Sơ Tổng Hợp Chi Phí KCB (Mẫu 01/BH - XML <HSTH01BH> - Loại HS 5)"
         defaultExpanded={!!fileUploadStats}
@@ -308,20 +293,16 @@ export const Hs01TongHopTab: React.FC = () => {
         isOpen={isXmlModalOpen}
         onClose={() => setIsXmlModalOpen(false)}
         items={items}
-        activeTab={xmlExportTab}
+        defaultTab={xmlModalTab}
         onSendSuccess={handleSendSuccess}
+        fileUploadStats={fileUploadStats}
       />
 
       {/* Schema Mapping Modal */}
       <SchemaMappingModal
         isOpen={isSchemaModalOpen}
         onClose={() => setIsSchemaModalOpen(false)}
-        schemaFields={HS01_SCHEMA_FIELDS}
-        matchedKeys={matchedKeys}
-        matchedColumnsMap={matchedColumnsMap}
-        sheetName={fileUploadStats?.selectedSheet}
-        fileName={fileUploadStats?.fileName}
-        totalRows={fileUploadStats?.totalRows}
+        {...schemaProps}
         loaiHsBadge="Loại HS 5 - 20 Trường"
         title="Đặc Tả Kỹ Thuật 20 Cột Chuẩn Mẫu 01/BH (XML <HSTH01BH> - Loại HS 5)"
       />

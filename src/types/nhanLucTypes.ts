@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import type { DanhMucParseResult } from '../utils/shared';
 import type { DmNhanLucItem } from './index';
 
 export interface NhanLucSchemaField {
@@ -19,21 +19,7 @@ export interface NhanLucValidationInput {
   tuNgay?: string;
 }
 
-export interface ParseNhanLucExcelResult {
-  sheetName: string;
-  fileName: string;
-  availableSheets: string[];
-  totalRows: number;
-  validRows: number;
-  invalidRows: number;
-  items: DmNhanLucItem[];
-  missingRequiredColumns: string[];
-  recognizedColumns: { key: string; colName: string }[];
-  isMultiSheet: boolean;
-  workbook?: XLSX.WorkBook;
-  sheets?: { name: string; rowCount: number; isBestMatch: boolean }[];
-  selectedSheet?: string;
-}
+export type ParseNhanLucExcelResult = DanhMucParseResult<DmNhanLucItem>;
 
 export interface SendNhanLucGatewayResult {
   maKetQua: string;

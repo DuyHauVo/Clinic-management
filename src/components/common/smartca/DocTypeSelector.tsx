@@ -17,6 +17,8 @@ import type { DocSignOptionType } from "../../../types/tt25ChungTuTypes";
 import { validateAndResolveDocType } from "../../../utils/validators";
 import { useToast } from "../../../context/ToastContext";
 
+import type { SourceFileUploadInfo } from "../XmlExportModal";
+
 export interface DocTypeSelectorProps {
   fileName: string;
   itemsCount?: number;
@@ -24,6 +26,7 @@ export interface DocTypeSelectorProps {
   selectedDocType: DocSignOptionType;
   isSigned?: boolean;
   hasFile?: boolean;
+  sourceFileInfo?: SourceFileUploadInfo | null;
   onSelectDocType: (type: DocSignOptionType) => void;
   onUploadedFileParsed: (params: {
     xmlContent: string;
@@ -43,6 +46,7 @@ export const DocTypeSelector: React.FC<DocTypeSelectorProps> = ({
   selectedDocType,
   isSigned = false,
   hasFile = true,
+  sourceFileInfo,
   onSelectDocType,
   onUploadedFileParsed,
   onClearUploaded,
@@ -78,8 +82,14 @@ export const DocTypeSelector: React.FC<DocTypeSelectorProps> = ({
 
   // Danh mục phân nhóm loại hồ sơ (lấy từ constants dùng chung)
   const docOptionsList = useMemo(
-    () => getDocOptionsList(fileName, itemsCount, itemLabel),
-    [fileName, itemsCount, itemLabel],
+    () =>
+      getDocOptionsList(
+        fileName,
+        itemsCount,
+        itemLabel,
+        sourceFileInfo?.fileName,
+      ),
+    [fileName, itemsCount, itemLabel, sourceFileInfo?.fileName],
   );
 
   const currentSelectedOption = useMemo(() => {
@@ -396,7 +406,8 @@ export const DocTypeSelector: React.FC<DocTypeSelectorProps> = ({
           </div>
         </div>
 
-        {uploadSuccessMsg && (
+        {/* Thông báo tệp nạp: Ưu tiên tệp nạp trực tiếp trong Modal; nếu không thì hiển thị tệp nguồn đã nạp từ Trang chủ */}
+        {uploadSuccessMsg ? (
           <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300/80 text-emerald-900 text-xs font-semibold flex items-center justify-between gap-3 animate-fadeIn">
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
               <CheckCircle2
@@ -411,7 +422,28 @@ export const DocTypeSelector: React.FC<DocTypeSelectorProps> = ({
               </span>
             )}
           </div>
-        )}
+        ) : selectedDocType === "CURRENT" && sourceFileInfo?.fileName ? (
+          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300/80 text-emerald-900 text-xs font-semibold flex items-center justify-between gap-3 animate-fadeIn">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <CheckCircle2
+                size={17}
+                className="text-emerald-600 flex-shrink-0"
+              />
+              <span className="leading-relaxed">
+                Đã nạp thành công {sourceFileInfo.totalRows ?? itemsCount ?? 0}{" "}
+                {itemLabel} từ tệp: <strong>{sourceFileInfo.fileName}</strong>
+                {sourceFileInfo.selectedSheet
+                  ? ` (Sheet: ${sourceFileInfo.selectedSheet})`
+                  : ""}
+              </span>
+            </div>
+            {(sourceFileInfo.totalRows || itemsCount) ? (
+              <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white font-bold font-mono text-xs whitespace-nowrap flex-shrink-0 shadow-xs">
+                {sourceFileInfo.totalRows ?? itemsCount} {itemLabel}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   );

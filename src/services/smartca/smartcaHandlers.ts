@@ -1,8 +1,3 @@
-// ============================================================
-// SERVERLESS GATEWAY HANDLERS - Xử lý nghiệp vụ ký số bảo mật
-// theo chuẩn VNPT SmartCA v4.1 Mục 4 (Quy trình 1 - Ký qua App Mobile)
-// ============================================================
-
 import {
   computeXmlDigest,
   injectSignatureToXml,
@@ -13,6 +8,7 @@ import {
   SMARTCA_CLIENT_ID,
   SMARTCA_CLIENT_SECRET,
   SMARTCA_DEFAULT_CCCD,
+  SMARTCA_MOCK_SIGNATURE_VALUE,
 } from "./smartcaConfig";
 import { SmartCaHttpClient } from "./SmartCaClient";
 import { MockSmartCaClient } from "./MockSmartCaClient";
@@ -21,9 +17,6 @@ import {
   type SignerProfile,
 } from "../../types/smartcaTypes";
 
-// ============================================================================
-// 1. CÁC KIỂU DỮ LIỆU YÊU CẦU & KẾT QUẢ KÝ (QUY TRÌNH 1 - Q1)
-// ============================================================================
 export interface SmartCaSignRequest {
   username?: string;
   password?: string;
@@ -79,9 +72,7 @@ export interface SmartCaSignResponse {
 export type SmartCaQ1SignResponse = SmartCaSignResponse;
 export type SmartCaQ2SignResponse = SmartCaSignResponse;
 
-// ============================================================================
-// 2. CẤU HÌNH BIẾN MÔI TRƯỜNG & CHỨNG THƯ SỐ MẪU
-// ============================================================================
+// CẤU HÌNH BIẾN MÔI TRƯỜNG & CHỨNG THƯ SỐ MẪU
 const CONFIG = {
   env: SMARTCA_ENV,
   clientId: SMARTCA_CLIENT_ID,
@@ -126,7 +117,9 @@ export async function getRuntimeMockCrypto(): Promise<{
           };
           const modulus = base64UrlToBase64(jwk.n || "");
           const exponent = base64UrlToBase64(jwk.e || "AQAB");
-          const pseudoCert = btoa(`MOCK_X509_CERTIFICATE_${modulus.slice(0, 32)}_${Date.now()}`);
+          const pseudoCert = btoa(
+            `MOCK_X509_CERTIFICATE_${modulus.slice(0, 32)}_${Date.now()}`,
+          );
           return {
             rsaModulus: modulus,
             rsaExponent: exponent,
@@ -155,20 +148,10 @@ export const MOCK_CERTIFICATE_CONFIG = {
   validTo: "2026-11-17 17:00:00",
 };
 
-/**
- * Sinh chữ ký mô phỏng RSA 2048-bit (Base64) chuẩn đặc tả VNPT SmartCA
- */
 export function generateMockSignatureValue(_digestValue: string): string {
-  return "roeBokGItwTuObPRrnZkmvu8vpTLzLMz7Vx01nlHcKCn+bTElXK0KM7PixT17kScDy4hD2agfoDjzNb1AZ+LiYBBgni01JPpTIRcTmpQJmSYcZKbO0dVSuY4FLg9bGHWkGAsTj7nN0HbxUMfuEui4vBGrW0N0G54hEHOboPpz44DIRkyS5cKiRWcMiMuZTAZHjtOS6tB0HK6RW8okkVKHn/IGX97fnXyJ4J40BoDicolX7oR1okb+K7bUGqYUDwpGehqcCAzIHUCJVZQ0BaFn7eNa0MYuH98H7+Phzv6tmL7SJaFACY+qGXm+247c1KXF+a4WVJaZI/NvToc1k0iHQ==";
+  return SMARTCA_MOCK_SIGNATURE_VALUE;
 }
-
-// ============================================================================
-// 3. LOGIC XỬ LÝ QUY TRÌNH 1 (Q1 - KÝ PHÊ DUYỆT TRÊN APP SMARTCA)
-// ============================================================================
-
-/**
- * Bước 1 (Q1): Khởi tạo giao dịch ký số và gửi Push Notification lên App VNPT SmartCA
- */
+//  LOGIC XỬ LÝ QUY TRÌNH 1 (Q1 - KÝ PHÊ DUYỆT TRÊN APP SMARTCA)
 export async function initiateSignQ1(
   req: SmartCaSignRequest,
 ): Promise<SmartCaQ1InitiateResponse> {
@@ -189,12 +172,19 @@ export async function initiateSignQ1(
   const roleTitle =
     req.signer?.roleTitle || (isUnitSign ? "Chữ ký đơn vị" : "Bác sĩ");
   const idValue =
-    req.signer?.mst || req.signer?.phone || req.signer?.cccd || username || "0901234567";
+    req.signer?.mst ||
+    req.signer?.phone ||
+    req.signer?.cccd ||
+    username ||
+    "0901234567";
 
-  // --- A. MÔI TRƯỜNG MOCK ---
+  // MÔI TRƯỜNG MOCK
   if (CONFIG.env === "mock") {
     const mockClient = new MockSmartCaClient();
-    const tokenPair = await mockClient.login(username, req.password || "123456");
+    const tokenPair = await mockClient.login(
+      username,
+      req.password || "123456",
+    );
     const credIds = await mockClient.listCredentials();
     const credInfo = await mockClient.getCredentialInfo(
       tokenPair.accessToken,
@@ -237,7 +227,7 @@ export async function initiateSignQ1(
     };
   }
 
-  // --- B. MÔI TRƯỜNG DEMO / PRODUCTION ---
+  // MÔI TRƯỜNG DEMO / PRODUCTION
   try {
     const realClient = new SmartCaHttpClient({
       env: CONFIG.env as "demo" | "production",
@@ -263,7 +253,10 @@ export async function initiateSignQ1(
       );
     }
 
-    const credInfo = await realClient.getCredentialInfo(accessToken, credIds[0]);
+    const credInfo = await realClient.getCredentialInfo(
+      accessToken,
+      credIds[0],
+    );
     const x509Certificate = credInfo.cert?.certificates?.[0] || "";
     const rsaModulus = credInfo.cert?.rsaModulus;
     const rsaExponent = credInfo.cert?.rsaExponent || "AQAB";
@@ -325,9 +318,6 @@ export async function initiateSignQ1(
   }
 }
 
-/**
- * Bước 2 (Q1): Kiểm tra trạng thái giao dịch ký số (Polling từ Web)
- */
 export async function checkSignStatusQ1(options: {
   tranId: string;
   accessToken: string;
@@ -343,7 +333,8 @@ export async function checkSignStatusQ1(options: {
   };
   signer?: SignerProfile;
 }): Promise<SmartCaSignResponse> {
-  const { tranId, accessToken, digestValue, rawXml, certInfo, signer } = options;
+  const { tranId, accessToken, digestValue, rawXml, certInfo, signer } =
+    options;
 
   // --- A. MÔI TRƯỜNG MOCK ---
   if (CONFIG.env === "mock") {
@@ -352,7 +343,8 @@ export async function checkSignStatusQ1(options: {
       const tranInfo = await mockClient.getTransactionInfo(accessToken, tranId);
       if (tranInfo.tranStatus === SMARTCA_TRAN_STATUS.SUCCESS) {
         const signatureValue =
-          tranInfo.documents?.[0]?.sig || generateMockSignatureValue(digestValue);
+          tranInfo.documents?.[0]?.sig ||
+          generateMockSignatureValue(digestValue);
 
         const mockCrypto = await getRuntimeMockCrypto();
         const subjectDN =
@@ -360,7 +352,9 @@ export async function checkSignStatusQ1(options: {
           signer?.subjectDN ||
           `CN=BS. NGUYỄN VĂN AN, O=PHÒNG KHÁM, C=VN`;
         const serialNumber =
-          certInfo?.serialNumber || signer?.serialNumber || "4001266514_SMARTCA_2026";
+          certInfo?.serialNumber ||
+          signer?.serialNumber ||
+          "4001266514_SMARTCA_2026";
         const issuerDN = certInfo?.issuerDN || MOCK_CERTIFICATE_CONFIG.issuerDN;
         const x509Certificate =
           certInfo?.x509Certificate || mockCrypto.x509Certificate;
@@ -413,7 +407,8 @@ export async function checkSignStatusQ1(options: {
           x509Certificate: "",
           signedAt: "",
           digestValue,
-          error: "Giao dịch ký số đã hết hạn trên App SmartCA (quá thời gian chờ)",
+          error:
+            "Giao dịch ký số đã hết hạn trên App SmartCA (quá thời gian chờ)",
         };
       }
 
@@ -447,7 +442,8 @@ export async function checkSignStatusQ1(options: {
         signer,
       };
     } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : "Lỗi kiểm tra trạng thái mock";
+      const errorMsg =
+        err instanceof Error ? err.message : "Lỗi kiểm tra trạng thái mock";
       return {
         success: false,
         status: 0,
@@ -599,29 +595,20 @@ export async function checkSignStatusQ1(options: {
   }
 }
 
-/**
- * Giả lập người dùng bấm "Xác nhận" trên App SmartCA (dành cho chế độ Mock & Test)
- */
+// Giả lập người dùng bấm "Xác nhận" trên App SmartCA (dành cho chế độ Mock & Test)
 export async function confirmMockSignQ1(tranId: string): Promise<void> {
   const mockClient = new MockSmartCaClient();
   await mockClient.confirmMockSign(tranId);
 }
 
-/**
- * Giả lập người dùng bấm "Từ chối" trên App SmartCA (dành cho chế độ Mock & Test)
- */
+// Giả lập người dùng bấm "Từ chối" trên App SmartCA (dành cho chế độ Mock & Test)
 export async function rejectMockSignQ1(tranId: string): Promise<void> {
   const mockClient = new MockSmartCaClient();
   await mockClient.rejectMockSign(tranId);
 }
 
-// ============================================================================
-// 4. HÀM TƯƠNG THÍCH NGƯỢC (TỰ ĐỘNG KHỞI TẠO VÀ KÝ Q1)
-// ============================================================================
-
-/**
- * Xử lý ký số một chạm (Hỗ trợ Q1)
- */
+// HÀM TƯƠNG THÍCH NGƯỢC (TỰ ĐỘNG KHỞI TẠO VÀ KÝ Q1)
+// Xử lý ký số một chạm (Hỗ trợ Q1)
 export async function handleSignQ1(
   req: SmartCaSignRequest,
 ): Promise<SmartCaSignResponse> {
@@ -674,12 +661,7 @@ export async function handleSignQ1(
     signer: req.signer,
   };
 }
-
-export const handleSignQ2 = handleSignQ1;
-
-/**
- * Xử lý băm và ghép chữ ký XML hoàn chỉnh (Hỗ trợ Q1)
- */
+// Xử lý băm và ghép chữ ký XML hoàn chỉnh (Hỗ trợ Q1)
 export async function handleSignAndInjectXml(
   rawXml: string,
   _otpOrPassword?: string,
@@ -707,7 +689,8 @@ export async function handleSignAndInjectXml(
         success: false,
         signedXml: rawXml,
         signResponse,
-        error: signResponse.error || "Giao dịch đang chờ xác nhận trên App SmartCA",
+        error:
+          signResponse.error || "Giao dịch đang chờ xác nhận trên App SmartCA",
       };
     }
 

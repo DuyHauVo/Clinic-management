@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import {
   FileCode,
   Send,
@@ -20,6 +20,12 @@ import { useModalBehavior } from "../../hooks/useModalBehavior";
 import { SmartCaSignPanel } from "./SmartCaSignPanel";
 import type { SmartCaSignResponse } from "../../services/smartca/smartcaHandlers";
 import { extractXmlSignature } from "../../utils/xmlDsigEngine";
+
+export interface SourceFileUploadInfo {
+  fileName: string;
+  selectedSheet?: string;
+  totalRows?: number;
+}
 
 export interface XmlExportModalProps {
   isOpen: boolean;
@@ -44,6 +50,8 @@ export interface XmlExportModalProps {
   customFileName?: string;
   /** Bật tab Ký Số SmartCA (mặc định: bật cho tất cả danh mục & hồ sơ) */
   enableSmartCa?: boolean;
+  /** Thông tin tệp nguồn đã nạp ở trang chủ (Excel/CSV) */
+  sourceFileInfo?: SourceFileUploadInfo | null;
 }
 
 export const XmlExportModal: React.FC<XmlExportModalProps> = ({
@@ -67,13 +75,15 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
   apiResponse,
   customFileName,
   enableSmartCa = true,
+  sourceFileInfo,
 }) => {
   const { isKeyCopied: internalIsKeyCopied, copy: internalCopy } =
     useClipboard();
-  useModalBehavior(isOpen, onClose);
-
-  // Ref theo dõi điểm bắt đầu mousedown trên backdrop để tránh bị tắt modal khi kéo chuột bôi đen văn bản từ trong ra ngoài
-  const isBackdropMouseDownRef = useRef(false);
+  const {
+    handleBackdropMouseDown,
+    handleBackdropClick,
+    handleStopPropagation,
+  } = useModalBehavior(isOpen, onClose);
 
   // Trạng thái nội bộ cho tệp XML đã ký số
   const [signedXml, setSignedXml] = useState<string | null>(null);
@@ -140,28 +150,6 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
     onClose();
   };
 
-  const handleBackdropMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Chỉ đánh dấu là mousedown trên backdrop nếu target thực sự là backdrop
-    if (e.target === e.currentTarget) {
-      isBackdropMouseDownRef.current = true;
-    } else {
-      isBackdropMouseDownRef.current = false;
-    }
-  };
-
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Chỉ đóng modal khi CẢ mousedown và click đều diễn ra trên backdrop
-    // Ngăn chặn trường hợp người dùng bôi đen văn bản/kéo chọn trong ô input rồi thả chuột ra ngoài backdrop
-    if (e.target === e.currentTarget && isBackdropMouseDownRef.current) {
-      onClose();
-    }
-    isBackdropMouseDownRef.current = false;
-  };
-
-  const handleStopPropagation = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
-
   const handlePreventDrag = (e: React.DragEvent) => {
     e.preventDefault();
   };
@@ -183,9 +171,22 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
     );
   };
 
+  const curlCommandText = useMemo(() => {
+    const shortBase64 = effectiveBase64.substring(0, 40);
+    return `curl --location '${apiEndpoint}' \\
+--header 'accessToken: {access_token}' \\
+--header 'tokenId: {token_id}' \\
+--header 'passwordHash: {md5_hash}' \\
+--header 'Content-Type: application/x-www-form-urlencoded' \\
+--data-urlencode 'username=${DEFAULT_MA_CSKCB}_BV' \\
+--data-urlencode 'loaiHs=${loaiHsCode}' \\
+--data-urlencode 'maTinh=${DEFAULT_MA_TINH}' \\
+--data-urlencode 'maCskcb=${DEFAULT_MA_CSKCB}' \\
+--data-urlencode 'fileHsBase64=${shortBase64}...'`;
+  }, [apiEndpoint, loaiHsCode, effectiveBase64]);
+
   const handleCopyCurlCommand = () => {
-    const curlCommand = `curl --location '${apiEndpoint}' \\\n--header 'accessToken: {access_token}' \\\n--header 'tokenId: {token_id}' \\\n--header 'passwordHash: {md5_hash}' \\\n--header 'Content-Type: application/x-www-form-urlencoded' \\\n--data-urlencode 'username=${DEFAULT_MA_CSKCB}_BV' \\\n--data-urlencode 'loaiHs=${loaiHsCode}' \\\n--data-urlencode 'maTinh=${DEFAULT_MA_TINH}' \\\n--data-urlencode 'maCskcb=${DEFAULT_MA_CSKCB}' \\\n--data-urlencode 'fileHsBase64=${effectiveBase64.substring(0, 50)}...'`;
-    handleCopy(curlCommand);
+    handleCopy(curlCommandText);
   };
 
   const handleSendApiClick = () => {
@@ -235,7 +236,17 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                 )}
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Dữ liệu hiện hành • {itemsCount} {itemLabel} • Tệp:{" "}
+                Dữ liệu hiện hành • {itemsCount} {itemLabel}
+                {sourceFileInfo?.fileName && (
+                  <>
+                    {" "}• Nguồn:{" "}
+                    <b className="font-semibold text-slate-700">
+                      {sourceFileInfo.fileName}
+                      {sourceFileInfo.selectedSheet ? ` [${sourceFileInfo.selectedSheet}]` : ""}
+                    </b>
+                  </>
+                )}
+                {" "}• Tệp:{" "}
                 <b className="font-mono text-slate-700">{effectiveFileName}</b>
               </p>
             </div>
@@ -344,6 +355,8 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                     fileName={effectiveFileName}
                     itemsCount={itemsCount}
                     itemLabel={itemLabel}
+                    signatureInfo={signatureInfo}
+                    sourceFileInfo={sourceFileInfo}
                     onSignedSuccess={handleSignedSuccess}
                     onResetSignature={handleResetSignature}
                     onDownloadSignedXml={handleDownloadEffectiveXml}
@@ -533,16 +546,7 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                       </button>
                     </div>
                     <pre className="p-3 bg-slate-900 text-amber-300 font-mono text-[10px] rounded-xl overflow-x-auto border border-slate-800 leading-relaxed select-text">
-                      {`curl --location '${apiEndpoint}' \\
---header 'accessToken: {access_token}' \\
---header 'tokenId: {token_id}' \\
---header 'passwordHash: {md5_hash}' \\
---header 'Content-Type: application/x-www-form-urlencoded' \\
---data-urlencode 'username=${DEFAULT_MA_CSKCB}_BV' \\
---data-urlencode 'loaiHs=${loaiHsCode}' \\
---data-urlencode 'maTinh=${DEFAULT_MA_TINH}' \\
---data-urlencode 'maCskcb=${DEFAULT_MA_CSKCB}' \\
---data-urlencode 'fileHsBase64=${effectiveBase64.substring(0, 40)}...'`}
+                      {curlCommandText}
                     </pre>
                   </div>
 
