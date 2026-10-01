@@ -70,6 +70,9 @@ export class BhxhChungTuService {
       });
 
       const data: BhxhTokenResponse = await response.json();
+      if (!data.apiToken && data.APIKey?.access_token) {
+        data.apiToken = data.APIKey.access_token;
+      }
       return data;
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Không thể kết nối đến máy chủ Cổng BHXH Việt Nam';

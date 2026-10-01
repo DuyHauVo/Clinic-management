@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  Building2,
   Calendar,
   Bell,
   ShieldAlert,
@@ -10,7 +9,6 @@ import {
 } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 import type { MainTabType, HoSoTabType } from "./Sidebar";
-import { DEFAULT_MA_CSKCB, DEFAULT_MA_TINH, DEFAULT_CLINIC_NAME } from "../utils/shared/excelXmlShared";
 
 interface NavbarProps {
   activeTab?: MainTabType;
@@ -97,37 +95,14 @@ export const Navbar: React.FC<NavbarProps> = ({
         )}
       </div>
 
-      {/* Center Metadata Badge */}
-      <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-600 font-medium whitespace-nowrap">
-          <Building2 size={14} className="text-[#1677ff]" />
-          <span>
-            Mã CS:{" "}
-            <strong className="font-mono text-slate-900">
-              {DEFAULT_MA_CSKCB}
-            </strong>
-          </span>
-          <span className="text-slate-300">|</span>
-          <span>
-            Tỉnh:{" "}
-            <strong className="font-mono text-slate-900">
-              {DEFAULT_MA_TINH}
-            </strong>
-          </span>
-          <span className="text-slate-300">|</span>
-          <span className="text-slate-700 font-semibold truncate max-w-xs">
-            {DEFAULT_CLINIC_NAME}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-600 font-medium">
+      {/* Right Gateway Status & Actions */}
+      <div className="flex items-center gap-3">
+        {/* Calendar Badge */}
+        <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-600 font-medium">
           <Calendar size={14} className="text-emerald-600" />
           <span>{today}</span>
         </div>
-      </div>
 
-      {/* Right Gateway Status & Actions */}
-      <div className="flex items-center gap-3">
         {/* Nút Mở Ký Số SmartCA Nhanh */}
         <button
           type="button"

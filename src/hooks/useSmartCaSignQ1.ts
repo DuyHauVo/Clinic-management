@@ -9,7 +9,12 @@ import {
   type SmartCaSignResponse,
   type SmartCaQ1InitiateResponse,
 } from "../services/smartca/smartcaHandlers";
-import { SMARTCA_CLIENT_SECRET } from "../services/smartca/smartcaConfig";
+import {
+  SMARTCA_CLIENT_SECRET,
+  SMARTCA_DEFAULT_MST,
+  SMARTCA_DEFAULT_PASSWORD,
+} from "../services/smartca/smartcaConfig";
+import { DEFAULT_CLINIC_NAME } from "../utils/shared/excelXmlShared";
 import { SMARTCA_TRAN_STATUS, type SignerProfile } from "../types/smartcaTypes";
 import {
   type IdentityType,
@@ -39,12 +44,15 @@ export function useSmartCaSignQ1({
   const { credential, config } = useSmartCa();
   const toast = useToast();
 
-  // Thông tin người ký
+  // Thông tin người ký (Mặc định ký theo đơn vị: Mã số thuế và mật khẩu cấu hình từ .env)
+  const defaultMst = SMARTCA_DEFAULT_MST || config.username || "";
   const [signerName, setSignerName] = useState("");
   const [signerEmail, setSignerEmail] = useState("");
-  const [idType, setIdType] = useState<"phone" | "cccd" | "mst">("phone");
-  const [identityValue, setIdentityValue] = useState("");
-  const [password, setPassword] = useState("");
+  const [idType, setIdType] = useState<"phone" | "cccd" | "mst">(
+    defaultMst ? "mst" : "phone",
+  );
+  const [identityValue, setIdentityValue] = useState(defaultMst);
+  const [password, setPassword] = useState(SMARTCA_DEFAULT_PASSWORD || "");
   const [showPassword, setShowPassword] = useState(false);
 
   // Trạng thái giao dịch Q1
@@ -111,7 +119,11 @@ export function useSmartCaSignQ1({
   const handleSelectIdType = (type: IdentityType) => {
     if (idType !== type) {
       setIdType(type);
-      setIdentityValue("");
+      if (type === "mst" && defaultMst) {
+        setIdentityValue(defaultMst);
+      } else {
+        setIdentityValue("");
+      }
     }
   };
 
@@ -241,6 +253,17 @@ export function useSmartCaSignQ1({
       return;
     }
 
+    if (idType !== "mst") {
+      if (!signerName.trim()) {
+        toast.warning("Vui lòng nhập Họ và Tên người ký (Bác sĩ)", "Thiếu Thông Tin");
+        return;
+      }
+      if (!signerEmail.trim()) {
+        toast.warning("Vui lòng nhập Email người ký", "Thiếu Thông Tin");
+        return;
+      }
+    }
+
     const trimmedEmail = signerEmail.trim();
     if (trimmedEmail) {
       const emailCheck = validateEmail(trimmedEmail);
@@ -267,7 +290,7 @@ export function useSmartCaSignQ1({
     const displayName =
       customName ||
       (isUnitSign
-        ? `Cơ sở KCB (MST: ${trimmedIdentity})`
+        ? DEFAULT_CLINIC_NAME || `Cơ sở KCB (MST: ${trimmedIdentity})`
         : `Bác sĩ (${idType === "phone" ? "SĐT" : "CCCD"}: ${trimmedIdentity})`);
 
     const dynamicSigner: SignerProfile = {

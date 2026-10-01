@@ -275,11 +275,14 @@ export const SmartCaErrorModal: React.FC<{
   clientId?: string;
   username?: string;
 }> = ({ isOpen, onClose, env, errorMessage, clientId, username }) => {
+  const isGrantError = errorMessage.toLowerCase().includes("invalid_grant") || errorMessage.toLowerCase().includes("mật khẩu");
+  const errorCode = isGrantError ? "INVALID_GRANT" : errorMessage.includes("400") ? "400" : errorMessage.includes("403") ? "403" : "401";
+
   return (
     <ErrorModal
       isOpen={isOpen}
       onClose={onClose}
-      errorCode="401"
+      errorCode={errorCode}
       title="Không Thể Kết Nối VNPT SmartCA"
       subtitle="Xác thực tài khoản hoặc kết nối tới máy chủ VNPT không thành công"
       errorMessage={errorMessage}
@@ -290,12 +293,12 @@ export const SmartCaErrorModal: React.FC<{
             ? 'https://gwsca.vnpt.vn (Production Gateway)'
             : 'https://rmgateway.vnptit.vn (Demo Gateway)',
         'Client ID': clientId || 'Chưa cung cấp',
-        'Username (CCCD)': username || 'Chưa cung cấp',
+        'Tài khoản ký (MST / CCCD)': username || 'Chưa cung cấp',
       }}
       reasons={[
-        `Chưa điền thông tin thật: File .env đang bật VITE_SMARTCA_ENV=${env} nhưng VITE_SMARTCA_CLIENT_ID hoặc CLIENT_SECRET chưa được VNPT cấp phép.`,
-        'Tài khoản chưa đăng ký: Số CCCD/Username chưa được cấp chứng thư số ký số trên hệ thống VNPT SmartCA.',
-        'Kiểm tra lại kết nối: Đảm bảo thông tin định danh và mật khẩu đã được đăng ký hợp lệ với VNPT.',
+        'Sai Mật khẩu hoặc Tài khoản: Vui lòng kiểm tra lại mật khẩu đăng nhập SmartCA của tài khoản MST.',
+        'Chứng thư số: Đảm bảo tài khoản MST này đã được kích hoạt gói chứng thư số ký số trên hệ thống VNPT SmartCA.',
+        `Cấu hình ứng dụng: File .env đang bật VITE_SMARTCA_ENV=${env}. Đảm bảo Client ID và Client Secret đã được VNPT kích hoạt quyền gọi API.`,
       ]}
     />
   );

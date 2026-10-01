@@ -7,6 +7,7 @@ import {
   SMARTCA_ENV,
   SMARTCA_CLIENT_ID,
   SMARTCA_CLIENT_SECRET,
+  SMARTCA_DEFAULT_MST,
   SMARTCA_DEFAULT_CCCD,
 } from "./smartcaConfig";
 import { SmartCaHttpClient } from "./SmartCaClient";
@@ -21,6 +22,7 @@ export interface SmartCaSignRequest {
   accessToken?: string;
   digestValue: string;
   fileName?: string;
+  refTranId?: string;
   subjectDN?: string;
   serialNumber?: string;
   userId?: string;
@@ -75,7 +77,7 @@ const CONFIG = {
   env: SMARTCA_ENV,
   clientId: SMARTCA_CLIENT_ID,
   clientSecret: SMARTCA_CLIENT_SECRET,
-  defaultUsername: SMARTCA_DEFAULT_CCCD,
+  defaultUsername: SMARTCA_DEFAULT_MST || SMARTCA_DEFAULT_CCCD,
 };
 
 // ============================================================================
@@ -122,12 +124,22 @@ export async function initiateSignQ1(
       accessToken,
       credIds[0],
     );
+    if (!credInfo || !credInfo.cert) {
+      throw new Error(
+        `Không thể lấy thông tin chứng thư số từ SmartCA (${JSON.stringify(credInfo || {})})`,
+      );
+    }
     const x509Certificate = credInfo.cert?.certificates?.[0] || "";
     const rsaModulus = credInfo.cert?.rsaModulus;
     const rsaExponent = credInfo.cert?.rsaExponent || "AQAB";
 
+    const refTranId =
+      req.refTranId ||
+      `REF_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+
     const signRes = await realClient.signHash(accessToken, {
       credentialId: credIds[0],
+      refTranId,
       datas: [
         {
           name: req.fileName || `DOC_${Date.now()}.xml`,
@@ -136,9 +148,16 @@ export async function initiateSignQ1(
       ],
     });
 
+    const tranId = signRes?.tranId || (signRes as any)?.content?.tranId || (signRes as any)?.tran_id || "";
+    if (!tranId) {
+      throw new Error(
+        `SmartCA không trả về mã giao dịch tranId hợp lệ (${JSON.stringify(signRes || {})})`,
+      );
+    }
+
     return {
       success: true,
-      tranId: signRes.tranId,
+      tranId,
       accessToken,
       credentialId: credIds[0],
       status: SMARTCA_TRAN_STATUS.WAITING_FOR_SIGNER_CONFIRM,
@@ -227,9 +246,9 @@ export async function checkSignStatusQ1(options: {
 
       let signedXml = rawXml;
       if (rawXml) {
-        if (!x509Certificate || !rsaModulus) {
+        if (!x509Certificate) {
           throw new Error(
-            "Lỗi chữ ký số Production: Không nhận được X509 Certificate hoặc RSA Modulus từ chứng thư số thực tế của SmartCA.",
+            "Lỗi chữ ký số Production: Không nhận được X509 Certificate từ chứng thư số thực tế của SmartCA.",
           );
         }
         const dsigParams: XmlDSigParams = {
@@ -238,8 +257,8 @@ export async function checkSignStatusQ1(options: {
           signatureValue,
           subjectDN,
           x509Certificate,
-          rsaModulus,
-          rsaExponent,
+          rsaModulus: rsaModulus || undefined,
+          rsaExponent: rsaExponent || "AQAB",
           signingTime: new Date().toISOString(),
         };
         signedXml = injectSignatureToXml(rawXml, dsigParams);

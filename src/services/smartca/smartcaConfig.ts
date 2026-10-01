@@ -15,12 +15,19 @@ export const SMARTCA_CLIENT_ID: string =
   (import.meta.env.VITE_SMARTCA_CLIENT_ID as string) || "";
 export const SMARTCA_CLIENT_SECRET: string =
   (import.meta.env.VITE_SMARTCA_CLIENT_SECRET as string) || "";
+export const SMARTCA_DEFAULT_MST: string =
+  (import.meta.env.VITE_SMARTCA_DEFAULT_MST as string) || "";
 export const SMARTCA_DEFAULT_CCCD: string =
   (import.meta.env.VITE_SMARTCA_DEFAULT_CCCD as string) || "";
+export const SMARTCA_DEFAULT_PASSWORD: string =
+  (import.meta.env.VITE_SMARTCA_PASSWORD as string) ||
+  (import.meta.env.VITE_SMARTCA_DEFAULT_PASSWORD as string) ||
+  "";
+
 export const SMARTCA_DEFAULT_CONFIG: SmartCaPersistentConfig = {
   env: SMARTCA_ENV,
   clientId: SMARTCA_CLIENT_ID,
-  username: SMARTCA_DEFAULT_CCCD,
+  username: SMARTCA_DEFAULT_MST,
 };
 
 export function loadSmartCaConfig(): SmartCaPersistentConfig {

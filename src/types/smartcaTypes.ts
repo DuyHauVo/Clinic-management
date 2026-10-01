@@ -12,16 +12,18 @@ export interface SmartCaEndpoints {
   resource: string;
 }
 
+const isDev = import.meta.env.DEV;
+
 export const SMARTCA_ENDPOINTS: Record<SmartCaEnv, SmartCaEndpoints> = {
   demo: {
-    authorize: 'https://rmgateway.vnptit.vn/auth/authorize',
-    token: 'https://rmgateway.vnptit.vn/auth/token',
-    resource: 'https://rmgateway.vnptit.vn',
+    authorize: isDev ? '/api-smartca-demo/auth/authorize' : 'https://rmgateway.vnptit.vn/auth/authorize',
+    token: isDev ? '/api-smartca-demo/auth/token' : 'https://rmgateway.vnptit.vn/auth/token',
+    resource: isDev ? '/api-smartca-demo' : 'https://rmgateway.vnptit.vn',
   },
   production: {
-    authorize: 'https://gwsca.vnpt.vn/auth/authorize',
-    token: 'https://gwsca.vnpt.vn/auth/token',
-    resource: 'https://gwsca.vnpt.vn',
+    authorize: isDev ? '/api-smartca-prod/auth/authorize' : 'https://gwsca.vnpt.vn/auth/authorize',
+    token: isDev ? '/api-smartca-prod/auth/token' : 'https://gwsca.vnpt.vn/auth/token',
+    resource: isDev ? '/api-smartca-prod' : 'https://gwsca.vnpt.vn',
   },
 };
 

@@ -245,12 +245,24 @@ export const STATIC_DOC_OPTION_GROUPS: DocSignOptionGroup[] = [
  * Helper sinh danh sách hoàn chỉnh bao gồm tài liệu hiện hành
  */
 export function getDocOptionsList(
-  fileName: string,
-  itemsCount: number = 1,
-  itemLabel: string = "bản ghi",
+  fileName?: string,
+  itemsCount: number = 0,
+  itemLabel: string = "chứng từ",
   sourceFileName?: string,
 ): DocSignOptionGroup[] {
-  return [
+  const currentTitle =
+    fileName && fileName.trim().length > 0
+      ? `[Tài liệu hiện hành] ${fileName}`
+      : `[Tài liệu hiện hành]`;
+
+  const currentDesc =
+    fileName && fileName.trim().length > 0
+      ? sourceFileName
+        ? `Dữ liệu đang thao tác từ tệp "${sourceFileName}" (${itemsCount || 1} ${itemLabel})`
+        : `Dữ liệu đang thao tác (${itemsCount || 1} ${itemLabel})`
+      : "Chưa có tệp dữ liệu (vui lòng nạp tệp Excel / XML)";
+
+  const currentGroup: DocSignOptionGroup[] = [
     {
       group: "TÀI LIỆU HIỆN HÀNH",
       items: [
@@ -258,15 +270,14 @@ export function getDocOptionsList(
           id: "CURRENT",
           code: "HIỆN TẠI",
           badge: "Tài liệu mở",
-          title: `[Tài liệu hiện hành] ${fileName}`,
-          desc: sourceFileName
-            ? `Dữ liệu đang thao tác từ tệp "${sourceFileName}" (${itemsCount || 1} ${itemLabel})`
-            : `Dữ liệu đang thao tác (${itemsCount || 1} ${itemLabel})`,
+          title: currentTitle,
+          desc: currentDesc,
         },
       ],
     },
-    ...STATIC_DOC_OPTION_GROUPS,
   ];
+
+  return [...currentGroup, ...STATIC_DOC_OPTION_GROUPS];
 }
 
 /**

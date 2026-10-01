@@ -360,6 +360,7 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                     onSignedSuccess={handleSignedSuccess}
                     onResetSignature={handleResetSignature}
                     onDownloadSignedXml={handleDownloadEffectiveXml}
+                    onViewXml={handleSelectTabXml}
                   />
                 </div>
               )}
@@ -405,26 +406,17 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                   </div>
 
                   {/* Banner nhắc nhở ký số nếu chưa ký */}
-                  {!isSigned && (
-                    <div className="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl text-xs text-indigo-900 flex items-center justify-between gap-2 shrink-0 select-none">
-                      <div className="flex items-center gap-1.5">
-                        <Fingerprint
-                          size={15}
-                          className="text-indigo-600 shrink-0"
-                        />
-                        <span>
-                          File XML này <b>chưa có chữ ký số</b>. Bạn có thể
-                          chuyển sang tab <b>"Ký Số SmartCA"</b> để thực hiện ký
-                          số trước khi gửi Cổng BHXH.
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleSelectTabSmartCa}
-                        className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[11px] font-bold shrink-0 transition-colors cursor-pointer"
-                      >
-                        Ký Số Ngay
-                      </button>
+                  {!isSigned && enableSmartCa && (
+                    <div className="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl text-xs text-indigo-900 flex items-center gap-2 shrink-0 select-none">
+                      <Fingerprint
+                        size={15}
+                        className="text-indigo-600 shrink-0"
+                      />
+                      <span>
+                        File XML này <b>chưa có chữ ký số</b>. Bạn có thể
+                        chuyển sang tab <b>"Ký Số SmartCA (Q1)"</b> ở phía trên để thực hiện ký
+                        số trước khi gửi Cổng BHXH.
+                      </span>
                     </div>
                   )}
 

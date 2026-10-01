@@ -84,7 +84,8 @@ export const GlobalSmartCaSignModal: React.FC<GlobalSmartCaSignModalProps> = ({
 
         // Bước 1: Lấy Token xác thực từ Cổng BHXH Production
         const tokenRes = await BhxhChungTuService.takeToken(undefined, "production");
-        if (tokenRes.maKetQua !== "200" || !tokenRes.apiToken) {
+        const apiToken = tokenRes.apiToken || tokenRes.APIKey?.access_token;
+        if (String(tokenRes.maKetQua) !== "200" || !apiToken) {
           const errDetail =
             tokenRes.thongDiep || "Không thể lấy Token xác thực từ Cổng BHXH";
           toast.error(errDetail, "Lỗi Xác Thực BHXH");
@@ -102,14 +103,14 @@ export const GlobalSmartCaSignModal: React.FC<GlobalSmartCaSignModalProps> = ({
         // Bước 2: Gửi hồ sơ chứng từ đã ký (Mã 39) lên Cổng BHXH Production
         const sendRes = await BhxhChungTuService.guiHoSoChungTu2025(
           {
-            token: tokenRes.apiToken,
+            token: apiToken,
             fileBase64Str,
             loaiHs: "39",
           },
           "production",
         );
 
-        if (sendRes.maKetQua === "200") {
+        if (String(sendRes.maKetQua) === "200") {
           setBhxhResponse({
             maKetQua: "200",
             thongDiep:
@@ -259,11 +260,11 @@ export const GlobalSmartCaSignModal: React.FC<GlobalSmartCaSignModalProps> = ({
         {/* Body Modal */}
         <div className="p-6 overflow-y-auto flex-1 space-y-5 bg-[#f8fafc]">
           <SmartCaSignPanel
-            xmlContent={`<?xml version="1.0" encoding="UTF-8"?>\n<HSCHUNGTU xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n  <THONGTINCHUNGTU>\n    <MACSKCB>${DEFAULT_MA_CSKCB}</MACSKCB>\n    <SOLUONGHOSO>1</SOLUONGHOSO>\n  </THONGTINCHUNGTU>\n</HSCHUNGTU>`}
+            xmlContent=""
             signedXml={signedXml || undefined}
-            fileName={`HOSO_CHUNGTU_TT25_${DEFAULT_MA_CSKCB}.xml`}
-            itemsCount={1}
-            itemLabel="chứng từ"
+            fileName=""
+            itemsCount={0}
+            itemLabel="hồ sơ"
             onSignedSuccess={handleSignedSuccess}
             onResetSignature={handleResetSignature}
             onDownloadSignedXml={handleDownloadSigned}

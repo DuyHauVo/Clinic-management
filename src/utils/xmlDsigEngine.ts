@@ -113,9 +113,9 @@ export function buildXmlDSigBlock(
   const rsaModulus = params.rsaModulus;
   const rsaExponent = params.rsaExponent || "AQAB";
 
-  if (!isBhxh2025 && !rsaModulus) {
+  if (!params.x509Certificate) {
     throw new Error(
-      "Lỗi ký số XMLDSig: Thiếu thông tin RSA Modulus từ chứng thư số.",
+      "Lỗi ký số XMLDSig: Thiếu chứng thư số X.509 (x509Certificate).",
     );
   }
 
@@ -156,6 +156,16 @@ ${indent}  </Signature>`;
   // --- B. CHUẨN W3C XMLDSig THÔNG THƯỜNG (QĐ 130 / Danh mục BHYT) --- Dùng cho Gói Dữ Liệu Thanh Toán BHYT & Danh Mục
   const standardSigId =
     params.signatureId || `Signature-${crypto.randomUUID()}`;
+  const keyValueBlock = rsaModulus
+    ? `${indent}      <KeyValue>
+${indent}        <RSAKeyValue xmlns="http://www.w3.org/2000/09/xmldsig#">
+${indent}          <Modulus>${rsaModulus}</Modulus>
+${indent}          <Exponent>${rsaExponent}</Exponent>
+${indent}        </RSAKeyValue>
+${indent}      </KeyValue>
+`
+    : "";
+
   return `${indent}  <Signature Id="${standardSigId}" xmlns="http://www.w3.org/2000/09/xmldsig#">
 ${indent}    <SignedInfo>
 ${indent}      <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315" />
@@ -170,13 +180,7 @@ ${indent}      </Reference>
 ${indent}    </SignedInfo>
 ${indent}    <SignatureValue>${params.signatureValue}</SignatureValue>
 ${indent}    <KeyInfo>
-${indent}      <KeyValue>
-${indent}        <RSAKeyValue xmlns="http://www.w3.org/2000/09/xmldsig#">
-${indent}          <Modulus>${rsaModulus}</Modulus>
-${indent}          <Exponent>${rsaExponent}</Exponent>
-${indent}        </RSAKeyValue>
-${indent}      </KeyValue>
-${indent}      <X509Data>
+${keyValueBlock}${indent}      <X509Data>
 ${indent}        <X509SubjectName>${params.subjectDN}</X509SubjectName>
 ${indent}        <X509Certificate>${params.x509Certificate}</X509Certificate>
 ${indent}      </X509Data>

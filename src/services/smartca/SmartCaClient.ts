@@ -66,17 +66,43 @@ async function postJson<T>(
       body: JSON.stringify(body),
       signal: controller.signal,
     });
-    const envelope = (await response.json()) as SmartCaEnvelope<T>;
-    if (envelope.code !== 0) {
+    let envelope: any;
+    try {
+      envelope = await response.json();
+    } catch {
       throw new SmartCaError(
+        `Không thể phân tích phản hồi từ máy chủ VNPT SmartCA (HTTP ${response.status})`,
+        response.status,
+      );
+    }
+
+    if (!response.ok) {
+      const errDetail =
+        envelope?.message ||
+        envelope?.error_description ||
+        envelope?.codeDesc ||
+        envelope?.error ||
+        `HTTP ${response.status} ${response.statusText || ""}`.trim();
+      throw new SmartCaError(
+        `Cổng VNPT SmartCA từ chối [HTTP ${response.status}]: ${errDetail}`,
+        envelope?.code || response.status,
+        envelope?.codeDesc || String(response.status),
+      );
+    }
+
+    if (envelope.code !== undefined && envelope.code !== 0) {
+      const errDetail =
         envelope.message ||
-          envelope.codeDesc ||
-          `SmartCA trả về mã lỗi ${envelope.code}`,
+        envelope.codeDesc ||
+        `Mã phản hồi từ SmartCA: ${envelope.code}`;
+      throw new SmartCaError(
+        errDetail,
         envelope.code,
         envelope.codeDesc,
       );
     }
-    return envelope;
+
+    return envelope as SmartCaEnvelope<T>;
   } finally {
     clearTimeout(timer);
   }
@@ -93,11 +119,6 @@ export class SmartCaHttpClient implements SmartCaClientContract {
     this.clientSecret = options.clientSecret;
   }
 
-  /** 
-   * [DÙNG CHO CẢ Q1 & Q2] Xác thực lấy access_token từ VNPT SmartCA:
-   * - Quy trình 1 (Q1 - Ký qua App): `password` là Mật khẩu tài khoản SmartCA (đăng nhập duy trì phiên).
-   * - Quy trình 2 (Q2 - Smart OTP): `password` là Mã Smart OTP 6 số nhập từ người dùng.
-   */
   async login(username: string, password: string): Promise<SmartCaTokenPair> {
     const body = new URLSearchParams({
       grant_type: "password",
@@ -108,10 +129,6 @@ export class SmartCaHttpClient implements SmartCaClientContract {
     });
     return this.tokenRequest(body);
   }
-
-  /** 
-   * [CHỦ YẾU PHỤC VỤ Q1] Làm mới access_token tự động khi phiên đăng nhập hết hạn.
-   */
   async refresh(refreshToken: string): Promise<SmartCaTokenPair> {
     const body = new URLSearchParams({
       grant_type: "refresh_token",
@@ -135,17 +152,28 @@ export class SmartCaHttpClient implements SmartCaClientContract {
       });
       if (!response.ok) {
         let errorCode = "unknown_error";
+        let errorDescription = "";
         try {
-          const err = (await response.json()) as { error?: string };
+          const err = (await response.json()) as {
+            error?: string;
+            error_description?: string;
+            message?: string;
+          };
           if (err.error) errorCode = err.error;
+          if (err.error_description) errorDescription = err.error_description;
+          else if (err.message) errorDescription = err.message;
         } catch {
           // body không phải JSON
         }
-        throw new SmartCaError(
-          SMARTCA_OAUTH_ERROR_VI[errorCode] ??
-            `Lỗi xác thực SmartCA (HTTP ${response.status})`,
-          errorCode,
-        );
+
+        const friendlyVi = SMARTCA_OAUTH_ERROR_VI[errorCode];
+        const detailMessage = errorDescription
+          ? friendlyVi
+            ? `${friendlyVi} (${errorDescription})`
+            : errorDescription
+          : friendlyVi || `Lỗi xác thực VNPT SmartCA (HTTP ${response.status})`;
+
+        throw new SmartCaError(detailMessage, errorCode);
       }
       const data = (await response.json()) as SmartCaTokenResponse;
       return toTokenPair(data);
@@ -154,38 +182,37 @@ export class SmartCaHttpClient implements SmartCaClientContract {
     }
   }
 
-  /** 
-   * [PHỤC VỤ Q1] Lấy thông tin định danh Bác sĩ (họ tên, CCCD, SĐT) để hiển thị lên Header/UI.
-   */
   async getUserInfo(accessToken: string): Promise<SmartCaUserInfo> {
-    const envelope = await postJson<SmartCaUserInfo>(
+    const envelope = await postJson<any>(
       `${this.endpoints.resource}/identityapi/userinfo/info`,
       {},
       accessToken,
     );
-    return envelope.content as SmartCaUserInfo;
+    const data =
+      envelope?.content !== undefined && envelope?.content !== null
+        ? envelope.content
+        : envelope;
+    return data as SmartCaUserInfo;
   }
 
-  /** 
-   * [DÙNG CHO CẢ Q1 & Q2] Lấy danh sách ID chứng thư số (Credential IDs) của Bác sĩ trên VNPT.
-   */
   async listCredentials(accessToken: string): Promise<string[]> {
-    const envelope = await postJson<string[]>(
+    const envelope = await postJson<any>(
       `${this.endpoints.resource}/csc/credentials/list`,
       {},
       accessToken,
     );
-    return envelope.content ?? [];
+    const raw: any = envelope;
+    if (Array.isArray(raw)) return raw;
+    if (Array.isArray(raw?.content)) return raw.content;
+    if (Array.isArray(raw?.credentialIDs)) return raw.credentialIDs;
+    return raw?.content ?? [];
   }
 
-  /** 
-   * [DÙNG CHO CẢ Q1 & Q2] Lấy chi tiết chứng thư số (SubjectDN, Serial, X509 Cert) để nhúng vào XMLDSig.
-   */
   async getCredentialInfo(
     accessToken: string,
     credentialId: string,
   ): Promise<SmartCaCredential> {
-    const envelope = await postJson<SmartCaCredential>(
+    const envelope = await postJson<any>(
       `${this.endpoints.resource}/csc/credentials/info`,
       {
         credentialId,
@@ -195,55 +222,58 @@ export class SmartCaHttpClient implements SmartCaClientContract {
       },
       accessToken,
     );
-    return envelope.content as SmartCaCredential;
+    const data =
+      envelope?.content !== undefined && envelope?.content !== null
+        ? envelope.content
+        : envelope;
+    return data as SmartCaCredential;
   }
 
-  /** 
-   * [DÙNG CHO CẢ Q1 & Q2] Gửi mã băm (Hash Digest) của XML sang VNPT để yêu cầu ký:
-   * - Q1: Khởi tạo giao dịch ký, trả về `tranId` để chờ duyệt trên App.
-   * - Q2: Yêu cầu ký nhanh với phiên đã xác thực bằng OTP.
-   */
   async signHash(
     accessToken: string,
     request: SmartCaSignHashRequest,
   ): Promise<SmartCaSignResponse> {
-    const envelope = await postJson<SmartCaSignResponse>(
+    const envelope = await postJson<any>(
       `${this.endpoints.resource}/csc/signature/signhash`,
       request,
       accessToken,
     );
-    return envelope.content as SmartCaSignResponse;
+    const data =
+      envelope?.content !== undefined && envelope?.content !== null
+        ? envelope.content
+        : envelope;
+    return data as SmartCaSignResponse;
   }
 
-  /**
-   * [MỤC 5.2.3 SIGN FILE] Gửi yêu cầu ký file PDF/XML trực tiếp
-   */
   async sign(
     accessToken: string,
     request: SmartCaSignFileRequest,
   ): Promise<SmartCaSignResponse> {
-    const envelope = await postJson<SmartCaSignResponse>(
+    const envelope = await postJson<any>(
       `${this.endpoints.resource}/csc/signature/sign`,
       request,
       accessToken,
     );
-    return envelope.content as SmartCaSignResponse;
+    const data =
+      envelope?.content !== undefined && envelope?.content !== null
+        ? envelope.content
+        : envelope;
+    return data as SmartCaSignResponse;
   }
 
-  /** 
-   * [DÙNG CHO CẢ Q1 & Q2] Kiểm tra trạng thái giao dịch & lấy kết quả chữ ký (Signature Value):
-   * - Q1: Dùng để Polling (hỏi liên tục) xem người dùng đã bấm đồng ý trên điện thoại chưa.
-   * - Q2: Dùng để lấy ngay chuỗi chữ ký số sau khi gọi signHash.
-   */
   async getTransactionInfo(
     accessToken: string,
     tranId: string,
   ): Promise<SmartCaTransactionInfo> {
-    const envelope = await postJson<SmartCaTransactionInfo>(
+    const envelope = await postJson<any>(
       `${this.endpoints.resource}/csc/credentials/gettraninfo`,
       { tranId },
       accessToken,
     );
-    return envelope.content as SmartCaTransactionInfo;
+    const data =
+      envelope?.content !== undefined && envelope?.content !== null
+        ? envelope.content
+        : envelope;
+    return data as SmartCaTransactionInfo;
   }
 }

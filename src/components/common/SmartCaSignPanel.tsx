@@ -32,6 +32,7 @@ export interface SmartCaSignPanelProps {
   ) => void;
   onResetSignature: () => void;
   onDownloadSignedXml?: () => void;
+  onViewXml?: () => void;
 }
 
 export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
@@ -45,6 +46,7 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
   onSignedSuccess,
   onResetSignature,
   onDownloadSignedXml,
+  onViewXml,
 }) => {
   // 1. Quản lý trạng thái chọn loại hồ sơ / chứng từ
   const [selectedDocType, setSelectedDocType] =
@@ -72,14 +74,14 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
     if (uploadedFileName) {
       return `${uploadedFileName.replace(/\.[^/.]+$/, "")}.xml`;
     }
-    if (fileName) {
+    if (selectedDocType === "CURRENT" && fileName) {
       return fileName;
     }
-    if (selectedDocType && selectedDocType !== "CURRENT") {
-      return `${selectedDocType}_Template.xml`;
+    if (uploadedCustomXml) {
+      return `${selectedDocType}_TaiLen.xml`;
     }
-    return "TepTin_KySo.xml";
-  }, [uploadedFileName, fileName, selectedDocType]);
+    return "";
+  }, [uploadedFileName, fileName, selectedDocType, uploadedCustomXml]);
 
   // XML đưa vào quy trình ký: nếu đang ở chế độ đồng ký thì ký tiếp trên bản đã có chữ ký
   const actualXmlForHook = useMemo(() => {
@@ -173,7 +175,13 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
           setUploadedFileName(null);
           if (isSigned) onResetSignature();
         }}
-        onOpenPreviewXml={() => setShowXmlPreview(true)}
+        onOpenPreviewXml={() => {
+          if (onViewXml) {
+            onViewXml();
+          } else {
+            setShowXmlPreview(true);
+          }
+        }}
       />
 
       {/* Modal Popup Xem Trước Cấu Trúc XML */}
@@ -274,6 +282,8 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
         onClose={handleCloseAuthErrorModal}
         errorMessage={authErrorModalData.errorMessage}
         env={config.env}
+        clientId={config.clientId}
+        username={identityValue}
       />
     </div>
   );

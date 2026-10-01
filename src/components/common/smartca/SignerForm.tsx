@@ -1,5 +1,12 @@
 import React, { useMemo } from "react";
-import { Eye, EyeOff, Loader2, Send, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  Send,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import type { SmartCaPersistentConfig } from "../../../services/smartca/smartcaConfig";
 import {
   type IdentityType,
@@ -68,9 +75,7 @@ export const SignerForm: React.FC<SignerFormProps> = ({
               : "bg-blue-50 text-blue-800 border-blue-200"
           }`}
         >
-          {config.env === "production"
-            ? "VNPT Production"
-            : "VNPT Demo/Test"}
+          {config.env === "production" ? "VNPT Production" : "VNPT Demo/Test"}
         </span>
       </div>
 
@@ -78,26 +83,34 @@ export const SignerForm: React.FC<SignerFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="text-xs font-bold text-slate-700 mb-1.5 block">
-            Họ và Tên Người Ký:
+            Họ và Tên Người Ký:{" "}
+            {idType !== "mst" && <span className="text-rose-500">*</span>}
           </label>
           <input
             type="text"
             value={signerName}
             onChange={(e) => setSignerName(e.target.value)}
-            placeholder="VD: BS. NGUYỄN VĂN AN hoặc CƠ SỞ KCB"
+            placeholder={
+              idType === "mst" ? "Optional" : "Bắt buộc (VD: BS. NGUYỄN VĂN AN)"
+            }
             className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-2xs"
           />
         </div>
 
         <div>
           <label className="text-xs font-bold text-slate-700 mb-1.5 block">
-            Email Người Ký (Tùy chọn):
+            Email Người Ký:
+            {idType !== "mst" && <span className="text-rose-500">*</span>}
           </label>
           <input
             type="email"
             value={signerEmail}
             onChange={(e) => setSignerEmail(e.target.value)}
-            placeholder="VD: bacsi.an@hospital.vn"
+            placeholder={
+              idType === "mst"
+                ? "Optional"
+                : "Bắt buộc (VD: bacsi.an@hospital.vn)"
+            }
             className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-2xs"
           />
         </div>
@@ -158,8 +171,8 @@ export const SignerForm: React.FC<SignerFormProps> = ({
               identityStatus === null
                 ? "border-slate-300 focus:ring-2 focus:ring-blue-500"
                 : identityStatus.isValid
-                ? "border-emerald-400 focus:ring-2 focus:ring-emerald-500 bg-emerald-50/20"
-                : "border-amber-300 focus:ring-2 focus:ring-amber-500"
+                  ? "border-emerald-400 focus:ring-2 focus:ring-emerald-500 bg-emerald-50/20"
+                  : "border-amber-300 focus:ring-2 focus:ring-amber-500"
             }`}
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono font-semibold text-slate-400 pointer-events-none select-none">
@@ -169,7 +182,9 @@ export const SignerForm: React.FC<SignerFormProps> = ({
 
         {/* GỢI Ý & TRẠNG THÁI KIỂM TRA ĐỊNH DANH */}
         <div className="flex items-center justify-between text-[11px] px-1">
-          <span className="text-slate-500">{IDENTITY_DESCRIPTIONS[idType]}</span>
+          <span className="text-slate-500">
+            {IDENTITY_DESCRIPTIONS[idType]}
+          </span>
           {identityStatus && (
             <span
               className={`flex items-center gap-1 font-semibold ${
@@ -184,7 +199,10 @@ export const SignerForm: React.FC<SignerFormProps> = ({
               ) : (
                 <>
                   <AlertCircle size={13} className="text-amber-500" />
-                  <span>Chưa đúng định dạng ({identityValue.length}/{IDENTITY_LIMITS[idType]})</span>
+                  <span>
+                    Chưa đúng định dạng ({identityValue.length}/
+                    {IDENTITY_LIMITS[idType]})
+                  </span>
                 </>
               )}
             </span>

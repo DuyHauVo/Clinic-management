@@ -27,6 +27,18 @@ export default defineConfig(({ mode }) => {
           secure: false,
           rewrite: (path) => path.replace(/^\/api-bhxh/, ''),
         },
+        '/api-smartca-prod': {
+          target: 'https://gwsca.vnpt.vn',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/api-smartca-prod/, ''),
+        },
+        '/api-smartca-demo': {
+          target: 'https://rmgateway.vnptit.vn',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/api-smartca-demo/, ''),
+        },
       },
     },
   }
