@@ -1,5 +1,4 @@
 import type { NhanLucSchemaField } from '../../types/nhanLucTypes';
-import { getCurrentYearStartYmd } from '../shared/excelXmlShared';
 
 export const CHUC_DANH_DICT: Record<string, string> = {
   '1': 'Bác sỹ',
@@ -223,7 +222,7 @@ export const NHANLUC_SCHEMA_FIELDS: NhanLucSchemaField[] = [
     label: 'Mã CSKCB',
     type: 'string',
     required: true,
-    desc: 'Mã cơ sở khám chữa bệnh (5 ký tự, ví dụ: 48001, 79012)',
+    desc: 'Mã cơ sở khám chữa bệnh (5 ký tự, ví dụ: 49939, 79012)',
     aliases: ['MA_CSKCB', 'MA_CƠ SỞ KCB', 'MÃ CSKCB', 'MÃ CƠ SỞ KCB', 'MACSKCB', 'MÃ CS KCB', 'MÃ BỆNH VIỆN', 'MÃ ĐƠN VỊ']
   }
 ];
@@ -258,23 +257,7 @@ export const NHANLUC_EXCEL_TEMPLATE_COLS = [
   { wch: 12 }, // MA_CSKCB
 ];
 
-export const NHANLUC_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
-  [
-    1, 'K01;K02', 'Khoa Khám Bệnh;Khoa Cấp Cứu', 'BS. CKII. Nguyễn Văn An', 1, '001088012345',
-    '1', '1', '001234/BYT-CCHN', '20180515', 'Bộ Y Tế', 'Nội khoa; Cấp cứu', '', '', '',
-    1, '0730-1630', 'T2T3T4T5T6', '', '', '', getCurrentYearStartYmd(), '', '48001'
-  ],
-  [
-    2, 'K0809', 'Khoa Hồi Sức Tích Cực & Chống Độc', 'ThS. BS. Trần Thị Mai', 2, '001192009876',
-    '1', '2', '005678/SYT-CCHN', '20190820', 'Sở Y Tế Hà Nội', 'Hồi sức cấp cứu', '', '', '',
-    1, '0730-1630', 'T2T3T4T5T6T7', '', '', '', getCurrentYearStartYmd(), '', '48001'
-  ],
-  [
-    3, 'K01', 'Khoa Khám Bệnh', 'CNĐD. Lê Hoàng Long', 1, '001095004321',
-    '3', '', '009876/SYT-CCHN', '20210310', 'Sở Y Tế Hà Nội', 'Điều dưỡng đa khoa', '', '', '',
-    1, '0730-1630', 'T2T3T4T5T6', '', '', '', getCurrentYearStartYmd(), '', '48001'
-  ]
-];
+export const NHANLUC_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [];
 
 export const NHANLUC_FIELD_HEURISTICS: Array<[RegExp | string, string]> = [
   [/HOTEN|BACSI|NHANSU/, 'HO_TEN'],

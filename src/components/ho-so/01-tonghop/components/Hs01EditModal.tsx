@@ -22,7 +22,7 @@ const getDefaultData = (count = 0): Hs01TongHopItem => {
     id: '',
     stt: count + 1,
     hoTen: '',
-    ngaySinh: '199001010000',
+    ngaySinh: '',
     gioiTinh: '1',
     maTheBhyt: '',
     maBenhChinh: '',

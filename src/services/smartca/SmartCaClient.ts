@@ -18,6 +18,7 @@ import {
   type SmartCaUserInfo,
   type SmartCaCredential,
   type SmartCaSignHashRequest,
+  type SmartCaSignFileRequest,
   type SmartCaSignResponse,
   type SmartCaTransactionInfo,
   type SmartCaEnvelope,
@@ -29,7 +30,7 @@ const TOKEN_EXPIRY_SAFETY_MARGIN_MS = 5 * 60_000; // 5 phút - Biên an toàn ch
 const REQUEST_TIMEOUT_MS = 30_000; // 30 giây - Thời gian chờ tối đa chống treo request
 
 export interface SmartCaRealClientOptions {
-  env: Exclude<SmartCaEnv, "mock">;
+  env: SmartCaEnv;
   clientId: string;
   clientSecret: string;
 }
@@ -208,6 +209,21 @@ export class SmartCaHttpClient implements SmartCaClientContract {
   ): Promise<SmartCaSignResponse> {
     const envelope = await postJson<SmartCaSignResponse>(
       `${this.endpoints.resource}/csc/signature/signhash`,
+      request,
+      accessToken,
+    );
+    return envelope.content as SmartCaSignResponse;
+  }
+
+  /**
+   * [MỤC 5.2.3 SIGN FILE] Gửi yêu cầu ký file PDF/XML trực tiếp
+   */
+  async sign(
+    accessToken: string,
+    request: SmartCaSignFileRequest,
+  ): Promise<SmartCaSignResponse> {
+    const envelope = await postJson<SmartCaSignResponse>(
+      `${this.endpoints.resource}/csc/signature/sign`,
       request,
       accessToken,
     );

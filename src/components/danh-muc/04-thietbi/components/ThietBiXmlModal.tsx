@@ -50,7 +50,7 @@ export const ThietBiXmlModal: React.FC<ThietBiXmlModalProps> = ({
     sendGateway: sendThietBiToBhxhGateway,
     downloadSuccessMessage: 'Đã tải xuống file XML Mẫu 04/DM chuẩn Loại hồ sơ 72',
     getSendSuccessMessage: (res) =>
-      `[Sandbox] Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`,
+      `Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`,
     onSendSuccess,
   });
 

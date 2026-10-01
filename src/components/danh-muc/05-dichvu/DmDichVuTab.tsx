@@ -7,10 +7,8 @@ import {
   generateDichVuTemplate,
   type ParseDichVuExcelResult,
 } from "./services/dichVuService";
-import { initialDichVuData } from "../../../mock/mockData";
 import { useToast } from "../../../context/ToastContext";
 import {
-  DichVuStatsCards,
   DichVuDropzone,
   DichVuTable,
   DichVuEditModal,
@@ -23,8 +21,7 @@ import { useSchemaMappingProps } from "../../../hooks";
 
 export const DmDichVuTab: React.FC = () => {
   const toast = useToast();
-  const [dichVuItems, setDichVuItems] =
-    useState<DmDichVuItem[]>(initialDichVuData);
+  const [dichVuItems, setDichVuItems] = useState<DmDichVuItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoadingFile, setIsLoadingFile] = useState(false);
   const [fileUploadStats, setFileUploadStats] =
@@ -96,15 +93,6 @@ export const DmDichVuTab: React.FC = () => {
         "Lỗi Đọc Sheet",
       );
     }
-  };
-
-  const handleLoadSampleData = () => {
-    setDichVuItems(initialDichVuData);
-    setFileUploadStats(null);
-    toast.success(
-      "Đã nạp dữ liệu danh mục DVKT mẫu gồm khám, X-quang, siêu âm, xét nghiệm, xạ hình",
-      "Nạp Dữ Liệu Mẫu",
-    );
   };
 
   const handleClearData = () => {
@@ -201,9 +189,6 @@ export const DmDichVuTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* 1. Top 4 Metric KPI Cards */}
-      <DichVuStatsCards items={dichVuItems} />
-
       {/* 2. Excel Upload Dropzone & Action Toolbar */}
       <DichVuDropzone
         isLoadingFile={isLoadingFile}
@@ -212,7 +197,6 @@ export const DmDichVuTab: React.FC = () => {
         onFileUpload={handleFileUpload}
         onSwitchSheet={handleSwitchSheet}
         onDownloadTemplate={generateDichVuTemplate}
-        onLoadSample={handleLoadSampleData}
         onClearData={handleClearData}
         onOpenXmlModal={() => {
           setXmlModalTab("xml");

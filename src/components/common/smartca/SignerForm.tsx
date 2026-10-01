@@ -65,16 +65,12 @@ export const SignerForm: React.FC<SignerFormProps> = ({
           className={`text-xs font-bold px-3 py-1 rounded-full border ${
             config.env === "production"
               ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-              : config.env === "demo"
-              ? "bg-blue-50 text-blue-800 border-blue-200"
-              : "bg-amber-50 text-amber-800 border-amber-200"
+              : "bg-blue-50 text-blue-800 border-blue-200"
           }`}
         >
           {config.env === "production"
             ? "VNPT Production"
-            : config.env === "demo"
-            ? "VNPT Demo/Test"
-            : "Giả Lập (Mock Sandbox)"}
+            : "VNPT Demo/Test"}
         </span>
       </div>
 
@@ -196,35 +192,33 @@ export const SignerForm: React.FC<SignerFormProps> = ({
         </div>
       </div>
 
-      {/* MẬT KHẨU KHI Ở MÔI TRƯỜNG THẬT */}
-      {(config.env === "production" || config.env === "demo") && (
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-            <span>
-              Mật Khẩu Tài Khoản SmartCA: <span className="text-rose-500">*</span>
-            </span>
-            <span className="text-xs text-slate-400 font-normal">
-              (Xác thực API VNPT)
-            </span>
-          </label>
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Nhập mật khẩu tài khoản VNPT SmartCA"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10 transition-all shadow-2xs"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
-            >
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
-          </div>
+      {/* MẬT KHẨU TÀI KHOẢN SMARTCA */}
+      <div className="space-y-1">
+        <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+          <span>
+            Mật Khẩu Tài Khoản SmartCA: <span className="text-rose-500">*</span>
+          </span>
+          <span className="text-xs text-slate-400 font-normal">
+            (Xác thực API VNPT)
+          </span>
+        </label>
+        <div className="relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Nhập mật khẩu tài khoản VNPT SmartCA"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10 transition-all shadow-2xs"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+          >
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
         </div>
-      )}
+      </div>
 
       {/* NÚT GỬI YÊU CẦU KÝ SỐ Q1 */}
       <div className="flex items-center justify-between pt-2">

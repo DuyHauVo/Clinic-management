@@ -1,9 +1,5 @@
-// ============================================================
-// FACADE - Điều phối Mock/Real + tự động refresh access_token
-// ============================================================
-
+// SERVICE - Điều phối SmartCA Client + tự động refresh access_token
 import { SmartCaHttpClient } from "./SmartCaClient";
-import { MockSmartCaClient } from "./MockSmartCaClient";
 import type {
   SmartCaClient,
   SmartCaEnv,
@@ -13,17 +9,13 @@ import type {
 export interface SmartCaClientConfig {
   env: SmartCaEnv;
   clientId: string;
-  /** Chỉ dùng trong bộ nhớ phiên - không persist ra storage */
   clientSecret: string;
 }
 
-/** Tạo client theo môi trường (mock | demo | production) */
+/** Tạo client theo môi trường (demo | production) */
 export function createSmartCaClient(
   config: SmartCaClientConfig,
 ): SmartCaClient {
-  if (config.env === "mock") {
-    return new MockSmartCaClient();
-  }
   return new SmartCaHttpClient({
     env: config.env,
     clientId: config.clientId,

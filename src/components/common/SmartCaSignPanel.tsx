@@ -127,8 +127,6 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
     handleResetAndResign,
     handleInitiateQ1Sign,
     handleCheckNow,
-    handleSimulateAppConfirm,
-    handleSimulateAppReject,
     formatCountdown,
   } = useSmartCaSignQ1({
     effectiveXmlToSign: actualXmlForHook,
@@ -231,8 +229,6 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
           copiedKey={copiedKey}
           onCopyTranId={() => handleCopy(waitingTransaction.tranId, "tranId")}
           onCheckNow={handleCheckNow}
-          onSimulateAppConfirm={handleSimulateAppConfirm}
-          onSimulateAppReject={handleSimulateAppReject}
           onCancelWaiting={handleCancelWaiting}
         />
       ) : (

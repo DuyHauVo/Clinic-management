@@ -10,7 +10,7 @@ import {
   buildHsDanhMucDocument,
   xmlToBase64,
   downloadXmlFile,
-  mockSendDanhMucToBhxhGateway,
+  sendDanhMucToBhxhGateway,
   type GatewaySendResult,
   type SharedSchemaField,
   type SchemaKeyMatcher,
@@ -444,12 +444,15 @@ ${rowsXml}
     maCskcb: string = DEFAULT_MA_CSKCB,
     maTinh: string = DEFAULT_MA_TINH,
   ): Promise<GatewaySendResult> => {
-    return mockSendDanhMucToBhxhGateway(
+    const xml = generateXml(items, maCskcb);
+    const base64 = xml ? generateBase64(items, xml) : undefined;
+    return sendDanhMucToBhxhGateway(
       config.catalogCode,
       items.length,
       config.catalogName,
       maCskcb,
       maTinh,
+      base64,
     );
   };
 

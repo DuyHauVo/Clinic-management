@@ -1,4 +1,3 @@
-export * from './DichVuStatsCards';
 export * from './DichVuDropzone';
 export * from './DichVuTable';
 export * from './DichVuEditModal';

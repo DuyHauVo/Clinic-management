@@ -7,9 +7,7 @@ import {
   downloadBpcmExcelTemplate,
   type ParseExcelResult,
 } from "./services/bpcmService";
-import { initialBpcmData } from "../../../mock/mockData";
 import { useToast } from "../../../context/ToastContext";
-import { BpcmStatsCards } from "./components/BpcmStatsCards";
 import { BpcmDropzone } from "./components/BpcmDropzone";
 import { BpcmTable } from "./components/BpcmTable";
 import { BpcmXmlModal } from "./components/BpcmXmlModal";
@@ -20,7 +18,7 @@ import { useSchemaMappingProps } from "../../../hooks";
 
 export const DmBpcmTab: React.FC = () => {
   const toast = useToast();
-  const [bpcmItems, setBpcmItems] = useState<DmBpcmItem[]>(initialBpcmData);
+  const [bpcmItems, setBpcmItems] = useState<DmBpcmItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoadingFile, setIsLoadingFile] = useState(false);
   const [fileUploadStats, setFileUploadStats] =
@@ -77,11 +75,6 @@ export const DmBpcmTab: React.FC = () => {
     }
   };
 
-  const handleLoadSampleData = () => {
-    setBpcmItems(initialBpcmData);
-    setFileUploadStats(null);
-    toast.success("Đã nạp dữ liệu danh mục BPCM mẫu chuẩn", "Nạp Dữ Liệu Mẫu");
-  };
 
   const handleClearData = () => {
     setBpcmItems([]);
@@ -137,8 +130,6 @@ export const DmBpcmTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <BpcmStatsCards items={bpcmItems} />
-
       <BpcmDropzone
         isLoadingFile={isLoadingFile}
         fileUploadStats={fileUploadStats}
@@ -146,7 +137,6 @@ export const DmBpcmTab: React.FC = () => {
         onFileUpload={handleFileUpload}
         onSwitchSheet={handleSwitchSheet}
         onDownloadTemplate={downloadBpcmExcelTemplate}
-        onLoadSample={handleLoadSampleData}
         onClearData={handleClearData}
         onOpenXmlModal={() => {
           setXmlModalTab("xml");

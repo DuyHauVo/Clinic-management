@@ -12,10 +12,8 @@ import {
   parseHs09Worksheet,
   downloadHs09ExcelTemplate,
 } from "../../../utils/hs09DieuChinhXmlEngine";
-import { initialHoSoDieuChinh09Data } from "../../../mock/mockData";
 import { useToast } from "../../../context/ToastContext";
 import {
-  Hs09StatsCards,
   Hs09Dropzone,
   Hs09Table,
   Hs09EditModal,
@@ -41,9 +39,7 @@ export const Hs09DieuChinhTab: React.FC<Hs09DieuChinhTabProps> = ({
   onItemsChange,
 }) => {
   const toast = useToast();
-  const [internalItems, setInternalItems] = useState<HoSoDieuChinh09Item[]>(
-    initialHoSoDieuChinh09Data,
-  );
+  const [internalItems, setInternalItems] = useState<HoSoDieuChinh09Item[]>([]);
   const items = propItems ?? internalItems;
   const setItems = (
     updater:
@@ -140,15 +136,6 @@ export const Hs09DieuChinhTab: React.FC<Hs09DieuChinhTabProps> = ({
       const msg = err instanceof Error ? err.message : "Lỗi tải tệp mẫu";
       toast.error(msg, "Lỗi");
     }
-  };
-
-  const handleLoadSample = () => {
-    setItems(initialHoSoDieuChinh09Data);
-    setFileUploadStats(null);
-    toast.info(
-      "Đã tải lại danh sách hồ sơ điều chỉnh 09/BH mẫu chuẩn BHXH",
-      "Nạp Dữ Liệu Mẫu",
-    );
   };
 
   const handleClearData = () => {
@@ -286,9 +273,6 @@ export const Hs09DieuChinhTab: React.FC<Hs09DieuChinhTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* 1. Header KPIs */}
-      <Hs09StatsCards items={items} />
-
       {/* 2. Dropzone & Action Toolbar */}
       <Hs09Dropzone
         isLoadingFile={isLoadingFile}
@@ -297,7 +281,6 @@ export const Hs09DieuChinhTab: React.FC<Hs09DieuChinhTabProps> = ({
         onFileUpload={handleFileUpload}
         onSwitchSheet={handleSwitchSheet}
         onDownloadTemplate={handleDownloadTemplate}
-        onLoadSample={handleLoadSample}
         onClearData={handleClearData}
         onOpenXmlModal={() => {
           setXmlModalTab("xml");

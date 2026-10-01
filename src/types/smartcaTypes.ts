@@ -3,7 +3,7 @@
 // ============================================================
 
 /** Môi trường kết nối SmartCA */
-export type SmartCaEnv = 'mock' | 'demo' | 'production';
+export type SmartCaEnv = 'demo' | 'production';
 
 /** Endpoint gốc theo môi trường (Mục 2 - Giao thức API) */
 export interface SmartCaEndpoints {
@@ -12,7 +12,7 @@ export interface SmartCaEndpoints {
   resource: string;
 }
 
-export const SMARTCA_ENDPOINTS: Record<Exclude<SmartCaEnv, 'mock'>, SmartCaEndpoints> = {
+export const SMARTCA_ENDPOINTS: Record<SmartCaEnv, SmartCaEndpoints> = {
   demo: {
     authorize: 'https://rmgateway.vnptit.vn/auth/authorize',
     token: 'https://rmgateway.vnptit.vn/auth/token',
@@ -235,7 +235,7 @@ export interface SmartCaSignatureResult {
 }
 
 // ------------------------------------------------------------
-// Client interface dùng chung cho Mock & Real (facade điều phối)
+// Client interface dùng cho VNPT SmartCA Client
 // ------------------------------------------------------------
 
 export interface SmartCaClient {
@@ -250,6 +250,10 @@ export interface SmartCaClient {
   signHash(
     accessToken: string,
     request: SmartCaSignHashRequest,
+  ): Promise<SmartCaSignResponse>;
+  sign?(
+    accessToken: string,
+    request: SmartCaSignFileRequest,
   ): Promise<SmartCaSignResponse>;
   getTransactionInfo(
     accessToken: string,
@@ -283,70 +287,5 @@ export interface SignerProfile {
   serialNumber: string;
 }
 
-export const DEFAULT_CLINIC_SIGNERS: SignerProfile[] = [
-  {
-    id: 'signer-bs-01',
-    name: 'BS.CKI Nguyễn Văn An',
-    role: 'BAC_SI',
-    roleTitle: 'Bác sĩ điều trị',
-    cchn: '012345/HCM-CCHN',
-    cccd: '079085012345',
-    phone: '0901234567',
-    department: 'Khoa Khám Bệnh',
-    subjectDN:
-      'CN=BS.CKI NGUYỄN VĂN AN, TITLE=Bác sĩ điều trị, CCHN=012345/HCM-CCHN, O=PHÒNG KHÁM ĐA KHOA QUỐC TẾ, C=VN',
-    serialNumber: 'BS01_SMARTCA_079085012345',
-  },
-  {
-    id: 'signer-bs-02',
-    name: 'BS. Trần Thị Mai',
-    role: 'BAC_SI',
-    roleTitle: 'Bác sĩ khám bệnh',
-    cchn: '014568/HCM-CCHN',
-    cccd: '079190045678',
-    phone: '0912345678',
-    department: 'Khoa Nội Tổng Hợp',
-    subjectDN:
-      'CN=BS. TRẦN THỊ MAI, TITLE=Bác sĩ khám bệnh, CCHN=014568/HCM-CCHN, O=PHÒNG KHÁM ĐA KHOA QUỐC TẾ, C=VN',
-    serialNumber: 'BS02_SMARTCA_079190045678',
-  },
-  {
-    id: 'signer-kt-01',
-    name: 'Trần Thị Thu Thảo',
-    role: 'NGUOI_LAP',
-    roleTitle: 'Kế toán / Người lập bảng kê',
-    cccd: '079192087654',
-    phone: '0934567890',
-    department: 'Phòng Tài Chính - Kế Toán',
-    subjectDN:
-      'CN=TRẦN THỊ THU THẢO, TITLE=Kế toán viện phí, O=PHÒNG KHÁM ĐA KHOA QUỐC TẾ, C=VN',
-    serialNumber: 'KT01_SMARTCA_079192087654',
-  },
-  {
-    id: 'signer-gd-01',
-    name: 'TS.BS Lê Hoàng Nam',
-    role: 'THU_TRUONG',
-    roleTitle: 'Giám đốc phòng khám (Thủ trưởng)',
-    cchn: '001988/BYT-CCHN',
-    cccd: '079075001988',
-    phone: '0988776655',
-    department: 'Ban Giám Đốc',
-    subjectDN:
-      'CN=TS.BS LÊ HOÀNG NAM, TITLE=Giám đốc, CCHN=001988/BYT-CCHN, O=PHÒNG KHÁM ĐA KHOA QUỐC TẾ, C=VN',
-    serialNumber: 'GD01_SMARTCA_079075001988',
-  },
-  {
-    id: 'signer-dv-01',
-    name: 'PHÒNG KHÁM ĐA KHOA QUỐC TẾ',
-    role: 'DON_VI',
-    roleTitle: 'Chữ ký số Cơ sở KCB (Đơn vị)',
-    mst: '4001266514',
-    cccd: '4001266514',
-    phone: '02838123456',
-    department: 'Ban Quản Lý',
-    subjectDN:
-      'CN=CÔNG TY CP ĐẦU TƯ FQ VIỆT NAM, OID.0.9.2342.19200300.100.1.1=MST:4001266514, C=VN',
-    serialNumber: '4001266514_SMARTCA_2026',
-  },
-];
+export const DEFAULT_CLINIC_SIGNERS: SignerProfile[] = [];
 

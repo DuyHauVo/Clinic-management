@@ -17,7 +17,7 @@ import {
   DmDichVuTab,
   DmTbDvktTab,
 } from "../components/danh-muc";
-import { DEFAULT_MA_CSKCB } from "../utils/shared/excelXmlShared";
+import { DEFAULT_MA_CSKCB, DEFAULT_CLINIC_NAME } from "../utils/shared/excelXmlShared";
 
 type CatalogTab =
   | "01_bpcm"
@@ -110,7 +110,11 @@ export const DanhMucPage: React.FC = () => {
           <p className="text-xs text-slate-500 mt-1">
             Mã CSKCB:{" "}
             <strong className="text-slate-800 font-mono font-bold">
-              {DEFAULT_MA_CSKCB} - PHÒNG KHÁM ĐA KHOA QUỐC TẾ ĐÀ NẴNG
+              {DEFAULT_MA_CSKCB}
+            </strong>{" "}
+            • Cơ sở:{" "}
+            <strong className="text-slate-800 font-bold">
+              {DEFAULT_CLINIC_NAME}
             </strong>{" "}
             • Phiên bản API Gateway:{" "}
             <strong className="text-[#1677ff] font-bold">DanhMucGW 2026</strong>

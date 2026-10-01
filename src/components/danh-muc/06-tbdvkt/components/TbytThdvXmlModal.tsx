@@ -50,7 +50,7 @@ export const TbytThdvXmlModal: React.FC<TbytThdvXmlModalProps> = ({
     sendGateway: sendTbytThdvToBhxhGateway,
     downloadSuccessMessage: 'Đã tải xuống file XML Mẫu 06/DM chuẩn Loại hồ sơ 70/72',
     getSendSuccessMessage: (res) =>
-      `[Sandbox] Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`,
+      `Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`,
     onSendSuccess,
   });
 

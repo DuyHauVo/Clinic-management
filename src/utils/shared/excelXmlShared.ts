@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx";
+import { BhxhChungTuService, BHXH_CONFIG } from "../../services/bhxh/bhxhChungTuService";
 // 1. CHUẨN HÓA & SO KHỚP TÊN CỘT EXCEL
 export function normalizeKey(str: string): string {
   if (!str) return "";
@@ -423,8 +424,9 @@ export function readExcelFile(file: File): Promise<XLSX.WorkBook> {
   });
 }
 
-export const DEFAULT_MA_CSKCB = "48939";
-export const DEFAULT_MA_TINH = "48";
+export const DEFAULT_MA_CSKCB = (import.meta.env.VITE_MA_CSKCB as string) || "49939";
+export const DEFAULT_MA_TINH = (import.meta.env.VITE_MA_TINH as string) || "48";
+export const DEFAULT_CLINIC_NAME = (import.meta.env.VITE_CLINIC_NAME as string) || "Cơ sở Khám chữa bệnh";
 
 export function pickBestSheetName(
   workbook: XLSX.WorkBook,
@@ -692,6 +694,7 @@ export interface GatewaySendResult {
   thongDiep: string;
   thoiGianTiepNhan: string;
   totalRecords: number;
+  loaiHs?: string;
 }
 
 export function formatCurrencyVnd(val?: number): string {
@@ -723,23 +726,67 @@ export function formatYmdHmDisplay(str?: string): string {
 /** @deprecated dùng getTimestampYmdHms */
 export const getThoiGianTiepNhan = getTimestampYmdHms;
 
-export async function mockSendDanhMucToBhxhGateway(
+export async function sendDanhMucToBhxhGateway(
   loaiHs: string,
   recordCount: number,
   recordLabel: string,
   maCskcb: string = DEFAULT_MA_CSKCB,
   maTinh: string = DEFAULT_MA_TINH,
-  delayMs = 800,
+  fileBase64Str?: string,
 ): Promise<GatewaySendResult> {
-  await new Promise((r) => setTimeout(r, delayMs));
+  const tokenRes = await BhxhChungTuService.takeToken();
+  const token = tokenRes.apiToken || tokenRes.APIKey?.access_token;
+  if (String(tokenRes.maKetQua) !== "200" || !token) {
+    return {
+      maKetQua: String(tokenRes.maKetQua || "401"),
+      maGiaoDich: "",
+      thongDiep: tokenRes.thongDiep || tokenRes.message || "Chưa cấu hình tài khoản kết nối Cổng BHXH hoặc lỗi xác thực Token",
+      thoiGianTiepNhan: getTimestampYmdHms(),
+      totalRecords: recordCount,
+      loaiHs,
+    };
+  }
 
-  const maGiaoDich = `${loaiHs}_T${maTinh}_${maCskcb}_${Date.now().toString().slice(-6)}`;
+  try {
+    const params = new URLSearchParams();
+    params.append("token", token);
+    params.append("loaiHs", loaiHs);
+    if (fileBase64Str) {
+      params.append("fileBase64Str", fileBase64Str);
+    }
 
-  return {
-    maKetQua: "200",
-    maGiaoDich,
-    thongDiep: `[Mô phỏng Sandbox] Tiếp nhận thành công ${recordCount} bản ghi ${recordLabel} vào Hệ thống Giám định BHYT`,
-    thoiGianTiepNhan: getTimestampYmdHms(),
-    totalRecords: recordCount,
-  };
+    const response = await fetch(`${BHXH_CONFIG.BASE_URL}/api/danhmuc/GuiDanhMuc`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    });
+
+    const data = await response.json();
+    const isOk = String(data.maKetQua ?? (response.ok ? "200" : "500")) === "200";
+    return {
+      maKetQua: String(data.maKetQua ?? (response.ok ? "200" : "500")),
+      maGiaoDich: data.maGiaoDich || (isOk ? `${loaiHs}_T${maTinh}_${maCskcb}_${Date.now().toString().slice(-6)}` : ""),
+      thongDiep:
+        data.thongDiep ||
+        data.ghiChu ||
+        (isOk
+          ? `Tiếp nhận thành công ${recordCount} bản ghi ${recordLabel} vào Cổng BHXH`
+          : `Cổng BHXH phản hồi mã kết quả: ${data.maKetQua ?? response.status}`),
+      thoiGianTiepNhan: data.thoiGianTiepNhan || getTimestampYmdHms(),
+      totalRecords: recordCount,
+      loaiHs,
+    };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Lỗi kết nối Cổng BHXH";
+    return {
+      maKetQua: "500",
+      maGiaoDich: "",
+      thongDiep: errorMsg,
+      thoiGianTiepNhan: getTimestampYmdHms(),
+      totalRecords: recordCount,
+      loaiHs,
+    };
+  }
 }

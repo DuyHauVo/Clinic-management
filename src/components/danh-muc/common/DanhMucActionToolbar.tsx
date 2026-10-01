@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Download,
-  Sparkles,
   Trash2,
   FileCode,
   Send,
@@ -13,7 +12,6 @@ export interface DanhMucActionToolbarProps {
   itemsCount: number;
   templateLabel?: string;
   templateTooltip?: string;
-  sampleTooltip?: string;
   xmlLabel?: string;
   xmlTooltip?: string;
   apiLabel?: string;
@@ -21,7 +19,6 @@ export interface DanhMucActionToolbarProps {
   addNewLabel?: string;
   themeColor?: ThemeColor;
   onDownloadTemplate: () => void;
-  onLoadSample: () => void;
   onClearData: () => void;
   onOpenXmlModal: () => void;
   onOpenApiTab?: () => void;
@@ -65,7 +62,6 @@ export const DanhMucActionToolbar: React.FC<DanhMucActionToolbarProps> = ({
   itemsCount,
   templateLabel = 'Tải File Mẫu Excel',
   templateTooltip,
-  sampleTooltip,
   xmlLabel = 'Xem Cấu Trúc XML',
   xmlTooltip,
   apiLabel = 'Gửi Cổng BHXH (API)',
@@ -73,7 +69,6 @@ export const DanhMucActionToolbar: React.FC<DanhMucActionToolbarProps> = ({
   addNewLabel = 'Thêm Mới Bản Ghi',
   themeColor = 'blue',
   onDownloadTemplate,
-  onLoadSample,
   onClearData,
   onOpenXmlModal,
   onOpenApiTab,
@@ -95,15 +90,6 @@ export const DanhMucActionToolbar: React.FC<DanhMucActionToolbarProps> = ({
           <span>{templateLabel}</span>
         </button>
 
-        <button
-          type="button"
-          onClick={onLoadSample}
-          className="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-1.5 transition-colors"
-          title={sampleTooltip}
-        >
-          <Sparkles size={14} className="text-amber-600" />
-          <span>Nạp Dữ Liệu Mẫu</span>
-        </button>
 
         {itemsCount > 0 && (
           <button

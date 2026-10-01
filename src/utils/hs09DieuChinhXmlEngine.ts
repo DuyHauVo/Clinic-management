@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx";
+import { BhxhChungTuService, BHXH_CONFIG } from "../services/bhxh/bhxhChungTuService";
 import type {
   HoSoDieuChinh09Item,
   ParseHs09ExcelResult,
@@ -245,26 +246,70 @@ export function downloadHs09ExcelTemplate(): void {
 }
 
 /**
- * Gửi hồ sơ điều chỉnh Mẫu 09/BH lên Cổng tiếp nhận Giám định BHYT (Sandbox)
- * Endpoint: https://egw.baohiemxahoi.gov.vn/api/HSDCTT12/GuiHoSoDieuChinh09BH (Loại HS 73)
+ * Gửi hồ sơ điều chỉnh Mẫu 09/BH lên Cổng tiếp nhận Giám định BHYT
+ * Endpoint: /api/HSDCTT12/GuiHoSoDieuChinh09BH (Loại HS 73)
  */
 export async function sendHs09ToBhxhGateway(
   items: HoSoDieuChinh09Item[],
   credentials?: Partial<Hs09GatewayCredentials>,
-  delayMs = 1000,
 ): Promise<SendHs09GatewayResult> {
   const maCskcb =
     credentials?.maCskcb || items[0]?.ttMau?.maCskcb || DEFAULT_MA_CSKCB;
-  await new Promise((resolve) => setTimeout(resolve, delayMs));
 
-  const maGiaoDich = `HSDC09BH_${maCskcb}_${getTodayYmd()}_${Date.now().toString().slice(-6)}`;
+  const tokenRes = await BhxhChungTuService.takeToken();
+  const token = tokenRes.apiToken || tokenRes.APIKey?.access_token;
+  if (String(tokenRes.maKetQua) !== "200" || !token) {
+    return {
+      maKetQua: String(tokenRes.maKetQua || "401"),
+      maGiaoDich: "",
+      thongDiep: tokenRes.thongDiep || tokenRes.message || "Chưa cấu hình tài khoản kết nối Cổng BHXH hoặc lỗi xác thực Token",
+      thoiGianTiepNhan: getThoiGianTiepNhan(),
+      totalRecords: items.length,
+      loaiHs: "73",
+    };
+  }
 
-  return {
-    maKetQua: "200",
-    maGiaoDich,
-    thongDiep: `[Mô phỏng Sandbox] Tiếp nhận thành công ${items.length} hồ sơ điều chỉnh Mẫu 09/BH vào Hệ thống Giám định BHYT`,
-    thoiGianTiepNhan: getThoiGianTiepNhan(),
-    totalRecords: items.length,
-    loaiHs: "73",
-  };
+  try {
+    const xml = generateHs09Xml(items, maCskcb);
+    const base64 = xmlToBase64(xml);
+
+    const params = new URLSearchParams();
+    params.append("token", token);
+    params.append("loaiHs", "73");
+    params.append("fileBase64Str", base64);
+
+    const response = await fetch(`${BHXH_CONFIG.BASE_URL}/api/HSDCTT12/GuiHoSoDieuChinh09BH`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    });
+
+    const data = await response.json();
+    const isOk = String(data.maKetQua ?? (response.ok ? "200" : "500")) === "200";
+    return {
+      maKetQua: String(data.maKetQua ?? (response.ok ? "200" : "500")),
+      maGiaoDich: data.maGiaoDich || (isOk ? `HSDC09BH_${maCskcb}_${getTodayYmd()}_${Date.now().toString().slice(-6)}` : ""),
+      thongDiep:
+        data.thongDiep ||
+        data.ghiChu ||
+        (isOk
+          ? `Tiếp nhận thành công ${items.length} hồ sơ điều chỉnh Mẫu 09/BH vào Hệ thống Giám định BHYT`
+          : `Cổng BHXH phản hồi mã kết quả: ${data.maKetQua ?? response.status}`),
+      thoiGianTiepNhan: data.thoiGianTiepNhan || getThoiGianTiepNhan(),
+      totalRecords: items.length,
+      loaiHs: "73",
+    };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Lỗi kết nối Cổng BHXH";
+    return {
+      maKetQua: "500",
+      maGiaoDich: "",
+      thongDiep: errorMsg,
+      thoiGianTiepNhan: getThoiGianTiepNhan(),
+      totalRecords: items.length,
+      loaiHs: "73",
+    };
+  }
 }

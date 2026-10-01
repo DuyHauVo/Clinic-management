@@ -11,7 +11,6 @@ interface Hs09DropzoneProps {
   onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSwitchSheet: (sheetName: string) => void;
   onDownloadTemplate: () => void;
-  onLoadSample: () => void;
   onClearData: () => void;
   onOpenXmlModal: () => void;
   onOpenApiTab: () => void;
@@ -26,7 +25,6 @@ export const Hs09Dropzone: React.FC<Hs09DropzoneProps> = ({
   onFileUpload,
   onSwitchSheet,
   onDownloadTemplate,
-  onLoadSample,
   onClearData,
   onOpenXmlModal,
   onOpenApiTab,
@@ -70,7 +68,6 @@ export const Hs09Dropzone: React.FC<Hs09DropzoneProps> = ({
       onSwitchSheet={onSwitchSheet}
       onOpenSchemaModal={onOpenSchemaModal}
       onDownloadTemplate={onDownloadTemplate}
-      onLoadSample={onLoadSample}
       onClearData={onClearData}
       onOpenXmlModal={onOpenXmlModal}
       onOpenApiTab={onOpenApiTab}

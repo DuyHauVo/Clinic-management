@@ -3,7 +3,6 @@ import {
   Clock,
   Loader2,
   RefreshCw,
-  CheckCheck,
   XCircle,
   Check,
   Copy,
@@ -22,13 +21,10 @@ export interface WaitingApprovalViewProps {
   copiedKey: string | null;
   onCopyTranId: () => void;
   onCheckNow: () => void;
-  onSimulateAppConfirm: () => void;
-  onSimulateAppReject: () => void;
   onCancelWaiting: () => void;
 }
 
 export const WaitingApprovalView: React.FC<WaitingApprovalViewProps> = ({
-  config,
   waitingTransaction,
   countdown,
   formatCountdown,
@@ -38,8 +34,6 @@ export const WaitingApprovalView: React.FC<WaitingApprovalViewProps> = ({
   copiedKey,
   onCopyTranId,
   onCheckNow,
-  onSimulateAppConfirm,
-  onSimulateAppReject,
   onCancelWaiting,
 }) => {
   return (
@@ -128,32 +122,6 @@ export const WaitingApprovalView: React.FC<WaitingApprovalViewProps> = ({
           </button>
         </div>
       </div>
-
-      {config.env === "mock" && (
-        <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between flex-wrap gap-2">
-          <span className="text-xs font-bold text-amber-900">
-            Môi Trường Giả Lập Test:
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onSimulateAppConfirm}
-              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-            >
-              <CheckCheck size={14} />
-              <span>Giả Lập Bấm Xác Nhận Ngay</span>
-            </button>
-            <button
-              type="button"
-              onClick={onSimulateAppReject}
-              className="px-3 py-1.5 bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer"
-            >
-              <XCircle size={13} />
-              <span>Giả Lập Từ Chối</span>
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="flex items-center justify-end pt-1">
         <button

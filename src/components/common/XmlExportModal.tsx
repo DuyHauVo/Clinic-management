@@ -304,7 +304,7 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
               }`}
             >
               <Send size={14} />
-              <span>Cổng Tiếp Nhận BHXH API (Sandbox)</span>
+              <span>Cổng Tiếp Nhận BHXH API</span>
             </button>
 
             {/* TAB KÝ SỐ SMARTCA (Q1) */}
@@ -578,7 +578,7 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                       <span>
                         {isSendingApi
                           ? "Đang gửi Cổng Giám Định..."
-                          : "Gửi Lên Cổng BHXH (Sandbox)"}
+                          : "Gửi Lên Cổng BHXH"}
                       </span>
                     </button>
                   </div>

@@ -7,9 +7,7 @@ import {
   downloadThuocExcelTemplate,
   type ParseThuocExcelResult
 } from './services/thuocService';
-import { initialThuocData } from '../../../mock/mockData';
 import { useToast } from '../../../context/ToastContext';
-import { ThuocStatsCards } from './components/ThuocStatsCards';
 import { ThuocDropzone } from './components/ThuocDropzone';
 import { ThuocTable } from './components/ThuocTable';
 import { ThuocEditModal } from './components/ThuocEditModal';
@@ -19,7 +17,7 @@ import { useSchemaMappingProps } from '../../../hooks';
 
 export const DmThuocTab: React.FC = () => {
   const toast = useToast();
-  const [thuocItems, setThuocItems] = useState<DmThuocItem[]>(initialThuocData);
+  const [thuocItems, setThuocItems] = useState<DmThuocItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoadingFile, setIsLoadingFile] = useState(false);
   const [fileUploadStats, setFileUploadStats] = useState<ParseThuocExcelResult | null>(null);
@@ -65,12 +63,6 @@ export const DmThuocTab: React.FC = () => {
     } catch (err: any) {
       toast.error(`Lỗi khi chuyển sang sheet "${sheetName}": ${err.message}`, 'Lỗi Đọc Sheet');
     }
-  };
-
-  const handleLoadSampleData = () => {
-    setThuocItems(initialThuocData);
-    setFileUploadStats(null);
-    toast.success('Đã nạp dữ liệu danh mục thuốc mẫu chuẩn 37 trường', 'Nạp Dữ Liệu Mẫu');
   };
 
   const handleClearData = () => {
@@ -128,8 +120,6 @@ export const DmThuocTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <ThuocStatsCards items={thuocItems} />
-
       <ThuocDropzone
         isLoadingFile={isLoadingFile}
         fileUploadStats={fileUploadStats}
@@ -137,7 +127,6 @@ export const DmThuocTab: React.FC = () => {
         onFileUpload={handleFileUpload}
         onSwitchSheet={handleSwitchSheet}
         onDownloadTemplate={downloadThuocExcelTemplate}
-        onLoadSample={handleLoadSampleData}
         onClearData={handleClearData}
         onOpenXmlModal={() => {
           setIsXmlModalOpen(true);

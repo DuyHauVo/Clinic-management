@@ -10,7 +10,6 @@ interface NhanLucDropzoneProps {
   onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSwitchSheet: (sheetName: string) => void;
   onDownloadTemplate: () => void;
-  onLoadSample: () => void;
   onClearData: () => void;
   onOpenXmlModal: () => void;
   onOpenApiTab: () => void;
@@ -25,7 +24,6 @@ export const NhanLucDropzone: React.FC<NhanLucDropzoneProps> = ({
   onFileUpload,
   onSwitchSheet,
   onDownloadTemplate,
-  onLoadSample,
   onClearData,
   onOpenXmlModal,
   onOpenApiTab,
@@ -68,7 +66,6 @@ export const NhanLucDropzone: React.FC<NhanLucDropzoneProps> = ({
       onSwitchSheet={onSwitchSheet}
       onOpenSchemaModal={onOpenSchemaModal}
       onDownloadTemplate={onDownloadTemplate}
-      onLoadSample={onLoadSample}
       onClearData={onClearData}
       onOpenXmlModal={onOpenXmlModal}
       onOpenApiTab={onOpenApiTab}

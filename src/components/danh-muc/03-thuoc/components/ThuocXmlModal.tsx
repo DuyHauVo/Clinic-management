@@ -53,7 +53,7 @@ export const ThuocXmlModal: React.FC<ThuocXmlModalProps> = ({
     sendGateway: sendThuocToBhxhGateway,
     downloadSuccessMessage: "Đã tải xuống file XML Mẫu 03/DM chuẩn Loại hồ sơ 10",
     getSendSuccessMessage: (res) =>
-      `[Sandbox] Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`,
+      `Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`,
     onSendSuccess,
   });
 

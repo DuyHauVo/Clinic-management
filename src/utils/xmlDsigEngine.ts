@@ -121,7 +121,7 @@ export function buildXmlDSigBlock(
 
   // --- A. CHUẨN BHXH 2025 (Phụ lục 02 - 2 References + Object SigningTime) --- Dùng cho Từng Chứng Từ Y Tế Cụ Thể
   if (isBhxh2025) {
-    const objectHash = params.objectDigestValue || params.digestValue; // Mock/fallback hash nếu chưa băm riêng Object
+    const objectHash = params.objectDigestValue || params.digestValue; // Fallback hash nếu chưa băm riêng Object
 
     return `${indent}  <Signature Id="${signatureId}" xmlns="http://www.w3.org/2000/09/xmldsig#">
 ${indent}    <SignedInfo>

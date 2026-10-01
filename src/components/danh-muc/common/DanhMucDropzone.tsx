@@ -108,7 +108,6 @@ export interface DanhMucDropzoneProps {
   onSwitchSheet?: (sheetName: string) => void;
   onOpenSchemaModal?: () => void;
   onDownloadTemplate: () => void;
-  onLoadSample: () => void;
   onClearData: () => void;
   onOpenXmlModal: () => void;
   onOpenApiTab?: () => void;
@@ -137,7 +136,6 @@ export const DanhMucDropzone: React.FC<DanhMucDropzoneProps> = ({
   onSwitchSheet,
   onOpenSchemaModal,
   onDownloadTemplate,
-  onLoadSample,
   onClearData,
   onOpenXmlModal,
   onOpenApiTab,
@@ -238,7 +236,6 @@ export const DanhMucDropzone: React.FC<DanhMucDropzoneProps> = ({
         addNewLabel={addNewLabel}
         themeColor={themeColor}
         onDownloadTemplate={onDownloadTemplate}
-        onLoadSample={onLoadSample}
         onClearData={onClearData}
         onOpenXmlModal={onOpenXmlModal}
         onOpenApiTab={onOpenApiTab}

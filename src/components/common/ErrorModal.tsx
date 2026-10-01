@@ -295,7 +295,7 @@ export const SmartCaErrorModal: React.FC<{
       reasons={[
         `Chưa điền thông tin thật: File .env đang bật VITE_SMARTCA_ENV=${env} nhưng VITE_SMARTCA_CLIENT_ID hoặc CLIENT_SECRET chưa được VNPT cấp phép.`,
         'Tài khoản chưa đăng ký: Số CCCD/Username chưa được cấp chứng thư số ký số trên hệ thống VNPT SmartCA.',
-        'Tiếp tục thử nghiệm offline: Mở file .env và đổi VITE_SMARTCA_ENV=mock.',
+        'Kiểm tra lại kết nối: Đảm bảo thông tin định danh và mật khẩu đã được đăng ký hợp lệ với VNPT.',
       ]}
     />
   );

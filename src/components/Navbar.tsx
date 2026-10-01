@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 import type { MainTabType, HoSoTabType } from "./Sidebar";
-import { DEFAULT_MA_CSKCB } from "../utils/shared/excelXmlShared";
+import { DEFAULT_MA_CSKCB, DEFAULT_MA_TINH, DEFAULT_CLINIC_NAME } from "../utils/shared/excelXmlShared";
 
 interface NavbarProps {
   activeTab?: MainTabType;
@@ -108,8 +108,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             </strong>
           </span>
           <span className="text-slate-300">|</span>
+          <span>
+            Tỉnh:{" "}
+            <strong className="font-mono text-slate-900">
+              {DEFAULT_MA_TINH}
+            </strong>
+          </span>
+          <span className="text-slate-300">|</span>
           <span className="text-slate-700 font-semibold truncate max-w-xs">
-            BV OurMed Hospital
+            {DEFAULT_CLINIC_NAME}
           </span>
         </div>
 

@@ -130,7 +130,8 @@ export const SignedResultView: React.FC<SignedResultViewProps> = ({
               <span className="font-mono font-semibold text-slate-900">
                 {signatureInfo.subjectDN ||
                   credential?.cert?.subjectDN ||
-                  `CN=${signerName || "NGƯỜI KÝ"}, UID=${identityValue}, O=PHÒNG KHÁM, C=VN`}
+                  signerName ||
+                  "—"}
               </span>
             </div>
             {signerEmail && (
@@ -141,12 +142,20 @@ export const SignedResultView: React.FC<SignedResultViewProps> = ({
                 </span>
               </div>
             )}
+            {identityValue && (
+              <div>
+                <b className="text-slate-500">Tài khoản ký:</b>{" "}
+                <span className="font-mono text-slate-900">
+                  {identityValue}
+                </span>
+              </div>
+            )}
             <div>
               <b className="text-slate-500">Mã Serial:</b>{" "}
               <span className="font-mono text-slate-900">
                 {signatureInfo.serialNumber ||
                   credential?.cert?.serialNumber ||
-                  `SMARTCA_${identityValue}`}
+                  "—"}
               </span>
             </div>
             <div>

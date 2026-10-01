@@ -1,5 +1,4 @@
 import type { TbytThdvSchemaField } from "../../types/tbyttHdvTypes";
-import { getCurrentYearStartYmd } from "../shared/excelXmlShared";
 
 export const TBYTTHDV_SCHEMA_FIELDS: TbytThdvSchemaField[] = [
   {
@@ -164,7 +163,7 @@ export const TBYTTHDV_SCHEMA_FIELDS: TbytThdvSchemaField[] = [
       'MA_CSKCB', 'MACSKCB', 'MÃ CSKCB', 'MÃ CƠ SỞ KCB', 'MA_CO_SO_KCB',
       'MÃ CƠ SỞ KHÁM CHỮA BỆNH', 'MÃ BỆNH VIỆN', 'MA_BV', 'MABV'
     ],
-    example: '48001'
+    example: '49939'
   }
 ];
 
@@ -205,54 +204,5 @@ export const TBYTTHDV_EXCEL_TEMPLATE_COLS = [
   { wch: 12 }, // MA_CSKCB
 ];
 
-export const TBYTTHDV_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
-  [
-    1,
-    "Máy thở đa năng kèm khí nén",
-    "Servo-air",
-    "Maquet Critical Care AB",
-    "Thụy Điển",
-    2020,
-    2021,
-    "48001.01.001",
-    "2100123/ĐKLH/BYT-TB",
-    "",
-    "",
-    getCurrentYearStartYmd(),
-    "",
-    "48001",
-  ],
-  [
-    2,
-    "Máy chụp X-quang kỹ thuật số cao tần",
-    "FDR Smart X",
-    "Fujifilm Corporation",
-    "Nhật Bản",
-    2019,
-    2020,
-    "48001.02.005",
-    "1900456/ĐKLH/BYT-TB",
-    "20220101",
-    "20271231",
-    "20220101",
-    "20271231",
-    "48001",
-  ],
-  [
-    3,
-    "Máy siêu âm màu 4 đầu dò Doppler màu 4D",
-    "Voluson E10",
-    "GE Healthcare Austria GmbH & Co OG",
-    "Áo",
-    2021,
-    2022,
-    "48001.03.012",
-    "2200789/ĐKLH/BYT-TB",
-    "",
-    "",
-    getCurrentYearStartYmd(),
-    "",
-    "48001",
-  ],
-];
+export const TBYTTHDV_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [];
 

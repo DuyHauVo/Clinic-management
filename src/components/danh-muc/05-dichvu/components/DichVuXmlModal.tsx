@@ -50,7 +50,7 @@ export const DichVuXmlModal: React.FC<DichVuXmlModalProps> = ({
     sendGateway: sendDichVuToBhxhGateway,
     downloadSuccessMessage: 'Đã tải xuống file XML Mẫu 05/DM chuẩn QĐ 3176/QĐ-BYT & BHXH Việt Nam',
     getSendSuccessMessage: (res) =>
-      `[Sandbox] Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`,
+      `Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`,
     onSendSuccess,
   });
 

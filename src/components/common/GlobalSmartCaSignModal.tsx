@@ -6,6 +6,7 @@ import { useToast } from "../../context/ToastContext";
 import {
   downloadXmlFile,
   DEFAULT_MA_CSKCB,
+  DEFAULT_CLINIC_NAME,
   xmlToBase64,
 } from "../../utils/shared/excelXmlShared";
 import {
@@ -143,27 +144,45 @@ export const GlobalSmartCaSignModal: React.FC<GlobalSmartCaSignModalProps> = ({
         const tokenRes = await BhxhChungTuService.takeToken(undefined, "sandbox");
         const sendRes = await BhxhChungTuService.guiHoSoChungTu2025(
           {
-            token: tokenRes.apiToken || "mock_token",
+            token: tokenRes.apiToken || "",
             fileBase64Str,
             loaiHs: "39",
           },
           "sandbox",
         );
 
-        setBhxhResponse({
-          maKetQua: sendRes.maKetQua,
-          thongDiep:
-            sendRes.ghiChu ||
-            "Hồ sơ đã được tiếp nhận thành công vào hệ thống BHXH (Sandbox/Thử nghiệm)",
-          maGiaoDich: sendRes.maGiaoDich || `BHXH-TT25-${Date.now()}`,
-          ngayTiepNhan: new Date().toLocaleString("vi-VN"),
-          isError: sendRes.maKetQua !== "200",
-          moiTruong: "Thử Nghiệm (Sandbox)",
-        });
-        toast.success(
-          "Đã gửi hồ sơ lên Cổng BHXH (Sandbox/Thử nghiệm) thành công!",
-          "Liên Thông BHXH",
-        );
+        const isSuccess = String(sendRes.maKetQua) === "200";
+        if (isSuccess) {
+          setBhxhResponse({
+            maKetQua: sendRes.maKetQua,
+            thongDiep:
+              sendRes.ghiChu ||
+              "Hồ sơ đã được tiếp nhận thành công vào hệ thống BHXH (Thử nghiệm)",
+            maGiaoDich: sendRes.maGiaoDich || `BHXH-TT25-${Date.now()}`,
+            ngayTiepNhan: new Date().toLocaleString("vi-VN"),
+            isError: false,
+            moiTruong: "Thử Nghiệm (Sandbox)",
+          });
+          toast.success(
+            "Đã gửi hồ sơ lên Cổng BHXH (Thử nghiệm) thành công!",
+            "Liên Thông BHXH",
+          );
+        } else {
+          setBhxhResponse({
+            maKetQua: sendRes.maKetQua || "400",
+            thongDiep:
+              sendRes.ghiChu ||
+              `Cổng BHXH từ chối hoặc phản hồi mã: ${sendRes.maKetQua}`,
+            maGiaoDich: sendRes.maGiaoDich || "TỪ CHỐI TIẾP NHẬN",
+            ngayTiepNhan: new Date().toLocaleString("vi-VN"),
+            isError: true,
+            moiTruong: "Thử Nghiệm (Sandbox)",
+          });
+          toast.error(
+            sendRes.ghiChu || `Cổng BHXH phản hồi mã lỗi: ${sendRes.maKetQua}`,
+            "Lỗi Tiếp Nhận",
+          );
+        }
       }
     } catch (err: unknown) {
       const errMsg =
@@ -310,8 +329,8 @@ export const GlobalSmartCaSignModal: React.FC<GlobalSmartCaSignModalProps> = ({
         {/* Footer Actions */}
         <div className="px-6 py-4 border-t border-slate-200 bg-white flex items-center justify-between flex-wrap gap-3">
           <div className="text-xs text-slate-500 font-medium">
-            Mã CS: <strong className="text-slate-800 font-mono">48939</strong> |
-            Cơ sở: BV OurMed Hospital
+            Mã CS: <strong className="text-slate-800 font-mono">{DEFAULT_MA_CSKCB}</strong> |
+            Cơ sở: <strong className="text-slate-800">{DEFAULT_CLINIC_NAME}</strong>
           </div>
 
           <div className="flex items-center gap-2.5">

@@ -6,16 +6,13 @@ import { HoSoPage } from './pages/HoSoPage';
 import { ToastProvider } from './context/ToastContext';
 import { SmartCaProvider } from './context/SmartCaContext';
 import { GlobalSmartCaSignModal } from './components/common/GlobalSmartCaSignModal';
-import { initialHoSoDieuChinh09Data } from './mock/mockData';
 import type { HoSoDieuChinh09Item } from './types/hs09DieuChinhTypes';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<MainTabType>('ho-so');
   const [hoSoTab, setHoSoTab] = useState<HoSoTabType>('01_tonghop');
   const [isSignModalOpen, setIsSignModalOpen] = useState(false);
-  const [hs09Items, setHs09Items] = useState<HoSoDieuChinh09Item[]>(
-    initialHoSoDieuChinh09Data
-  );
+  const [hs09Items, setHs09Items] = useState<HoSoDieuChinh09Item[]>([]);
 
   const pendingXuattoanCount = hs09Items.filter(
     (x) => x.trangThai === 'cho_xu_ly'

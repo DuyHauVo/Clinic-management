@@ -55,7 +55,7 @@ export const NhanLucXmlModal: React.FC<NhanLucXmlModalProps> = ({
     sendGateway: sendNhanLucToBhxhGateway,
     downloadSuccessMessage: 'Đã tải xuống file XML Mẫu 02/DM chuẩn Loại hồ sơ 71',
     getSendSuccessMessage: (res) =>
-      `[Sandbox] Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`,
+      `Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`,
     onSendSuccess,
   });
 

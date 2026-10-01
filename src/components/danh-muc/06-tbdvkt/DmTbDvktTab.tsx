@@ -7,9 +7,7 @@ import {
   downloadTbytThdvExcelTemplate,
   type ParseTbytThdvExcelResult,
 } from "./services/tbyttHdvService";
-import { initialTbytThdvData } from "../../../mock/mockData";
 import { useToast } from "../../../context/ToastContext";
-import { TbytThdvStatsCards } from "./components/TbytThdvStatsCards";
 import { TbytThdvDropzone } from "./components/TbytThdvDropzone";
 import { TbytThdvTable } from "./components/TbytThdvTable";
 import { TbytThdvXmlModal } from "./components/TbytThdvXmlModal";
@@ -20,9 +18,7 @@ import { useSchemaMappingProps } from "../../../hooks";
 
 export const DmTbDvktTab: React.FC = () => {
   const toast = useToast();
-  const [tbytItems, setTbytItems] = useState<DmTbytThdvItem[]>(() => [
-    ...initialTbytThdvData,
-  ]);
+  const [tbytItems, setTbytItems] = useState<DmTbytThdvItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoadingFile, setIsLoadingFile] = useState(false);
   const [fileUploadStats, setFileUploadStats] =
@@ -89,15 +85,6 @@ export const DmTbDvktTab: React.FC = () => {
         "Lỗi Đọc Sheet",
       );
     }
-  };
-
-  const handleLoadSampleData = () => {
-    setTbytItems([...initialTbytThdvData]);
-    setFileUploadStats(null);
-    toast.success(
-      "Đã nạp dữ liệu danh mục TBYT thực hiện DVKT mẫu theo QĐ 3176/QĐ-BYT",
-      "Nạp Dữ Liệu Mẫu",
-    );
   };
 
   const handleClearData = () => {
@@ -168,9 +155,6 @@ export const DmTbDvktTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* 1. Top 4 Metric KPI Cards */}
-      <TbytThdvStatsCards items={tbytItems} />
-
       {/* 2. Excel Upload Dropzone & Action Toolbar */}
       <TbytThdvDropzone
         isLoadingFile={isLoadingFile}
@@ -179,7 +163,6 @@ export const DmTbDvktTab: React.FC = () => {
         onFileUpload={handleFileUpload}
         onSwitchSheet={handleSwitchSheet}
         onDownloadTemplate={downloadTbytThdvExcelTemplate}
-        onLoadSample={handleLoadSampleData}
         onClearData={handleClearData}
         onOpenXmlModal={() => {
           setXmlModalTab("xml");
