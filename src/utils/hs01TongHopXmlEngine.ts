@@ -26,6 +26,7 @@ import {
   downloadXmlFile,
   getThoiGianTiepNhan,
   DEFAULT_MA_CSKCB,
+  DEFAULT_MA_TINH,
 } from "./shared/excelXmlShared";
 import { validateHs01Data } from "./validators/hs01Validator";
 import {
@@ -162,13 +163,144 @@ export function parseHs01Worksheet(
 }
 
 /**
- * Đọc file Excel tải đúng sheet nếu trong file nhiều sheet
+ * Parse trực tiếp tệp XML Mẫu 01/BH (<HSTH01BH>) thành danh sách Hs01TongHopItem
+ */
+export function parseHs01XmlText(
+  xmlText: string,
+  fileName: string,
+  defaultMaCskcb = DEFAULT_MA_CSKCB,
+): ParseHs01ExcelResult {
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+
+  const parserError = xmlDoc.querySelector("parsererror");
+  if (parserError) {
+    throw new Error(
+      "Tệp XML không hợp lệ hoặc cấu trúc bị lỗi: " +
+        parserError.textContent?.slice(0, 100),
+    );
+  }
+
+  const isBhxhXml =
+    xmlDoc.querySelector("HSTH01BH") ||
+    xmlDoc.querySelector("CHITIET_HS01BH") ||
+    xmlDoc.querySelector("DS_CHITIET") ||
+    xmlDoc.querySelector("HO_TEN") ||
+    xmlDoc.querySelector("MA_THE_BHYT");
+
+  if (!isBhxhXml) {
+    if (
+      xmlDoc.querySelector("Canvas") ||
+      xmlDoc.querySelector("PolyLine") ||
+      xmlDoc.querySelector("Path")
+    ) {
+      throw new Error(
+        "Tệp bạn nạp là tệp đồ họa trang in/bản vẽ (XAML/XPS Canvas), không phải tệp dữ liệu chi phí KCB của BHXH. Vui lòng nạp tệp Excel mẫu hoặc tệp XML dữ liệu chuẩn chứa thẻ <CHITIET_HS01BH>.",
+      );
+    }
+    throw new Error(
+      "Tệp XML không đúng định dạng Hồ sơ 01/BH (thiếu thẻ <HSTH01BH> hoặc <CHITIET_HS01BH>).",
+    );
+  }
+
+  let detailNodes = Array.from(xmlDoc.querySelectorAll("CHITIET_HS01BH"));
+  if (detailNodes.length === 0) {
+    detailNodes = Array.from(xmlDoc.querySelectorAll("DS_CHITIET > *"));
+  }
+  if (detailNodes.length === 0) {
+    const root = xmlDoc.firstElementChild;
+    if (root) {
+      detailNodes = Array.from(root.children).filter(
+        (c) =>
+          !["CHUKYDONVI", "SIGNATURE", "DS_CHITIET"].includes(
+            c.tagName.toUpperCase(),
+          ),
+      );
+    }
+  }
+
+  if (detailNodes.length === 0) {
+    throw new Error(
+      `Không tìm thấy bản ghi hồ sơ <CHITIET_HS01BH> nào trong tệp XML [${fileName}]!`,
+    );
+  }
+
+  const items: Hs01TongHopItem[] = [];
+  let validRows = 0;
+  let invalidRows = 0;
+  const detectedHeaders: { [colIdx: number]: string } = {};
+
+  detailNodes.forEach((node, idx) => {
+    const rowObj: Record<string, unknown> = {};
+    for (let i = 0; i < node.children.length; i++) {
+      const child = node.children[i];
+      const tagUpper = child.tagName.toUpperCase();
+      rowObj[tagUpper] = child.textContent?.trim() || "";
+      if (idx === 0) {
+        detectedHeaders[i] = tagUpper;
+      }
+    }
+
+    const item = parseHs01Row(rowObj, idx, idx + 1, defaultMaCskcb);
+    if (item) {
+      if (item.isValid) {
+        validRows++;
+      } else {
+        invalidRows++;
+      }
+      items.push(item);
+    }
+  });
+
+  const matchedFieldKeys = new Set(Object.values(detectedHeaders));
+  const missingRequiredFields = HS01_SCHEMA_FIELDS.filter(
+    (f) => f.required && !matchedFieldKeys.has(f.key),
+  ).map((f) => f.key);
+
+  return {
+    items,
+    totalRows: items.length,
+    validRows,
+    invalidRows,
+    detectedHeaders,
+    missingRequiredFields,
+    availableSheets: ["Dữ liệu XML"],
+    selectedSheet: "Tệp XML (" + fileName + ")",
+    fileName,
+  };
+}
+
+/**
+ * Đọc file Excel hoặc XML Hồ sơ tổng hợp Mẫu 01/BH
  */
 export async function parseHs01ExcelFile(
   file: File,
   selectedSheetName?: string,
   defaultMaCskcb = DEFAULT_MA_CSKCB,
 ): Promise<ParseHs01ExcelResult> {
+  // 1. Kiểm tra nếu là file XML
+  const isXml =
+    file.name.toLowerCase().endsWith(".xml") ||
+    file.type === "application/xml" ||
+    file.type === "text/xml";
+
+  if (isXml) {
+    const text = await file.text();
+    return parseHs01XmlText(text, file.name, defaultMaCskcb);
+  }
+
+  // Dự phòng: Kiểm tra nội dung text đầu nếu file XML bị lưu nhầm không có đuôi
+  try {
+    const sample = await file.slice(0, 300).text();
+    if (sample.includes("<?xml") || sample.includes("<HSTH01BH")) {
+      const text = await file.text();
+      return parseHs01XmlText(text, file.name, defaultMaCskcb);
+    }
+  } catch {
+    // Tiếp tục xử lý Excel bình thường
+  }
+
+  // 2. Xử lý tệp Excel (.xlsx, .xls)
   const workbook = await readExcelFile(file);
   const availableSheets = workbook.SheetNames;
 
@@ -285,18 +417,29 @@ export async function sendHs01ToBhxhGateway(
     const base64 = xmlToBase64(xml);
 
     const params = new URLSearchParams();
-    params.append("token", token);
+    params.append("username", BHXH_CONFIG.USERNAME || `${maCskcb}_BV`);
     params.append("loaiHs", "5");
+    params.append("maTinh", credentials?.maTinh || DEFAULT_MA_TINH);
+    params.append("maCskcb", maCskcb);
+    params.append("maCơ sở KCB", maCskcb);
+    params.append("kyQT", kyQT);
+    params.append("fileHsBase64", base64);
     params.append("fileBase64Str", base64);
     if (signature?.tranId) {
       params.append("tranId", signature.tranId);
     }
 
-    const response = await fetch(`${BHXH_CONFIG.BASE_URL}/api/HoSoTongHop7980/GuiHoSoTongHop01BH`, {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "accessToken": token,
+      "tokenId": tokenRes.idToken || tokenRes.APIKey?.id_token || "",
+      "passwordHash": tokenRes.passwordHash || "",
+    };
+
+    const baseUrl = BhxhChungTuService.getBaseUrl();
+    const response = await fetch(`${baseUrl}${BHXH_CONFIG.ENDPOINTS.GUI_HO_SO_TONG_HOP_01BH}`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
+      headers,
       body: params.toString(),
     });
 

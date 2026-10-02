@@ -117,6 +117,7 @@ export interface DanhMucDropzoneProps {
   xmlLabel?: string;
   apiLabel?: string;
   addNewLabel: string;
+  buttonLabel?: string;
 }
 
 /**
@@ -144,6 +145,7 @@ export const DanhMucDropzone: React.FC<DanhMucDropzoneProps> = ({
   xmlLabel,
   apiLabel,
   addNewLabel,
+  buttonLabel = "Chọn Tệp Excel / XML",
 }) => {
   const {
     fileInputRef,
@@ -164,7 +166,7 @@ export const DanhMucDropzone: React.FC<DanhMucDropzoneProps> = ({
           type="file"
           ref={fileInputRef}
           className="hidden"
-          accept=".xlsx,.xls,.csv"
+          accept=".xlsx,.xls,.csv,.xml,text/xml,application/xml"
           disabled={isLoadingFile}
           onChange={onFileUpload}
         />
@@ -205,7 +207,7 @@ export const DanhMucDropzone: React.FC<DanhMucDropzoneProps> = ({
             className={`px-5 py-2.5 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md transition-all whitespace-nowrap self-stretch md:self-auto flex items-center gap-2 ${theme.btn} ${theme.btnShadow}`}
           >
             <Upload size={15} />
-            <span>{isLoadingFile ? "Đang Xử Lý..." : "Chọn Tệp Excel"}</span>
+            <span>{isLoadingFile ? "Đang Xử Lý..." : buttonLabel}</span>
           </button>
         </div>
 

@@ -59,20 +59,20 @@ export const TbytThdvXmlModal: React.FC<TbytThdvXmlModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Cấu Trúc XML & Chuỗi Base64 Ký Số Mẫu 06/DM"
-      loaiHsBadge="Loại HS 70/72 - GuiDanhMuc06_TBTHDV"
+      loaiHsBadge="Loại HS 72 - GuiDanhMuc06_DMTBYT"
       itemsCount={items.length}
       itemLabel="thiết bị thực hiện DVKT"
       xmlContent={xmlContent}
       base64Content={base64Content}
-      apiEndpoint="https://egw.baohiemxahoi.gov.vn/api/DanhMucGW/GuiDanhMuc06_TBTHDV"
-      loaiHsCode="70"
+      apiEndpoint="https://egw.baohiemxahoi.gov.vn/api/DanhMucGW/GuiDanhMuc06_DMTBYT"
+      loaiHsCode="72"
       tab={tab}
       onTabChange={setTab}
       onExportXml={handleDownloadXml}
       onSendApi={handleSendGateway}
       isSendingApi={isSending}
       apiResponse={sendResult}
-      customFileName={`DM06_TBTHDV_${DEFAULT_MA_CSKCB}.xml`}
+      customFileName={`DM06_DMTBYT_${DEFAULT_MA_CSKCB}.xml`}
       enableSmartCa
       sourceFileInfo={fileUploadStats}
     />

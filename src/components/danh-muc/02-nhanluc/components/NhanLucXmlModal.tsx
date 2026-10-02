@@ -64,12 +64,12 @@ export const NhanLucXmlModal: React.FC<NhanLucXmlModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Cấu Trúc XML & Chuỗi Base64 Ký Số Mẫu 02/DM"
-      loaiHsBadge="Loại HS 71 - GuiDanhMuc02_NHANLUCKBCB"
+      loaiHsBadge="Loại HS 71 - GuiDanhMuc02_NLKCB"
       itemsCount={items.length}
       itemLabel="nhân lực y tế"
       xmlContent={xmlContent}
       base64Content={base64Content}
-      apiEndpoint="https://egw.baohiemxahoi.gov.vn/api/DanhMucGW/GuiDanhMuc02_NHANLUCKBCB"
+      apiEndpoint="https://egw.baohiemxahoi.gov.vn/api/DanhMucGW/GuiDanhMuc02_NLKCB"
       loaiHsCode="71"
       tab={tab}
       onTabChange={setTab}
@@ -77,7 +77,7 @@ export const NhanLucXmlModal: React.FC<NhanLucXmlModalProps> = ({
       onSendApi={handleSendGateway}
       isSendingApi={isSending}
       apiResponse={sendResult}
-      customFileName={`DM02_NHANLUCKBCB_${DEFAULT_MA_CSKCB}.xml`}
+      customFileName={`DM02_NLKCB_${DEFAULT_MA_CSKCB}.xml`}
       enableSmartCa
       sourceFileInfo={fileUploadStats}
     />
