@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Pill, AlertCircle } from 'lucide-react';
 import type { DmThuocItem } from '../../../../types';
 import { useToast } from '../../../../context/ToastContext';
-import { DEFAULT_MA_CSKCB } from '../../../../utils/shared/excelXmlShared';
+import { DEFAULT_MA_CSKCB, getTodayYmd } from '../../../../utils/shared/excelXmlShared';
 import { useModalBehavior } from '../../../../hooks/useModalBehavior';
 
 interface ThuocEditModalProps {
@@ -24,9 +24,9 @@ const getDefaultThuocData = (): DmThuocItem => ({
   maDuongDung: '1.01',
   dangBaoChe: 'Viên nén',
   soDangKy: '',
-  soLuong: 1000,
-  donGia: 1000,
-  donGiaBh: 1000,
+  soLuong: 0,
+  donGia: 0,
+  donGiaBh: 0,
   quyCach: '',
   nhaSx: '',
   nuocSx: 'Việt Nam',
@@ -49,7 +49,7 @@ const getDefaultThuocData = (): DmThuocItem => ({
   tlhhCb: undefined,
   tlhhBq: undefined,
   maCskcbThuoc: '',
-  tuNgay: '20260101',
+  tuNgay: getTodayYmd(),
   denNgay: ''
 });
 

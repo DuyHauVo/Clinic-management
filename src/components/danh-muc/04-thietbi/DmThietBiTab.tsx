@@ -7,9 +7,7 @@ import {
   downloadThietBiExcelTemplate,
   type ParseThietBiExcelResult,
 } from "./services/thietBiService";
-import { initialThietBiData } from "../../../mock/mockData";
 import { useToast } from "../../../context/ToastContext";
-import { ThietBiStatsCards } from "./components/ThietBiStatsCards";
 import { ThietBiDropzone } from "./components/ThietBiDropzone";
 import { ThietBiTable } from "./components/ThietBiTable";
 import { ThietBiXmlModal } from "./components/ThietBiXmlModal";
@@ -20,8 +18,7 @@ import { useSchemaMappingProps } from "../../../hooks";
 
 export const DmThietBiTab: React.FC = () => {
   const toast = useToast();
-  const [thietBiItems, setThietBiItems] =
-    useState<DmThietBiItem[]>(initialThietBiData);
+  const [thietBiItems, setThietBiItems] = useState<DmThietBiItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoadingFile, setIsLoadingFile] = useState(false);
   const [fileUploadStats, setFileUploadStats] =
@@ -88,15 +85,6 @@ export const DmThietBiTab: React.FC = () => {
         "Lỗi Đọc Sheet",
       );
     }
-  };
-
-  const handleLoadSampleData = () => {
-    setThietBiItems(initialThietBiData);
-    setFileUploadStats(null);
-    toast.success(
-      "Đã nạp dữ liệu danh mục thiết bị y tế mẫu gồm các vật tư / TBYT chuẩn",
-      "Nạp Dữ Liệu Mẫu",
-    );
   };
 
   const handleClearData = () => {
@@ -168,9 +156,6 @@ export const DmThietBiTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* 1. Top 4 Metric KPI Cards */}
-      <ThietBiStatsCards items={thietBiItems} />
-
       {/* 2. Excel Upload Dropzone & Action Toolbar */}
       <ThietBiDropzone
         isLoadingFile={isLoadingFile}
@@ -179,7 +164,6 @@ export const DmThietBiTab: React.FC = () => {
         onFileUpload={handleFileUpload}
         onSwitchSheet={handleSwitchSheet}
         onDownloadTemplate={downloadThietBiExcelTemplate}
-        onLoadSample={handleLoadSampleData}
         onClearData={handleClearData}
         onOpenXmlModal={() => {
           setXmlModalTab("xml");

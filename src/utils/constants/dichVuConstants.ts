@@ -1,5 +1,4 @@
 import type { DichVuSchemaField } from "../../types/dichVuTypes";
-import { getCurrentYearStartYmd } from "../shared/excelXmlShared";
 
 export const DICHVU_SCHEMA_FIELDS: DichVuSchemaField[] = [
   {
@@ -275,7 +274,7 @@ export const DICHVU_SCHEMA_FIELDS: DichVuSchemaField[] = [
     label: "Mã CSKCB",
     type: "string",
     required: true,
-    desc: "Mã cơ sở khám bệnh, chữa bệnh (gồm 5 ký tự số, vd 48001)",
+    desc: "Mã cơ sở khám bệnh, chữa bệnh (gồm 5 ký tự số, vd 49939)",
     aliases: [
       "MA_CSKCB",
       "MACSKCB",
@@ -288,7 +287,7 @@ export const DICHVU_SCHEMA_FIELDS: DichVuSchemaField[] = [
       "MA_DON_VI",
       "MÃ ĐƠN VỊ",
     ],
-    example: "48001",
+    example: "49939",
   },
 ];
 
@@ -337,41 +336,4 @@ export const DICHVU_EXCEL_TEMPLATE_COLS = [
   { wch: 12 }, // MA_CSKCB
 ];
 
-export const DICHVU_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
-  [
-    1,
-    "01.0001.0001",
-    "Khám bệnh chuyên khoa Nội",
-    "Khám bệnh chuyên khoa Nội",
-    42100,
-    `${new Date().getFullYear()}0101_01/QĐ-BV`,
-    "",
-    "",
-    "",
-    `${new Date().getFullYear()}0101_01/QĐ-SYT`,
-    `${new Date().getFullYear()}0101_01/QĐ-UBND`,
-    "",
-    42100,
-    getCurrentYearStartYmd(),
-    "",
-    "48001",
-  ],
-  [
-    2,
-    "03.2383.0314",
-    "Xạ hình tưới máu cơ tim bằng SPECT (gồm thuốc phóng xạ)",
-    "Xạ hình tưới máu cơ tim bằng SPECT (chưa gồm thuốc PX)",
-    345600,
-    "20171128_5344/QĐ-BYT",
-    "",
-    "",
-    "",
-    `${new Date().getFullYear()}0819_902/QĐ-SYT`,
-    `${new Date().getFullYear()}0731_96/NQ-HĐND`,
-    "Gồm Technetium-99m MIBI",
-    785600,
-    getCurrentYearStartYmd(),
-    "",
-    "48001",
-  ],
-];
+export const DICHVU_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [];

@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx";
+import { BhxhChungTuService, BHXH_CONFIG } from "../services/bhxh/bhxhChungTuService";
 import type {
   Hs01TongHopItem,
   ParseHs01ExcelResult,
@@ -25,6 +26,7 @@ import {
   downloadXmlFile,
   getThoiGianTiepNhan,
   DEFAULT_MA_CSKCB,
+  DEFAULT_MA_TINH,
 } from "./shared/excelXmlShared";
 import { validateHs01Data } from "./validators/hs01Validator";
 import {
@@ -161,13 +163,144 @@ export function parseHs01Worksheet(
 }
 
 /**
- * Đọc file Excel tải đúng sheet nếu trong file nhiều sheet
+ * Parse trực tiếp tệp XML Mẫu 01/BH (<HSTH01BH>) thành danh sách Hs01TongHopItem
+ */
+export function parseHs01XmlText(
+  xmlText: string,
+  fileName: string,
+  defaultMaCskcb = DEFAULT_MA_CSKCB,
+): ParseHs01ExcelResult {
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+
+  const parserError = xmlDoc.querySelector("parsererror");
+  if (parserError) {
+    throw new Error(
+      "Tệp XML không hợp lệ hoặc cấu trúc bị lỗi: " +
+        parserError.textContent?.slice(0, 100),
+    );
+  }
+
+  const isBhxhXml =
+    xmlDoc.querySelector("HSTH01BH") ||
+    xmlDoc.querySelector("CHITIET_HS01BH") ||
+    xmlDoc.querySelector("DS_CHITIET") ||
+    xmlDoc.querySelector("HO_TEN") ||
+    xmlDoc.querySelector("MA_THE_BHYT");
+
+  if (!isBhxhXml) {
+    if (
+      xmlDoc.querySelector("Canvas") ||
+      xmlDoc.querySelector("PolyLine") ||
+      xmlDoc.querySelector("Path")
+    ) {
+      throw new Error(
+        "Tệp bạn nạp là tệp đồ họa trang in/bản vẽ (XAML/XPS Canvas), không phải tệp dữ liệu chi phí KCB của BHXH. Vui lòng nạp tệp Excel mẫu hoặc tệp XML dữ liệu chuẩn chứa thẻ <CHITIET_HS01BH>.",
+      );
+    }
+    throw new Error(
+      "Tệp XML không đúng định dạng Hồ sơ 01/BH (thiếu thẻ <HSTH01BH> hoặc <CHITIET_HS01BH>).",
+    );
+  }
+
+  let detailNodes = Array.from(xmlDoc.querySelectorAll("CHITIET_HS01BH"));
+  if (detailNodes.length === 0) {
+    detailNodes = Array.from(xmlDoc.querySelectorAll("DS_CHITIET > *"));
+  }
+  if (detailNodes.length === 0) {
+    const root = xmlDoc.firstElementChild;
+    if (root) {
+      detailNodes = Array.from(root.children).filter(
+        (c) =>
+          !["CHUKYDONVI", "SIGNATURE", "DS_CHITIET"].includes(
+            c.tagName.toUpperCase(),
+          ),
+      );
+    }
+  }
+
+  if (detailNodes.length === 0) {
+    throw new Error(
+      `Không tìm thấy bản ghi hồ sơ <CHITIET_HS01BH> nào trong tệp XML [${fileName}]!`,
+    );
+  }
+
+  const items: Hs01TongHopItem[] = [];
+  let validRows = 0;
+  let invalidRows = 0;
+  const detectedHeaders: { [colIdx: number]: string } = {};
+
+  detailNodes.forEach((node, idx) => {
+    const rowObj: Record<string, unknown> = {};
+    for (let i = 0; i < node.children.length; i++) {
+      const child = node.children[i];
+      const tagUpper = child.tagName.toUpperCase();
+      rowObj[tagUpper] = child.textContent?.trim() || "";
+      if (idx === 0) {
+        detectedHeaders[i] = tagUpper;
+      }
+    }
+
+    const item = parseHs01Row(rowObj, idx, idx + 1, defaultMaCskcb);
+    if (item) {
+      if (item.isValid) {
+        validRows++;
+      } else {
+        invalidRows++;
+      }
+      items.push(item);
+    }
+  });
+
+  const matchedFieldKeys = new Set(Object.values(detectedHeaders));
+  const missingRequiredFields = HS01_SCHEMA_FIELDS.filter(
+    (f) => f.required && !matchedFieldKeys.has(f.key),
+  ).map((f) => f.key);
+
+  return {
+    items,
+    totalRows: items.length,
+    validRows,
+    invalidRows,
+    detectedHeaders,
+    missingRequiredFields,
+    availableSheets: ["Dữ liệu XML"],
+    selectedSheet: "Tệp XML (" + fileName + ")",
+    fileName,
+  };
+}
+
+/**
+ * Đọc file Excel hoặc XML Hồ sơ tổng hợp Mẫu 01/BH
  */
 export async function parseHs01ExcelFile(
   file: File,
   selectedSheetName?: string,
   defaultMaCskcb = DEFAULT_MA_CSKCB,
 ): Promise<ParseHs01ExcelResult> {
+  // 1. Kiểm tra nếu là file XML
+  const isXml =
+    file.name.toLowerCase().endsWith(".xml") ||
+    file.type === "application/xml" ||
+    file.type === "text/xml";
+
+  if (isXml) {
+    const text = await file.text();
+    return parseHs01XmlText(text, file.name, defaultMaCskcb);
+  }
+
+  // Dự phòng: Kiểm tra nội dung text đầu nếu file XML bị lưu nhầm không có đuôi
+  try {
+    const sample = await file.slice(0, 300).text();
+    if (sample.includes("<?xml") || sample.includes("<HSTH01BH")) {
+      const text = await file.text();
+      return parseHs01XmlText(text, file.name, defaultMaCskcb);
+    }
+  } catch {
+    // Tiếp tục xử lý Excel bình thường
+  }
+
+  // 2. Xử lý tệp Excel (.xlsx, .xls)
   const workbook = await readExcelFile(file);
   const availableSheets = workbook.SheetNames;
 
@@ -245,12 +378,8 @@ export function downloadHs01ExcelTemplate(): void {
 }
 
 /**
- * Gửi hồ sơ tổng hợp Mẫu 01/BH lên Cổng tiếp nhận Giám định BHYT (Sandbox)
- * @param signature (tùy chọn) chữ ký số SmartCA - khi hồ sơ đã ký ở tab Ký Số SmartCA
- *
- * ⚠️ ĐIỂM THAY DỮ LIỆU THẬT: hiện là mô phỏng sandbox. Khi tích hợp cổng EGW
- * thật, dùng `signature` (tranId, serialNumber, signatures) trong payload
- * theo đặc tả Cổng BHXH và gọi HTTP thật thay vì setTimeout.
+ * Gửi hồ sơ tổng hợp Mẫu 01/BH lên Cổng tiếp nhận Giám định BHYT
+ * Endpoint: /api/HoSoTongHop7980/GuiHoSoTongHop01BH (Loại HS 5)
  */
 export async function sendHs01ToBhxhGateway(
   items: Hs01TongHopItem[],
@@ -264,26 +393,83 @@ export async function sendHs01ToBhxhGateway(
     kyQT: string;
   }>,
   signature?: SmartCaSignatureResult,
-  delayMs = 1000,
 ): Promise<SendHs01GatewayResult> {
   const maCskcb = credentials?.maCskcb || DEFAULT_MA_CSKCB;
-  const kyQT = credentials?.kyQT || '202602';
-  await new Promise((resolve) => setTimeout(resolve, delayMs));
+  const currentKyQt = `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+  const kyQT = credentials?.kyQT || currentKyQt;
 
-  const maGiaoDich = `HS01BH_${maCskcb}_${kyQT}_${Date.now().toString().slice(-6)}`;
+  const tokenRes = await BhxhChungTuService.takeToken();
+  const token = tokenRes.apiToken || tokenRes.APIKey?.access_token;
+  if (String(tokenRes.maKetQua) !== "200" || !token) {
+    return {
+      maKetQua: String(tokenRes.maKetQua || "401"),
+      maGiaoDich: "",
+      thongDiep: tokenRes.thongDiep || tokenRes.message || "Chưa cấu hình tài khoản kết nối Cổng BHXH hoặc lỗi xác thực Token",
+      thoiGianTiepNhan: getThoiGianTiepNhan(),
+      totalRecords: items.length,
+      kyQT,
+      loaiHs: "5",
+    };
+  }
 
-  return {
-    maKetQua: "200",
-    maGiaoDich,
-    // Ghi nhận chữ ký số vào thông điệp kết quả để tiện kiểm chứng
-    thongDiep:
-      `[Mô phỏng Sandbox] Tiếp nhận thành công ${items.length} hồ sơ tổng hợp Mẫu 01/BH` +
-      (signature
-        ? ` - đã đính kèm chữ ký số SmartCA (tranId: ${signature.tranId})`
-        : " - CHƯA ký số SmartCA"),
-    thoiGianTiepNhan: getThoiGianTiepNhan(),
-    totalRecords: items.length,
-    kyQT,
-    loaiHs: "5",
-  };
+  try {
+    const xml = generateHs01Xml(items, maCskcb);
+    const base64 = xmlToBase64(xml);
+
+    const params = new URLSearchParams();
+    params.append("username", BHXH_CONFIG.USERNAME || `${maCskcb}_BV`);
+    params.append("loaiHs", "5");
+    params.append("maTinh", credentials?.maTinh || DEFAULT_MA_TINH);
+    params.append("maCskcb", maCskcb);
+    params.append("maCơ sở KCB", maCskcb);
+    params.append("kyQT", kyQT);
+    params.append("fileHsBase64", base64);
+    params.append("fileBase64Str", base64);
+    if (signature?.tranId) {
+      params.append("tranId", signature.tranId);
+    }
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "accessToken": token,
+      "tokenId": tokenRes.idToken || tokenRes.APIKey?.id_token || "",
+      "passwordHash": tokenRes.passwordHash || "",
+    };
+
+    const baseUrl = BhxhChungTuService.getBaseUrl();
+    const response = await fetch(`${baseUrl}${BHXH_CONFIG.ENDPOINTS.GUI_HO_SO_TONG_HOP_01BH}`, {
+      method: "POST",
+      headers,
+      body: params.toString(),
+    });
+
+    const data = await response.json();
+    const isOk = String(data.maKetQua ?? (response.ok ? "200" : "500")) === "200";
+    return {
+      maKetQua: String(data.maKetQua ?? (response.ok ? "200" : "500")),
+      maGiaoDich: data.maGiaoDich || (isOk ? `HS01BH_${maCskcb}_${kyQT}_${Date.now().toString().slice(-6)}` : ""),
+      thongDiep:
+        data.thongDiep ||
+        data.ghiChu ||
+        (isOk
+          ? `Tiếp nhận thành công ${items.length} hồ sơ tổng hợp Mẫu 01/BH lên Cổng BHXH` +
+            (signature ? ` (đã ký số SmartCA)` : "")
+          : `Cổng BHXH phản hồi mã kết quả: ${data.maKetQua ?? response.status}`),
+      thoiGianTiepNhan: data.thoiGianTiepNhan || getThoiGianTiepNhan(),
+      totalRecords: items.length,
+      kyQT,
+      loaiHs: "5",
+    };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Lỗi kết nối Cổng BHXH";
+    return {
+      maKetQua: "500",
+      maGiaoDich: "",
+      thongDiep: errorMsg,
+      thoiGianTiepNhan: getThoiGianTiepNhan(),
+      totalRecords: items.length,
+      kyQT,
+      loaiHs: "5",
+    };
+  }
 }

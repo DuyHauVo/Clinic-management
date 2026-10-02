@@ -7,9 +7,7 @@ import {
   downloadNhanLucExcelTemplate,
   type ParseNhanLucExcelResult
 } from './services/nhanLucService';
-import { initialNhanLucData } from '../../../mock/mockData';
 import { useToast } from '../../../context/ToastContext';
-import { NhanLucStatsCards } from './components/NhanLucStatsCards';
 import { NhanLucDropzone } from './components/NhanLucDropzone';
 import { NhanLucTable } from './components/NhanLucTable';
 import { NhanLucXmlModal } from './components/NhanLucXmlModal';
@@ -20,7 +18,7 @@ import { useSchemaMappingProps } from '../../../hooks';
 
 export const DmNhanLucTab: React.FC = () => {
   const toast = useToast();
-  const [nhanLucItems, setNhanLucItems] = useState<DmNhanLucItem[]>(initialNhanLucData);
+  const [nhanLucItems, setNhanLucItems] = useState<DmNhanLucItem[]>([]);
   const [searchNhanLuc, setSearchNhanLuc] = useState('');
   const [isLoadingNhanLucFile, setIsLoadingNhanLucFile] = useState(false);
   const [nhanLucFileUploadStats, setNhanLucFileUploadStats] = useState<ParseNhanLucExcelResult | null>(null);
@@ -77,12 +75,6 @@ export const DmNhanLucTab: React.FC = () => {
     }
   };
 
-  const handleNhanLucLoadSampleData = () => {
-    setNhanLucItems(initialNhanLucData);
-    setNhanLucFileUploadStats(null);
-    toast.success('Đã nạp dữ liệu danh mục nhân lực mẫu gồm các nhân sự chuẩn', 'Nạp Dữ Liệu Mẫu');
-  };
-
   const handleNhanLucClearData = () => {
     setNhanLucItems([]);
     setNhanLucFileUploadStats(null);
@@ -135,8 +127,6 @@ export const DmNhanLucTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <NhanLucStatsCards items={nhanLucItems} />
-
       <NhanLucDropzone
         isLoadingFile={isLoadingNhanLucFile}
         fileUploadStats={nhanLucFileUploadStats}
@@ -144,7 +134,6 @@ export const DmNhanLucTab: React.FC = () => {
         onFileUpload={handleNhanLucFileUpload}
         onSwitchSheet={handleNhanLucSwitchSheet}
         onDownloadTemplate={downloadNhanLucExcelTemplate}
-        onLoadSample={handleNhanLucLoadSampleData}
         onClearData={handleNhanLucClearData}
         onOpenXmlModal={() => {
           setIsNhanLucXmlModalOpen(true);

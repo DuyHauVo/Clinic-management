@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useToast } from '../context/ToastContext';
+import { extractXmlSignature } from '../utils/xmlDsigEngine';
 
 export interface UseXmlExportModalOptions<T, R = any> {
   isOpen: boolean;
@@ -8,7 +9,7 @@ export interface UseXmlExportModalOptions<T, R = any> {
   generateXml: (items: T[]) => string;
   generateBase64?: (items: T[], xml?: string) => string;
   downloadFile: (items: T[], xml?: string) => void;
-  sendGateway?: (items: T[], signature?: any) => Promise<R>;
+  sendGateway?: (items: T[], signature?: any, fileBase64?: string) => Promise<R>;
   downloadSuccessMessage?: string;
   emptyItemsMessage?: string;
   getSendSuccessMessage?: (result: R) => string;
@@ -65,23 +66,53 @@ export function useXmlExportModal<T, R = any>({
     toast.success(downloadSuccessMessage, 'Tải Tệp XML');
   };
 
-  const handleSendGateway = async () => {
-    if (items.length === 0) {
+  const handleSendGateway = async (signaturePayload?: any) => {
+    const fileBase64 = signaturePayload?.fileBase64 || base64Content;
+    const signatureResult = signaturePayload?.signResponse || signaturePayload;
+
+    if (items.length === 0 && !fileBase64) {
       toast.error(emptyItemsMessage, 'Lỗi Gửi Dữ Liệu');
       return;
     }
+
+    // Kiểm tra an toàn: Nếu truyền signedXml thì bắt buộc phải có chữ ký điện tử
+    if (signaturePayload?.signedXml) {
+      const sig = extractXmlSignature(signaturePayload.signedXml);
+      if (!sig.hasSignature) {
+        toast.warning(
+          'Hồ sơ chưa có chữ ký số điện tử hợp lệ (<CHUKYDONVI>). Cổng BHXH bắt buộc gói dữ liệu XML phải được ký số trước khi gửi!',
+          'Yêu Cầu Chữ Ký Số'
+        );
+        return;
+      }
+    }
+
     if (!sendGateway) return;
 
     setIsSending(true);
     try {
-      const res = await sendGateway(items);
+      const res = await sendGateway(items, signatureResult, fileBase64);
       setSendResult(res);
-      const msg = getSendSuccessMessage
-        ? getSendSuccessMessage(res)
-        : 'Gửi Cổng BHXH thành công!';
-      toast.success(msg, 'Gửi Cổng BHXH Thành Công');
-      if (onSendSuccess) {
-        onSendSuccess(res);
+      const isSuccess =
+        String((res as any)?.maKetQua) === '200' ||
+        (res as any)?.isOk === true ||
+        Boolean((res as any)?.maGiaoDich && !(res as any)?.isError);
+
+      if (isSuccess) {
+        const msg = getSendSuccessMessage
+          ? getSendSuccessMessage(res)
+          : 'Hồ sơ đã được gửi và tiếp nhận thành công trên Cổng BHXH!';
+        toast.success(msg, 'Gửi Cổng BHXH Thành Công');
+        if (onSendSuccess) {
+          onSendSuccess(res);
+        }
+      } else {
+        const errMsg =
+          (res as any)?.thongDiep ||
+          (res as any)?.ghiChu ||
+          (res as any)?.message ||
+          `Cổng BHXH từ chối tiếp nhận (Mã phản hồi: ${String((res as any)?.maKetQua || '400')})`;
+        toast.error(errMsg, 'Lỗi Tiếp Nhận Cổng BHXH');
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi kết nối cổng BHXH';

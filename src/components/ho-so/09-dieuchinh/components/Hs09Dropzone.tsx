@@ -11,7 +11,6 @@ interface Hs09DropzoneProps {
   onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSwitchSheet: (sheetName: string) => void;
   onDownloadTemplate: () => void;
-  onLoadSample: () => void;
   onClearData: () => void;
   onOpenXmlModal: () => void;
   onOpenApiTab: () => void;
@@ -26,7 +25,6 @@ export const Hs09Dropzone: React.FC<Hs09DropzoneProps> = ({
   onFileUpload,
   onSwitchSheet,
   onDownloadTemplate,
-  onLoadSample,
   onClearData,
   onOpenXmlModal,
   onOpenApiTab,
@@ -39,11 +37,11 @@ export const Hs09Dropzone: React.FC<Hs09DropzoneProps> = ({
     <DanhMucDropzone
       themeColor="indigo"
       isLoadingFile={isLoadingFile}
-      loadingTitle="Đang đọc và phân tích file Excel Hồ sơ điều chỉnh 09/BH..."
-      title="Nạp Tệp Excel Hồ Sơ Điều Chỉnh Mẫu 09/BH (Loại HS 73)"
+      loadingTitle="Đang đọc và phân tích file Excel / XML Hồ sơ điều chỉnh 09/BH..."
+      title="Nạp Tệp Excel / XML Hồ Sơ Điều Chỉnh Mẫu 09/BH (Loại HS 73)"
       description={
         <>
-          Kéo thả hoặc nhấp để chọn file (.xlsx, .xls, .csv). Tự động phân tích cấu trúc điều chỉnh XML1, XML2, XML3, XML4, XML5 chuẩn cổng BHXH.
+          Kéo thả hoặc nhấp để chọn file (.xlsx, .xls, .csv, .xml). Tự động phân tích cấu trúc điều chỉnh XML1, XML2, XML3, XML4, XML5 chuẩn cổng BHXH.
         </>
       }
       uploadStats={
@@ -70,7 +68,6 @@ export const Hs09Dropzone: React.FC<Hs09DropzoneProps> = ({
       onSwitchSheet={onSwitchSheet}
       onOpenSchemaModal={onOpenSchemaModal}
       onDownloadTemplate={onDownloadTemplate}
-      onLoadSample={onLoadSample}
       onClearData={onClearData}
       onOpenXmlModal={onOpenXmlModal}
       onOpenApiTab={onOpenApiTab}

@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx";
+import { BhxhChungTuService, BHXH_CONFIG } from "../../services/bhxh/bhxhChungTuService";
 // 1. CHUẨN HÓA & SO KHỚP TÊN CỘT EXCEL
 export function normalizeKey(str: string): string {
   if (!str) return "";
@@ -403,6 +404,19 @@ export function formatCurrencyDecimals(val?: number): string {
 // ĐỌC WORKBOOK EXCEL
 export function readExcelFile(file: File): Promise<XLSX.WorkBook> {
   return new Promise((resolve, reject) => {
+    const isXml =
+      file.name.toLowerCase().endsWith(".xml") ||
+      file.type === "application/xml" ||
+      file.type === "text/xml";
+    if (isXml) {
+      reject(
+        new Error(
+          "Tệp bạn vừa chọn là tệp XML, không phải bảng tính Excel (.xlsx, .xls). Vui lòng nạp qua bộ đọc XML.",
+        ),
+      );
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
@@ -415,7 +429,18 @@ export function readExcelFile(file: File): Promise<XLSX.WorkBook> {
       } catch (err: unknown) {
         const msg =
           err instanceof Error ? err.message : "Định dạng tệp không hợp lệ";
-        reject(new Error(msg));
+        if (
+          msg.includes("reading '0'") ||
+          msg.includes("Cannot read properties of undefined")
+        ) {
+          reject(
+            new Error(
+              "Tệp không đúng định dạng bảng tính Excel (.xlsx, .xls) hoặc file bị lỗi cấu trúc!",
+            ),
+          );
+        } else {
+          reject(new Error(msg));
+        }
       }
     };
     reader.onerror = () => reject(new Error("Không thể đọc file từ thiết bị!"));
@@ -423,8 +448,9 @@ export function readExcelFile(file: File): Promise<XLSX.WorkBook> {
   });
 }
 
-export const DEFAULT_MA_CSKCB = "48939";
-export const DEFAULT_MA_TINH = "48";
+export const DEFAULT_MA_CSKCB = (import.meta.env.VITE_MA_CSKCB as string) || "49939";
+export const DEFAULT_MA_TINH = (import.meta.env.VITE_MA_TINH as string) || "48";
+export const DEFAULT_CLINIC_NAME = (import.meta.env.VITE_CLINIC_NAME as string) || "Cơ sở Khám chữa bệnh";
 
 export function pickBestSheetName(
   workbook: XLSX.WorkBook,
@@ -672,13 +698,16 @@ export async function copyTextToClipboard(text: string): Promise<boolean> {
 }
 //Tải file XML xuống máy người dùng.
 export function downloadXmlFile(xmlContent: string, fileName: string): void {
+  const safeFileName = fileName.toLowerCase().endsWith(".xml")
+    ? fileName
+    : `${fileName}.xml`;
   const blob = new Blob([xmlContent], {
     type: "application/xml;charset=utf-8",
   });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = fileName;
+  a.download = safeFileName;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -692,6 +721,7 @@ export interface GatewaySendResult {
   thongDiep: string;
   thoiGianTiepNhan: string;
   totalRecords: number;
+  loaiHs?: string;
 }
 
 export function formatCurrencyVnd(val?: number): string {
@@ -723,23 +753,109 @@ export function formatYmdHmDisplay(str?: string): string {
 /** @deprecated dùng getTimestampYmdHms */
 export const getThoiGianTiepNhan = getTimestampYmdHms;
 
-export async function mockSendDanhMucToBhxhGateway(
+export async function sendDanhMucToBhxhGateway(
   loaiHs: string,
   recordCount: number,
   recordLabel: string,
   maCskcb: string = DEFAULT_MA_CSKCB,
   maTinh: string = DEFAULT_MA_TINH,
-  delayMs = 800,
+  fileBase64Str?: string,
 ): Promise<GatewaySendResult> {
-  await new Promise((r) => setTimeout(r, delayMs));
+  const tokenRes = await BhxhChungTuService.takeToken();
+  const token = tokenRes.apiToken || tokenRes.APIKey?.access_token;
+  if (String(tokenRes.maKetQua) !== "200" || !token) {
+    return {
+      maKetQua: String(tokenRes.maKetQua || "401"),
+      maGiaoDich: "",
+      thongDiep: tokenRes.thongDiep || tokenRes.message || "Chưa cấu hình tài khoản kết nối Cổng BHXH hoặc lỗi xác thực Token",
+      thoiGianTiepNhan: getTimestampYmdHms(),
+      totalRecords: recordCount,
+      loaiHs,
+    };
+  }
 
-  const maGiaoDich = `${loaiHs}_T${maTinh}_${maCskcb}_${Date.now().toString().slice(-6)}`;
+  try {
+    const LOAI_HS_NORMALIZED: Record<string, string> = {
+      "DANHMUC01": "70",
+      "DM01": "70",
+      "70": "70",
+      "DANHMUC02": "71",
+      "DM02": "71",
+      "71": "71",
+      "DANHMUC03": "10",
+      "DM03": "10",
+      "10": "10",
+      "DANHMUC04": "11",
+      "DM04": "11",
+      "11": "11",
+      "DANHMUC05": "12",
+      "DM05": "12",
+      "12": "12",
+      "DANHMUC06": "72",
+      "DM06": "72",
+      "72": "72",
+    };
+    const officialLoaiHs = LOAI_HS_NORMALIZED[loaiHs] || loaiHs;
 
-  return {
-    maKetQua: "200",
-    maGiaoDich,
-    thongDiep: `[Mô phỏng Sandbox] Tiếp nhận thành công ${recordCount} bản ghi ${recordLabel} vào Hệ thống Giám định BHYT`,
-    thoiGianTiepNhan: getTimestampYmdHms(),
-    totalRecords: recordCount,
-  };
+    const endpointMap: Record<string, string> = {
+      "70": BHXH_CONFIG.ENDPOINTS.GUI_DANH_MUC_01_BPCMKBCB,
+      "71": BHXH_CONFIG.ENDPOINTS.GUI_DANH_MUC_02_NLKCB,
+      "10": BHXH_CONFIG.ENDPOINTS.GUI_DANH_MUC_03_DMTHUOC,
+      "11": BHXH_CONFIG.ENDPOINTS.GUI_DANH_MUC_04_DMVTYT,
+      "12": BHXH_CONFIG.ENDPOINTS.GUI_DANH_MUC_05_DVKT,
+      "72": BHXH_CONFIG.ENDPOINTS.GUI_DANH_MUC_06_DMTBYT,
+    };
+    const endpoint = endpointMap[officialLoaiHs] || '/api/DanhMucGW';
+
+    const params = new URLSearchParams();
+    params.append("username", BHXH_CONFIG.USERNAME || `${maCskcb}_BV`);
+    params.append("loaiHs", officialLoaiHs);
+    params.append("maTinh", maTinh);
+    params.append("maCskcb", maCskcb);
+    params.append("maCơ sở KCB", maCskcb); // Alias theo curl example tài liệu
+    if (fileBase64Str) {
+      params.append("fileHsBase64", fileBase64Str);
+      params.append("fileBase64Str", fileBase64Str); // Fallback
+    }
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "accessToken": token,
+      "tokenId": tokenRes.idToken || tokenRes.APIKey?.id_token || "",
+      "passwordHash": tokenRes.passwordHash || "",
+    };
+
+    const baseUrl = BhxhChungTuService.getBaseUrl();
+    const response = await fetch(`${baseUrl}${endpoint}`, {
+      method: "POST",
+      headers,
+      body: params.toString(),
+    });
+
+    const data = await response.json();
+    const isOk = String(data.maKetQua ?? (response.ok ? "200" : "500")) === "200";
+    return {
+      maKetQua: String(data.maKetQua ?? (response.ok ? "200" : "500")),
+      maGiaoDich: data.maGiaoDich || (isOk ? `${loaiHs}_T${maTinh}_${maCskcb}_${Date.now().toString().slice(-6)}` : ""),
+      thongDiep:
+        data.thongDiep ||
+        data.ghiChu ||
+        (isOk
+          ? `Tiếp nhận thành công ${recordCount} bản ghi ${recordLabel} vào Cổng BHXH`
+          : `Cổng BHXH phản hồi mã kết quả: ${data.maKetQua ?? response.status}`),
+      thoiGianTiepNhan: data.thoiGianTiepNhan || getTimestampYmdHms(),
+      totalRecords: recordCount,
+      loaiHs,
+    };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Lỗi kết nối Cổng BHXH";
+    return {
+      maKetQua: "500",
+      maGiaoDich: "",
+      thongDiep: errorMsg,
+      thoiGianTiepNhan: getTimestampYmdHms(),
+      totalRecords: recordCount,
+      loaiHs,
+    };
+  }
 }

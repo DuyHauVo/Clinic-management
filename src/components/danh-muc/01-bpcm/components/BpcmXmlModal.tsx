@@ -50,7 +50,7 @@ export const BpcmXmlModal: React.FC<BpcmXmlModalProps> = ({
     sendGateway: sendBpcmToBhxhGateway,
     downloadSuccessMessage: 'Đã tải xuống file XML Mẫu 01/DM chuẩn Loại hồ sơ 70',
     getSendSuccessMessage: (res) =>
-      `[Sandbox] Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`,
+      `Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`,
     onSendSuccess,
   });
 

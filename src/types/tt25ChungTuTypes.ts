@@ -385,6 +385,8 @@ export interface BhxhTokenRequest {
 export interface BhxhTokenResponse {
   maKetQua: string | number; // "200" hoặc 200
   apiToken?: string;
+  idToken?: string;
+  passwordHash?: string;
   APIKey?: {
     access_token: string;
     id_token: string;

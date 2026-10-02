@@ -32,6 +32,7 @@ export interface SmartCaSignPanelProps {
   ) => void;
   onResetSignature: () => void;
   onDownloadSignedXml?: () => void;
+  onViewXml?: () => void;
 }
 
 export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
@@ -45,6 +46,7 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
   onSignedSuccess,
   onResetSignature,
   onDownloadSignedXml,
+  onViewXml,
 }) => {
   // 1. Quản lý trạng thái chọn loại hồ sơ / chứng từ
   const [selectedDocType, setSelectedDocType] =
@@ -72,14 +74,14 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
     if (uploadedFileName) {
       return `${uploadedFileName.replace(/\.[^/.]+$/, "")}.xml`;
     }
-    if (fileName) {
+    if (selectedDocType === "CURRENT" && fileName) {
       return fileName;
     }
-    if (selectedDocType && selectedDocType !== "CURRENT") {
-      return `${selectedDocType}_Template.xml`;
+    if (uploadedCustomXml) {
+      return `${selectedDocType}_TaiLen.xml`;
     }
-    return "TepTin_KySo.xml";
-  }, [uploadedFileName, fileName, selectedDocType]);
+    return "";
+  }, [uploadedFileName, fileName, selectedDocType, uploadedCustomXml]);
 
   // XML đưa vào quy trình ký: nếu đang ở chế độ đồng ký thì ký tiếp trên bản đã có chữ ký
   const actualXmlForHook = useMemo(() => {
@@ -127,8 +129,6 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
     handleResetAndResign,
     handleInitiateQ1Sign,
     handleCheckNow,
-    handleSimulateAppConfirm,
-    handleSimulateAppReject,
     formatCountdown,
   } = useSmartCaSignQ1({
     effectiveXmlToSign: actualXmlForHook,
@@ -168,14 +168,36 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
         onUploadedFileParsed={({ xmlContent: parsedXml, fileName: name }) => {
           setUploadedCustomXml(parsedXml);
           setUploadedFileName(name);
-          if (isSigned) onResetSignature();
+          const sig = extractXmlSignature(parsedXml);
+          if (sig.hasSignature) {
+            onSignedSuccess(parsedXml, {
+              success: true,
+              tranId: "UPLOADED_SIGNED_XML",
+              signatureValue: sig.signatureValue || "",
+              subjectDN: sig.subjectDN || "",
+              serialNumber: sig.serialNumber || "",
+              issuerDN: "",
+              x509Certificate: "",
+              signedAt: sig.signingTime || new Date().toISOString(),
+              digestValue: sig.digestValue || "",
+              signedXml: parsedXml,
+            });
+          } else if (isSigned) {
+            onResetSignature();
+          }
         }}
         onClearUploaded={() => {
           setUploadedCustomXml(null);
           setUploadedFileName(null);
           if (isSigned) onResetSignature();
         }}
-        onOpenPreviewXml={() => setShowXmlPreview(true)}
+        onOpenPreviewXml={() => {
+          if (onViewXml) {
+            onViewXml();
+          } else {
+            setShowXmlPreview(true);
+          }
+        }}
       />
 
       {/* Modal Popup Xem Trước Cấu Trúc XML */}
@@ -231,8 +253,6 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
           copiedKey={copiedKey}
           onCopyTranId={() => handleCopy(waitingTransaction.tranId, "tranId")}
           onCheckNow={handleCheckNow}
-          onSimulateAppConfirm={handleSimulateAppConfirm}
-          onSimulateAppReject={handleSimulateAppReject}
           onCancelWaiting={handleCancelWaiting}
         />
       ) : (
@@ -278,6 +298,8 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
         onClose={handleCloseAuthErrorModal}
         errorMessage={authErrorModalData.errorMessage}
         env={config.env}
+        clientId={config.clientId}
+        username={identityValue}
       />
     </div>
   );

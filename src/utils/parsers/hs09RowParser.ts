@@ -10,40 +10,6 @@ import {
   escapeXml,
   generateUUID,
 } from "../shared";
-import { initialBpcmData, initialNhanLucData } from "../../mock/mockData";
-
-/**
- * Tra cứu tự động tên Khoa từ Mã Khoa hoặc ID (01/DM)
- */
-function resolveKhoaFromCatalog(raw?: string): string | undefined {
-  if (!raw) return undefined;
-  const cleaned = raw.trim().toLowerCase();
-  if (!cleaned) return undefined;
-  const found = initialBpcmData.find(
-    (b) =>
-      b.maKhoa?.toLowerCase() === cleaned ||
-      b.id?.toLowerCase() === cleaned ||
-      b.tenKhoa?.toLowerCase() === cleaned,
-  );
-  return found ? found.tenKhoa : raw.trim();
-}
-
-/**
- * Tra cứu tự động tên Bác Sĩ từ Mã CCHN, CCCD, Mã BS hoặc ID (02/DM)
- */
-function resolveNhanLucFromCatalog(raw?: string): string | undefined {
-  if (!raw) return undefined;
-  const cleaned = raw.trim().toLowerCase();
-  if (!cleaned) return undefined;
-  const found = initialNhanLucData.find(
-    (nl) =>
-      nl.macchn?.toLowerCase() === cleaned ||
-      nl.soDinhDanh?.toLowerCase() === cleaned ||
-      nl.id?.toLowerCase() === cleaned ||
-      nl.hoTen?.toLowerCase() === cleaned,
-  );
-  return found ? found.hoTen : raw.trim();
-}
 
 /**
  * Chuyển đổi một dòng thô Excel thành đối tượng HoSoDieuChinh09Item
@@ -90,7 +56,10 @@ export function parseHs09Row(
   const dsChiPhiDieuChinh: ChiPhiDieuChinhItem[] = [];
 
   // Phân loại dòng điều chỉnh XML1 hay Chi phí
-  if (soBangXml <= 1 && (truongTtGoc || ttDieuChinh || truongTtDieuChinh || ttGoc || lyDoDieuChinh)) {
+  if (
+    soBangXml <= 1 &&
+    (truongTtGoc || ttDieuChinh || truongTtDieuChinh || ttGoc || lyDoDieuChinh)
+  ) {
     dsXml1DieuChinh.push({
       stt: 1,
       truongTtGoc,
@@ -129,40 +98,44 @@ export function parseHs09Row(
     errors.push("Chưa có thông tin dòng điều chỉnh XML1 hoặc chi phí");
   }
 
-  const rawKhoa =
-    String(rowObj["KHOA_DIEU_TRI"] ?? rowObj["KHOA"] ?? rowObj["TEN_KHOA"] ?? "").trim();
-  const khoaDieuTri = resolveKhoaFromCatalog(rawKhoa);
+  const rawKhoa = String(
+    rowObj["KHOA_DIEU_TRI"] ?? rowObj["KHOA"] ?? rowObj["TEN_KHOA"] ?? "",
+  ).trim();
+  const khoaDieuTri = rawKhoa || undefined;
 
-  const rawNguoiGiaiTrinh =
-    String(
-      rowObj["NGUOI_GIAI_TRINH"] ??
-        rowObj["MACCHN"] ??
-        rowObj["SO_DINH_DANH"] ??
-        rowObj["MA_BS"] ??
-        rowObj["NGUOILAPBIEU"] ??
-        rowObj["BAC_SI"] ??
-        "",
-    ).trim();
-  const nguoiGiaiTrinh = resolveNhanLucFromCatalog(rawNguoiGiaiTrinh);
+  const rawNguoiGiaiTrinh = String(
+    rowObj["NGUOI_GIAI_TRINH"] ??
+      rowObj["MACCHN"] ??
+      rowObj["SO_DINH_DANH"] ??
+      rowObj["MA_BS"] ??
+      rowObj["NGUOILAPBIEU"] ??
+      rowObj["BAC_SI"] ??
+      "",
+  ).trim();
+  const nguoiGiaiTrinh = rawNguoiGiaiTrinh || undefined;
 
   const ngayGiaiTrinh =
     parseYmdHmDate(rowObj["NGAY_GIAI_TRINH"]) ||
     String(rowObj["NGAY_GIAI_TRINH"] ?? rowObj["NGAYTHANGNAM"] ?? "").trim() ||
     undefined;
-  const nhomLoi = String(rowObj["NHOM_LOI"] ?? (tuChoi || "")).trim() || undefined;
+  const nhomLoi =
+    String(rowObj["NHOM_LOI"] ?? (tuChoi || "")).trim() || undefined;
 
-  const nguoiLapBieu = resolveNhanLucFromCatalog(
-    String(rowObj["NGUOILAPBIEU"] ?? nguoiGiaiTrinh ?? "").trim(),
-  ) || "";
+  const nguoiLapBieu = String(
+    rowObj["NGUOILAPBIEU"] ?? nguoiGiaiTrinh ?? "",
+  ).trim();
   const thuTruongDv = String(rowObj["THUTRUONG_DV"] ?? "").trim();
-  const ngayThangNam = String(rowObj["NGAYTHANGNAM"] ?? ngayGiaiTrinh ?? "").trim();
+  const ngayThangNam = String(
+    rowObj["NGAYTHANGNAM"] ?? ngayGiaiTrinh ?? "",
+  ).trim();
 
   return {
     id: `hs09-${Date.now()}-${rowIndex}-${Math.random().toString(36).substring(2, 6)}`,
     stt,
     ttMau: {
       mauSo: "09/BH",
-      maCskcb: String(rowObj["MA_CSKCB"] ?? defaultMaCskcb).trim() || defaultMaCskcb,
+      maCskcb:
+        String(rowObj["MA_CSKCB"] ?? defaultMaCskcb).trim() || defaultMaCskcb,
       nguoiLapBieu,
       thuTruongDv,
       ngayThangNam,
@@ -203,10 +176,7 @@ export function renderHs09ItemXml(
   const containerId = `Id-${generateUUID()}`;
   const cskcb = item.ttMau.maCskcb || defaultMaCskcb;
 
-  const tagOrEmpty = (
-    tag: string,
-    val: string | number | undefined | null,
-  ) => {
+  const tagOrEmpty = (tag: string, val: string | number | undefined | null) => {
     if (val === undefined || val === null || val === "") {
       return `<${tag}/>`;
     }

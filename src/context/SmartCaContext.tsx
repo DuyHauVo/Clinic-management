@@ -65,7 +65,7 @@ function saveSession(session: SmartCaSessionPersisted | null): void {
 // ============================================================================
 interface SmartCaContextValue {
   // --- [DÙNG CHUNG & HỖ TRỢ Q2 (KÝ NHANH SMART OTP)] ---
-  config: SmartCaPersistentConfig; // Cấu hình môi trường (mock/demo/prod) nạp từ .env
+  config: SmartCaPersistentConfig; // Cấu hình môi trường (production/demo) nạp từ .env
   client: SmartCaClient;           // Đối tượng Client giao tiếp VNPT SmartCA
 
   // --- [QUY TRÌNH 1 - Q1 (QUẢN LÝ PHIÊN ĐĂNG NHẬP / ĐĂNG XUẤT LÂU DÀI)] ---
@@ -94,7 +94,7 @@ export const SmartCaProvider: React.FC<{ children: ReactNode }> = ({ children })
   // --------------------------------------------------------------------------
   // A. STATE DÙNG CHUNG & HỖ TRỢ Q2
   // --------------------------------------------------------------------------
-  // Đọc cấu hình từ .env (mock / demo / production, clientId, username)
+  // Đọc cấu hình từ .env (production / demo, clientId, username)
   const [config, setConfig] = useState<SmartCaPersistentConfig>(loadSmartCaConfig);
   const [clientSecret, setClientSecretState] = useState<string>('');
 

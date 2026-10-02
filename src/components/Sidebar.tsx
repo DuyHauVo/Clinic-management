@@ -7,9 +7,10 @@ import {
   Stethoscope,
   Building2,
   ChevronRight,
+  User,
 } from "lucide-react";
 import { useToast } from "../context/ToastContext";
-import { DEFAULT_MA_CSKCB } from "../utils/shared/excelXmlShared";
+import { DEFAULT_MA_CSKCB, DEFAULT_MA_TINH, DEFAULT_CLINIC_NAME } from "../utils/shared/excelXmlShared";
 
 export type MainTabType = "danh-muc" | "ho-so";
 export type HoSoTabType = "01_tonghop" | "09_xuattoan";
@@ -37,9 +38,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Stethoscope size={22} className="stroke-[2.5]" />
         </div>
         <div className="min-w-0">
-          <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-1.5 leading-tight">
-            OurMed Hospital{" "}
-            <span className="text-[10px] bg-blue-500/20 text-blue-400 font-semibold px-1.5 py-0.5 rounded border border-blue-500/30">
+          <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-1.5 leading-tight truncate">
+            {DEFAULT_CLINIC_NAME}{" "}
+            <span className="text-[10px] bg-blue-500/20 text-blue-400 font-semibold px-1.5 py-0.5 rounded border border-blue-500/30 flex-shrink-0">
               BHYT
             </span>
           </h2>
@@ -212,11 +213,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Building2 size={14} /> CSKCB {DEFAULT_MA_CSKCB}
               </span>
               <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded font-bold">
-                Tuyến Tỉnh
+                Tỉnh {DEFAULT_MA_TINH}
               </span>
             </div>
-            <div className="text-[11px] text-slate-400 leading-snug">
-              Bệnh Viện OurMed Hospital
+            <div className="text-[11px] text-slate-400 leading-snug truncate">
+              {DEFAULT_CLINIC_NAME}
             </div>
             <div className="flex items-center justify-between text-[11px] text-slate-400">
               <span>Trạng thái Cổng:</span>
@@ -231,11 +232,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* User Profile Bar */}
       <div className="p-4 border-t border-slate-800/80 bg-[#001122] flex items-center gap-3">
-        <img
-          src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=100&auto=format&fit=crop&q=80"
-          alt="Avatar"
-          className="w-9 h-9 rounded-xl object-cover border border-slate-700"
-        />
+        <div className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300">
+          <User size={18} />
+        </div>
         <div className="flex-1 min-w-0">
           <div className="text-xs font-bold text-white truncate">
             Ban Chuyên Viên CNTT

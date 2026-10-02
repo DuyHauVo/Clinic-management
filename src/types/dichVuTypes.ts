@@ -33,7 +33,7 @@ export interface DmDichVuItem {
   giaThanhToan: number; // 15: Giá TT BHYT = donGia + tổng thanhTienThuoc trong dsThuocPx
   tuNgay: string; // 8: YYYYMMDD
   denNgay?: string; // 8: YYYYMMDD
-  maCskcb: string; // 5: Mã cơ sở KCB (vd 48001)
+  maCskcb: string; // 5: Mã cơ sở KCB (vd 49939)
   dsThuocPx?: DmThuocPxItem[]; // Danh sách thuốc phóng xạ & chất đánh dấu
   isValid?: boolean;
   errors?: string[];

@@ -8,10 +8,8 @@ import {
   type ParseHs01ExcelResult,
   type SendHs01GatewayResult,
 } from "./services/hs01TongHopService";
-import { initialHs01TongHopData } from "../../../mock/mockData";
 import { useToast } from "../../../context/ToastContext";
 import {
-  Hs01StatsCards,
   Hs01Dropzone,
   Hs01Table,
   Hs01EditModal,
@@ -25,7 +23,7 @@ import { getTodayIsoDate } from "../../../utils/shared/excelXmlShared";
 
 export const Hs01TongHopTab: React.FC = () => {
   const toast = useToast();
-  const [items, setItems] = useState<Hs01TongHopItem[]>(initialHs01TongHopData);
+  const [items, setItems] = useState<Hs01TongHopItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterLoaiKcb, setFilterLoaiKcb] = useState("all");
   const [filterTrangThai, setFilterTrangThai] = useState("all");
@@ -104,12 +102,6 @@ export const Hs01TongHopTab: React.FC = () => {
       const msg = err instanceof Error ? err.message : "Lỗi tải tệp mẫu";
       toast.error(msg, "Lỗi");
     }
-  };
-
-  const handleLoadSample = () => {
-    setItems(initialHs01TongHopData);
-    setFileUploadStats(null);
-    toast.info("Đã tải lại 5 hồ sơ tổng hợp mẫu chuẩn BHXH", "Nạp Dữ Liệu Mẫu");
   };
 
   const handleClearData = () => {
@@ -225,9 +217,6 @@ export const Hs01TongHopTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* 1. Header KPIs */}
-      <Hs01StatsCards items={items} />
-
       {/* 2. Dropzone & Action Toolbar */}
       <Hs01Dropzone
         isLoadingFile={isLoadingFile}
@@ -236,7 +225,6 @@ export const Hs01TongHopTab: React.FC = () => {
         onFileUpload={handleFileUpload}
         onSwitchSheet={handleSwitchSheet}
         onDownloadTemplate={handleDownloadTemplate}
-        onLoadSample={handleLoadSample}
         onClearData={handleClearData}
         onOpenXmlModal={() => {
           setXmlModalTab("xml");

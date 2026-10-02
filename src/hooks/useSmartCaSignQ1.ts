@@ -6,12 +6,15 @@ import { computeXmlDigest } from "../utils/xmlDsigEngine";
 import {
   initiateSignQ1,
   checkSignStatusQ1,
-  confirmMockSignQ1,
-  rejectMockSignQ1,
   type SmartCaSignResponse,
   type SmartCaQ1InitiateResponse,
 } from "../services/smartca/smartcaHandlers";
-import { SMARTCA_CLIENT_SECRET } from "../services/smartca/smartcaConfig";
+import {
+  SMARTCA_CLIENT_SECRET,
+  SMARTCA_DEFAULT_MST,
+  SMARTCA_DEFAULT_PASSWORD,
+} from "../services/smartca/smartcaConfig";
+import { DEFAULT_CLINIC_NAME } from "../utils/shared/excelXmlShared";
 import { SMARTCA_TRAN_STATUS, type SignerProfile } from "../types/smartcaTypes";
 import {
   type IdentityType,
@@ -41,12 +44,15 @@ export function useSmartCaSignQ1({
   const { credential, config } = useSmartCa();
   const toast = useToast();
 
-  // Thông tin người ký
+  // Thông tin người ký (Mặc định ký theo đơn vị: Mã số thuế và mật khẩu cấu hình từ .env)
+  const defaultMst = SMARTCA_DEFAULT_MST || config.username || "";
   const [signerName, setSignerName] = useState("");
   const [signerEmail, setSignerEmail] = useState("");
-  const [idType, setIdType] = useState<"phone" | "cccd" | "mst">("phone");
-  const [identityValue, setIdentityValue] = useState("");
-  const [password, setPassword] = useState("");
+  const [idType, setIdType] = useState<"phone" | "cccd" | "mst">(
+    defaultMst ? "mst" : "phone",
+  );
+  const [identityValue, setIdentityValue] = useState(defaultMst);
+  const [password, setPassword] = useState(SMARTCA_DEFAULT_PASSWORD || "");
   const [showPassword, setShowPassword] = useState(false);
 
   // Trạng thái giao dịch Q1
@@ -113,7 +119,11 @@ export function useSmartCaSignQ1({
   const handleSelectIdType = (type: IdentityType) => {
     if (idType !== type) {
       setIdType(type);
-      setIdentityValue("");
+      if (type === "mst" && defaultMst) {
+        setIdentityValue(defaultMst);
+      } else {
+        setIdentityValue("");
+      }
     }
   };
 
@@ -158,7 +168,7 @@ export function useSmartCaSignQ1({
           certInfo: {
             subjectDN: tran.subjectDN,
             serialNumber: tran.serialNumber,
-            issuerDN: tran.issuerDN || "VNPT SmartCA RS",
+            issuerDN: tran.issuerDN || "",
             x509Certificate: tran.x509Certificate || "",
             rsaModulus: tran.rsaModulus,
             rsaExponent: tran.rsaExponent,
@@ -243,6 +253,17 @@ export function useSmartCaSignQ1({
       return;
     }
 
+    if (idType !== "mst") {
+      if (!signerName.trim()) {
+        toast.warning("Vui lòng nhập Họ và Tên người ký (Bác sĩ)", "Thiếu Thông Tin");
+        return;
+      }
+      if (!signerEmail.trim()) {
+        toast.warning("Vui lòng nhập Email người ký", "Thiếu Thông Tin");
+        return;
+      }
+    }
+
     const trimmedEmail = signerEmail.trim();
     if (trimmedEmail) {
       const emailCheck = validateEmail(trimmedEmail);
@@ -269,7 +290,7 @@ export function useSmartCaSignQ1({
     const displayName =
       customName ||
       (isUnitSign
-        ? `Cơ sở KCB (MST: ${trimmedIdentity})`
+        ? DEFAULT_CLINIC_NAME || `Cơ sở KCB (MST: ${trimmedIdentity})`
         : `Bác sĩ (${idType === "phone" ? "SĐT" : "CCCD"}: ${trimmedIdentity})`);
 
     const dynamicSigner: SignerProfile = {
@@ -281,15 +302,17 @@ export function useSmartCaSignQ1({
       cccd: idType === "cccd" ? trimmedIdentity : "",
       mst: idType === "mst" ? trimmedIdentity : "",
       email: trimmedEmail || undefined,
-      subjectDN: isUnitSign
-        ? `CN=${displayName.toUpperCase()}, OID.0.9.2342.19200300.100.1.1=MST:${trimmedIdentity}, C=VN`
-        : `CN=${displayName.toUpperCase()}, UID=${trimmedIdentity}, O=PHÒNG KHÁM, C=VN`,
-      serialNumber: isUnitSign
-        ? `SMARTCA_MST_${trimmedIdentity.replace(/[^0-9]/g, "")}`
-        : `SMARTCA_${trimmedIdentity}`,
+      subjectDN: "",
+      serialNumber: "",
     };
 
     try {
+      if (!password.trim()) {
+        toast.warning("Vui lòng nhập mật khẩu tài khoản SmartCA để xác thực.", "Thiếu Mật Khẩu");
+        setIsInitiating(false);
+        return;
+      }
+
       const digestValue =
         digestInfo?.digestValue ||
         (
@@ -300,7 +323,7 @@ export function useSmartCaSignQ1({
 
       const initResponse = await initiateSignQ1({
         username: trimmedIdentity,
-        password: password.trim() || "123456",
+        password: password.trim(),
         digestValue,
         fileName: effectiveFileName,
         signer: dynamicSigner,
@@ -310,9 +333,7 @@ export function useSmartCaSignQ1({
         const errText =
           initResponse.error || "Không thể khởi tạo giao dịch ký số với VNPT SmartCA.";
         toast.error(errText, "Lỗi Khởi Tạo");
-        if (config.env !== "mock") {
-          setAuthErrorModalData({ isOpen: true, errorMessage: errText });
-        }
+        setAuthErrorModalData({ isOpen: true, errorMessage: errText });
         setIsInitiating(false);
         return;
       }
@@ -348,26 +369,6 @@ export function useSmartCaSignQ1({
     await checkTransactionStatus(waitingTransaction, true);
   };
 
-  const handleSimulateAppConfirm = async () => {
-    if (!waitingTransaction) return;
-    try {
-      await confirmMockSignQ1(waitingTransaction.tranId);
-      await handleCheckNow();
-    } catch (err: unknown) {
-      console.error("Mock confirm error:", err);
-    }
-  };
-
-  const handleSimulateAppReject = async () => {
-    if (!waitingTransaction) return;
-    try {
-      await rejectMockSignQ1(waitingTransaction.tranId);
-      await handleCheckNow();
-    } catch (err: unknown) {
-      console.error("Mock reject error:", err);
-    }
-  };
-
   const formatCountdown = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -401,8 +402,6 @@ export function useSmartCaSignQ1({
     handleResetAndResign,
     handleInitiateQ1Sign,
     handleCheckNow,
-    handleSimulateAppConfirm,
-    handleSimulateAppReject,
     formatCountdown,
   };
 }

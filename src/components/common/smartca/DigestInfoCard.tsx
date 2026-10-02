@@ -42,6 +42,10 @@ export const DigestInfoCard: React.FC<DigestInfoCardProps> = ({
             <span className="px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold flex items-center gap-1.5 animate-pulse">
               CHỜ DUYỆT APP
             </span>
+          ) : !digestValue ? (
+            <span className="px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-xs font-semibold flex items-center gap-1.5">
+              <Clock size={13} /> CHƯA NẠP TỆP
+            </span>
           ) : (
             <span className="px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold flex items-center gap-1.5">
               <Clock size={13} /> CHỜ KÝ SỐ
@@ -57,9 +61,13 @@ export const DigestInfoCard: React.FC<DigestInfoCardProps> = ({
         </span>
         <div className="flex items-center gap-1.5 min-w-0">
           <code className="font-mono text-slate-800 text-[11px] bg-white px-2 py-0.5 rounded border border-slate-200 select-all break-all shadow-2xs font-semibold">
-            {digestValue
-              ? digestValue
-              : "(Tính mã băm sau khi nạp file lên)"}
+            {digestValue ? (
+              digestValue
+            ) : (
+              <span className="text-slate-400 font-normal italic">
+                (Chưa có tệp tin - Vui lòng nạp tệp Excel / XML)
+              </span>
+            )}
           </code>
           {digestValue && (
             <button

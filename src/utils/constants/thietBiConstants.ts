@@ -1,5 +1,4 @@
 import type { ThietBiSchemaField } from "../../types/thietBiTypes";
-import { getCurrentYearStartYmd } from "../shared/excelXmlShared";
 
 export const THIETBI_SCHEMA_FIELDS: ThietBiSchemaField[] = [
   {
@@ -237,7 +236,7 @@ export const THIETBI_SCHEMA_FIELDS: ThietBiSchemaField[] = [
     aliases: [
       'MA_CSKCB', 'MACSKCB', 'MÃ CSKCB', 'MÃ CƠ SỞ KCB', 'MA_CO_SO_KCB', 'MÃ BV', 'MA_BV', 'MABV'
     ],
-    example: '48001'
+    example: '49939'
   },
   {
     key: 'LOAI_THAU',
@@ -384,33 +383,4 @@ export const THIETBI_EXCEL_TEMPLATE_COLS = [
   { wch: 12 }, // DEN_NGAY
 ];
 
-export const THIETBI_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [
-  [
-    1,
-    "N04.01.001",
-    "Kim tiêm",
-    "Kim dùng cho buồng tiêm 20G x 25mm",
-    "MH-KT-2024",
-    "2400012/ĐKLH/BYT",
-    "Thép không gỉ y tế 304, đầu vát Huber",
-    "1 bộ/túi",
-    "B. Braun Medical AG",
-    "Đức",
-    "Cái",
-    15000,
-    15000,
-    80,
-    770,
-    1,
-    "Công ty CP Dược & TBYT TW",
-    `456/QĐ-BV;G1;N1;${new Date().getFullYear()}`,
-    getCurrentYearStartYmd(),
-    `${new Date().getFullYear()}1231`,
-    "48001",
-    1,
-    1,
-    "",
-    getCurrentYearStartYmd(),
-    "",
-  ],
-];
+export const THIETBI_EXCEL_TEMPLATE_SAMPLES: (string | number)[][] = [];

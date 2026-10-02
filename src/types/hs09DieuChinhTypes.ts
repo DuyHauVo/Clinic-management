@@ -3,7 +3,7 @@
  */
 export interface TtMauInfo {
   mauSo: string; // MAU_SO (mặc định "09/BH")
-  maCskcb: string; // MA_CSKCB (mã 5 ký tự, vd: "48001")
+  maCskcb: string; // MA_CSKCB (mã 5 ký tự, vd: "49939")
   nguoiLapBieu: string; // NGUOILAPBIEU
   thuTruongDv: string; // THUTRUONG_DV
   ngayThangNam: string; // NGAYTHANGNAM (định dạng YYYYMMDD)

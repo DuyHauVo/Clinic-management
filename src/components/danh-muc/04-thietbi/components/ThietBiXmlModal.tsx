@@ -50,7 +50,7 @@ export const ThietBiXmlModal: React.FC<ThietBiXmlModalProps> = ({
     sendGateway: sendThietBiToBhxhGateway,
     downloadSuccessMessage: 'Đã tải xuống file XML Mẫu 04/DM chuẩn Loại hồ sơ 72',
     getSendSuccessMessage: (res) =>
-      `[Sandbox] Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`,
+      `Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`,
     onSendSuccess,
   });
 
@@ -59,20 +59,20 @@ export const ThietBiXmlModal: React.FC<ThietBiXmlModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Cấu Trúc XML & Chuỗi Base64 Ký Số Mẫu 04/DM"
-      loaiHsBadge="Loại HS 72 - GuiDanhMuc04_THIETBIKBCB"
+      loaiHsBadge="Loại HS 11 - GuiDanhMuc04_DMVTYT"
       itemsCount={items.length}
       itemLabel="vật tư / thiết bị"
       xmlContent={xmlContent}
       base64Content={base64Content}
-      apiEndpoint="https://egw.baohiemxahoi.gov.vn/api/DanhMucGW/GuiDanhMuc04_THIETBIKBCB"
-      loaiHsCode="72"
+      apiEndpoint="https://egw.baohiemxahoi.gov.vn/api/DanhMucGW/GuiDanhMuc04_DMVTYT"
+      loaiHsCode="11"
       tab={tab}
       onTabChange={setTab}
       onExportXml={handleDownloadXml}
       onSendApi={handleSendGateway}
       isSendingApi={isSending}
       apiResponse={sendResult}
-      customFileName={`DM04_THIETBIKBCB_${DEFAULT_MA_CSKCB}.xml`}
+      customFileName={`DM04_DMVTYT_${DEFAULT_MA_CSKCB}.xml`}
       enableSmartCa
       sourceFileInfo={fileUploadStats}
     />

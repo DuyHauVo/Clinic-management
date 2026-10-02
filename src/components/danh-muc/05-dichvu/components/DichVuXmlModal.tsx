@@ -50,7 +50,7 @@ export const DichVuXmlModal: React.FC<DichVuXmlModalProps> = ({
     sendGateway: sendDichVuToBhxhGateway,
     downloadSuccessMessage: 'Đã tải xuống file XML Mẫu 05/DM chuẩn QĐ 3176/QĐ-BYT & BHXH Việt Nam',
     getSendSuccessMessage: (res) =>
-      `[Sandbox] Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`,
+      `Cổng tiếp nhận thành công! Mã GD: ${res.maGiaoDich}`,
     onSendSuccess,
   });
 
@@ -59,13 +59,13 @@ export const DichVuXmlModal: React.FC<DichVuXmlModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Cấu Trúc XML & Chuỗi Base64 Ký Số Mẫu 05/DM"
-      loaiHsBadge="Loại HS 70/72 - GuiDanhMuc05_DICHVUKBCB"
+      loaiHsBadge="Loại HS 12 - GuiDanhMuc05_DVKT"
       itemsCount={items.length}
       itemLabel="dịch vụ kỹ thuật"
       xmlContent={xmlContent}
       base64Content={base64Content}
-      apiEndpoint="https://egw.baohiemxahoi.gov.vn/api/DanhMucGW/GuiDanhMuc05_DICHVUKBCB"
-      loaiHsCode="70"
+      apiEndpoint="https://egw.baohiemxahoi.gov.vn/api/DanhMucGW/GuiDanhMuc05_DVKT"
+      loaiHsCode="12"
       tab={tab}
       onTabChange={setTab}
       onExportXml={handleDownloadXml}
