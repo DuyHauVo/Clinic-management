@@ -149,11 +149,122 @@ export function parseHs09Worksheet(
 /**
  * Đọc file Excel tải đúng sheet nếu trong file nhiều sheet
  */
+/**
+ * Parse trực tiếp tệp XML Mẫu 09/BH (<HOSO_DIEUCHINH_GD>) thành danh sách HoSoDieuChinh09Item
+ */
+export function parseHs09XmlText(
+  xmlText: string,
+  fileName: string,
+  defaultMaCskcb = DEFAULT_MA_CSKCB,
+): ParseHs09ExcelResult {
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+
+  const parserError = xmlDoc.querySelector("parsererror");
+  if (parserError) {
+    throw new Error(
+      "Tệp XML không hợp lệ hoặc cấu trúc bị lỗi: " +
+        parserError.textContent?.slice(0, 100),
+    );
+  }
+
+  let detailNodes = Array.from(xmlDoc.querySelectorAll("CHITIET_HSDC09"));
+  if (detailNodes.length === 0) {
+    detailNodes = Array.from(xmlDoc.querySelectorAll("DS_CHITIET > *"));
+  }
+  if (detailNodes.length === 0) {
+    const root = xmlDoc.firstElementChild;
+    if (root) {
+      detailNodes = Array.from(root.children).filter(
+        (c) =>
+          !["CHUKYDONVI", "SIGNATURE", "DS_CHITIET"].includes(
+            c.tagName.toUpperCase(),
+          ),
+      );
+    }
+  }
+
+  if (detailNodes.length === 0) {
+    throw new Error(
+      `Không tìm thấy bản ghi hồ sơ <CHITIET_HSDC09> nào trong tệp XML [${fileName}]!`,
+    );
+  }
+
+  const items: HoSoDieuChinh09Item[] = [];
+  let validRows = 0;
+  let invalidRows = 0;
+  const detectedHeaders: { [colIdx: number]: string } = {};
+
+  detailNodes.forEach((node, idx) => {
+    const rowObj: Record<string, unknown> = {};
+    for (let i = 0; i < node.children.length; i++) {
+      const child = node.children[i];
+      const tagUpper = child.tagName.toUpperCase();
+      rowObj[tagUpper] = child.textContent?.trim() || "";
+      if (idx === 0) {
+        detectedHeaders[i] = tagUpper;
+      }
+    }
+
+    const item = parseHs09Row(rowObj, idx, idx + 1, defaultMaCskcb);
+    if (item) {
+      if (item.isValid) {
+        validRows++;
+      } else {
+        invalidRows++;
+      }
+      items.push(item);
+    }
+  });
+
+  const matchedFieldKeys = new Set(Object.values(detectedHeaders));
+  const missingRequiredFields = HS09_SCHEMA_FIELDS.filter(
+    (f) => f.required && !matchedFieldKeys.has(f.key),
+  ).map((f) => f.key);
+
+  return {
+    items,
+    totalRows: items.length,
+    validRows,
+    invalidRows,
+    detectedHeaders,
+    missingRequiredFields,
+    availableSheets: ["Dữ liệu XML"],
+    selectedSheet: "Tệp XML (" + fileName + ")",
+    fileName,
+  };
+}
+
+/**
+ * Đọc file Excel hoặc XML Hồ sơ điều chỉnh Mẫu 09/BH
+ */
 export async function parseHs09ExcelFile(
   file: File,
   selectedSheetName?: string,
   defaultMaCskcb = DEFAULT_MA_CSKCB,
 ): Promise<ParseHs09ExcelResult> {
+  // 1. Kiểm tra nếu là file XML
+  const isXml =
+    file.name.toLowerCase().endsWith(".xml") ||
+    file.type === "application/xml" ||
+    file.type === "text/xml";
+
+  if (isXml) {
+    const text = await file.text();
+    return parseHs09XmlText(text, file.name, defaultMaCskcb);
+  }
+
+  try {
+    const sample = await file.slice(0, 300).text();
+    if (sample.includes("<?xml") || sample.includes("<HOSO_DIEUCHINH")) {
+      const text = await file.text();
+      return parseHs09XmlText(text, file.name, defaultMaCskcb);
+    }
+  } catch {
+    // Tiếp tục đọc Excel
+  }
+
+  // 2. Đọc file Excel (.xlsx, .xls)
   const workbook = await readExcelFile(file);
   const availableSheets = workbook.SheetNames;
 
@@ -274,15 +385,24 @@ export async function sendHs09ToBhxhGateway(
     const base64 = xmlToBase64(xml);
 
     const params = new URLSearchParams();
-    params.append("token", token);
+    params.append("username", BHXH_CONFIG.USERNAME || `${maCskcb}_BV`);
     params.append("loaiHs", "73");
+    params.append("maCskcb", maCskcb);
+    params.append("maCơ sở KCB", maCskcb);
+    params.append("fileHsBase64", base64);
     params.append("fileBase64Str", base64);
 
-    const response = await fetch(`${BHXH_CONFIG.BASE_URL}/api/HSDCTT12/GuiHoSoDieuChinh09BH`, {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "accessToken": token,
+      "tokenId": tokenRes.idToken || tokenRes.APIKey?.id_token || "",
+      "passwordHash": tokenRes.passwordHash || "",
+    };
+
+    const baseUrl = BhxhChungTuService.getBaseUrl();
+    const response = await fetch(`${baseUrl}${BHXH_CONFIG.ENDPOINTS.GUI_HO_SO_DIEU_CHINH_09BH}`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
+      headers,
       body: params.toString(),
     });
 

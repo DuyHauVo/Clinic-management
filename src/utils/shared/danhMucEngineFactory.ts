@@ -92,8 +92,9 @@ export interface DanhMucEngine<TItem> {
   downloadExcelTemplate: () => void;
   sendToBhxhGateway: (
     items: TItem[],
-    maCskcb?: string,
-    maTinh?: string,
+    maCskcbOrSig?: string | any,
+    maTinhOrBase64?: string,
+    customBase64?: string,
   ) => Promise<GatewaySendResult>;
 }
 
@@ -333,12 +334,108 @@ export function createDanhMucEngine<TItem>(
     };
   };
 
+  const parseXmlFile = (
+    xmlText: string,
+    fileName: string,
+    defaultMaCskcb: string = DEFAULT_MA_CSKCB,
+  ): DanhMucParseResult<TItem> => {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+
+    const parserError = xmlDoc.querySelector("parsererror");
+    if (parserError) {
+      throw new Error(
+        "Tệp XML không hợp lệ hoặc cấu trúc bị lỗi: " +
+          parserError.textContent?.slice(0, 100),
+      );
+    }
+
+    let nodes = Array.from(xmlDoc.querySelectorAll("DS_CHITIET > *"));
+    if (nodes.length === 0) {
+      const root = xmlDoc.firstElementChild;
+      if (root) {
+        nodes = Array.from(root.children).filter(
+          (c) =>
+            !["CHUKYDONVI", "SIGNATURE", "DS_CHITIET"].includes(
+              c.tagName.toUpperCase(),
+            ),
+        );
+      }
+    }
+
+    if (nodes.length === 0) {
+      throw new Error(
+        `Không tìm thấy bản ghi dữ liệu nào trong tệp XML [${fileName}]!`,
+      );
+    }
+
+    const items: TItem[] = [];
+    const matchedFieldKeys = new Set<string>();
+
+    nodes.forEach((node, idx) => {
+      const rowObj: Record<string, unknown> = {};
+      for (let i = 0; i < node.children.length; i++) {
+        const child = node.children[i];
+        const key = child.tagName.toUpperCase();
+        rowObj[key] = child.textContent?.trim() || "";
+        matchedFieldKeys.add(key);
+      }
+      const item = config.parseRow(rowObj, idx, idx + 1, defaultMaCskcb);
+      if (item) items.push(item);
+    });
+
+    const missingRequiredFields = config.schemaFields
+      .filter((f) => f.required && !matchedFieldKeys.has(f.key))
+      .map((f) => f.key);
+
+    return {
+      items,
+      totalRows: items.length,
+      validRows: items.filter((it: any) => it.isValid).length,
+      invalidRows: items.filter((it: any) => !it.isValid).length,
+      availableSheets: ["Dữ liệu XML"],
+      selectedSheet: "Tệp XML (" + fileName + ")",
+      sheetName: "Tệp XML (" + fileName + ")",
+      sheets: [],
+      fileName,
+      detectedHeaders: {},
+      matchedColumnsMap: {},
+      matchedFields: Array.from(matchedFieldKeys),
+      missingFields: missingRequiredFields,
+      missingRequiredFields,
+    };
+  };
+
   const parseExcelFile = async (
     file: File,
     defaultMaCskcb: string = DEFAULT_MA_CSKCB,
     preferredSheet?: string,
   ): Promise<DanhMucParseResult<TItem>> => {
     try {
+      const isXml =
+        file.name.toLowerCase().endsWith(".xml") ||
+        file.type === "application/xml" ||
+        file.type === "text/xml";
+
+      if (isXml) {
+        const text = await file.text();
+        return parseXmlFile(text, file.name, defaultMaCskcb);
+      }
+
+      try {
+        const sample = await file.slice(0, 300).text();
+        if (
+          sample.includes("<?xml") ||
+          sample.includes("<DS_CHITIET") ||
+          sample.includes(`<${config.containerTag}`)
+        ) {
+          const text = await file.text();
+          return parseXmlFile(text, file.name, defaultMaCskcb);
+        }
+      } catch {
+        // Tiếp tục đọc Excel
+      }
+
       const workbook = await readExcelFile(file);
       const availableSheets = workbook.SheetNames || [];
 
@@ -441,18 +538,38 @@ ${rowsXml}
 
   const sendToBhxhGateway = async (
     items: TItem[],
-    maCskcb: string = DEFAULT_MA_CSKCB,
-    maTinh: string = DEFAULT_MA_TINH,
+    maCskcbOrSig?: string | any,
+    maTinhOrBase64?: string,
+    customBase64?: string,
   ): Promise<GatewaySendResult> => {
+    let maCskcb = DEFAULT_MA_CSKCB;
+    let maTinh = DEFAULT_MA_TINH;
+    let fileBase64 = customBase64;
+
+    if (typeof maCskcbOrSig === "string") {
+      maCskcb = maCskcbOrSig || DEFAULT_MA_CSKCB;
+    }
+    if (typeof maTinhOrBase64 === "string") {
+      if (maTinhOrBase64.length > 10 || maTinhOrBase64.startsWith("PD94")) {
+        fileBase64 = maTinhOrBase64;
+      } else {
+        maTinh = maTinhOrBase64 || DEFAULT_MA_TINH;
+      }
+    }
+    if (!fileBase64 && typeof customBase64 === "string") {
+      fileBase64 = customBase64;
+    }
+
     const xml = generateXml(items, maCskcb);
-    const base64 = xml ? generateBase64(items, xml) : undefined;
+    const finalBase64 = fileBase64 || (xml ? generateBase64(items, xml) : undefined);
+
     return sendDanhMucToBhxhGateway(
       config.catalogCode,
       items.length,
       config.catalogName,
       maCskcb,
       maTinh,
-      base64,
+      finalBase64,
     );
   };
 

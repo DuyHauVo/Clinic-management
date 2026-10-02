@@ -168,7 +168,23 @@ export const SmartCaSignPanel: React.FC<SmartCaSignPanelProps> = ({
         onUploadedFileParsed={({ xmlContent: parsedXml, fileName: name }) => {
           setUploadedCustomXml(parsedXml);
           setUploadedFileName(name);
-          if (isSigned) onResetSignature();
+          const sig = extractXmlSignature(parsedXml);
+          if (sig.hasSignature) {
+            onSignedSuccess(parsedXml, {
+              success: true,
+              tranId: "UPLOADED_SIGNED_XML",
+              signatureValue: sig.signatureValue || "",
+              subjectDN: sig.subjectDN || "",
+              serialNumber: sig.serialNumber || "",
+              issuerDN: "",
+              x509Certificate: "",
+              signedAt: sig.signingTime || new Date().toISOString(),
+              digestValue: sig.digestValue || "",
+              signedXml: parsedXml,
+            });
+          } else if (isSigned) {
+            onResetSignature();
+          }
         }}
         onClearUploaded={() => {
           setUploadedCustomXml(null);

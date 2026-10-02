@@ -404,6 +404,19 @@ export function formatCurrencyDecimals(val?: number): string {
 // ĐỌC WORKBOOK EXCEL
 export function readExcelFile(file: File): Promise<XLSX.WorkBook> {
   return new Promise((resolve, reject) => {
+    const isXml =
+      file.name.toLowerCase().endsWith(".xml") ||
+      file.type === "application/xml" ||
+      file.type === "text/xml";
+    if (isXml) {
+      reject(
+        new Error(
+          "Tệp bạn vừa chọn là tệp XML, không phải bảng tính Excel (.xlsx, .xls). Vui lòng nạp qua bộ đọc XML.",
+        ),
+      );
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
@@ -416,7 +429,18 @@ export function readExcelFile(file: File): Promise<XLSX.WorkBook> {
       } catch (err: unknown) {
         const msg =
           err instanceof Error ? err.message : "Định dạng tệp không hợp lệ";
-        reject(new Error(msg));
+        if (
+          msg.includes("reading '0'") ||
+          msg.includes("Cannot read properties of undefined")
+        ) {
+          reject(
+            new Error(
+              "Tệp không đúng định dạng bảng tính Excel (.xlsx, .xls) hoặc file bị lỗi cấu trúc!",
+            ),
+          );
+        } else {
+          reject(new Error(msg));
+        }
       }
     };
     reader.onerror = () => reject(new Error("Không thể đọc file từ thiết bị!"));
@@ -674,13 +698,16 @@ export async function copyTextToClipboard(text: string): Promise<boolean> {
 }
 //Tải file XML xuống máy người dùng.
 export function downloadXmlFile(xmlContent: string, fileName: string): void {
+  const safeFileName = fileName.toLowerCase().endsWith(".xml")
+    ? fileName
+    : `${fileName}.xml`;
   const blob = new Blob([xmlContent], {
     type: "application/xml;charset=utf-8",
   });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = fileName;
+  a.download = safeFileName;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -748,18 +775,60 @@ export async function sendDanhMucToBhxhGateway(
   }
 
   try {
+    const LOAI_HS_NORMALIZED: Record<string, string> = {
+      "DANHMUC01": "70",
+      "DM01": "70",
+      "70": "70",
+      "DANHMUC02": "71",
+      "DM02": "71",
+      "71": "71",
+      "DANHMUC03": "10",
+      "DM03": "10",
+      "10": "10",
+      "DANHMUC04": "11",
+      "DM04": "11",
+      "11": "11",
+      "DANHMUC05": "12",
+      "DM05": "12",
+      "12": "12",
+      "DANHMUC06": "72",
+      "DM06": "72",
+      "72": "72",
+    };
+    const officialLoaiHs = LOAI_HS_NORMALIZED[loaiHs] || loaiHs;
+
+    const endpointMap: Record<string, string> = {
+      "70": BHXH_CONFIG.ENDPOINTS.GUI_DANH_MUC_01_BPCMKBCB,
+      "71": BHXH_CONFIG.ENDPOINTS.GUI_DANH_MUC_02_NLKCB,
+      "10": BHXH_CONFIG.ENDPOINTS.GUI_DANH_MUC_03_DMTHUOC,
+      "11": BHXH_CONFIG.ENDPOINTS.GUI_DANH_MUC_04_DMVTYT,
+      "12": BHXH_CONFIG.ENDPOINTS.GUI_DANH_MUC_05_DVKT,
+      "72": BHXH_CONFIG.ENDPOINTS.GUI_DANH_MUC_06_DMTBYT,
+    };
+    const endpoint = endpointMap[officialLoaiHs] || '/api/DanhMucGW';
+
     const params = new URLSearchParams();
-    params.append("token", token);
-    params.append("loaiHs", loaiHs);
+    params.append("username", BHXH_CONFIG.USERNAME || `${maCskcb}_BV`);
+    params.append("loaiHs", officialLoaiHs);
+    params.append("maTinh", maTinh);
+    params.append("maCskcb", maCskcb);
+    params.append("maCơ sở KCB", maCskcb); // Alias theo curl example tài liệu
     if (fileBase64Str) {
-      params.append("fileBase64Str", fileBase64Str);
+      params.append("fileHsBase64", fileBase64Str);
+      params.append("fileBase64Str", fileBase64Str); // Fallback
     }
 
-    const response = await fetch(`${BHXH_CONFIG.BASE_URL}/api/danhmuc/GuiDanhMuc`, {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "accessToken": token,
+      "tokenId": tokenRes.idToken || tokenRes.APIKey?.id_token || "",
+      "passwordHash": tokenRes.passwordHash || "",
+    };
+
+    const baseUrl = BhxhChungTuService.getBaseUrl();
+    const response = await fetch(`${baseUrl}${endpoint}`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
+      headers,
       body: params.toString(),
     });
 

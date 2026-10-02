@@ -19,8 +19,19 @@ export const BHXH_CONFIG = {
     TAKE_TOKEN: '/api/token/take',
     GUI_HO_SO_CHUNG_TU_2025: '/api/chungtugw/GuiHoSoChungTu2025', // Mã 39
     GUI_GIAY_TO_DIEN_TU: '/api/hososuckhoe/guiGiayToDienTu',       // Mã 60, 61
+    // Các endpoint danh mục và hồ sơ chuẩn theo QĐ-BHXH (2026):
+    GUI_DANH_MUC_01_BPCMKBCB: '/api/DanhMucGW/GuiDanhMuc01_BPCMKBCB', // Loại HS 70
+    GUI_DANH_MUC_02_NLKCB: '/api/DanhMucGW/GuiDanhMuc02_NLKCB',         // Loại HS 71
+    GUI_DANH_MUC_03_DMTHUOC: '/api/DanhMucGW/GuiDanhMuc03_DMTHUOC',     // Loại HS 10
+    GUI_DANH_MUC_04_DMVTYT: '/api/DanhMucGW/GuiDanhMuc04_DMVTYT',       // Loại HS 11
+    GUI_DANH_MUC_05_DVKT: '/api/DanhMucGW/GuiDanhMuc05_DVKT',           // Loại HS 12
+    GUI_DANH_MUC_06_DMTBYT: '/api/DanhMucGW/GuiDanhMuc06_DMTBYT',       // Loại HS 72
+    GUI_HO_SO_TONG_HOP_01BH: '/api/HoSoTongHop7980/GuiHoSoTongHop01BH', // Loại HS 5
+    GUI_HO_SO_DIEU_CHINH_09BH: '/api/HSDCTT12/GuiHoSoDieuChinh09BH',   // Loại HS 73
   },
 };
+
+import { formatBhxhPassword } from '../../utils/crypto/md5';
 
 export class BhxhChungTuService {
   /**
@@ -40,6 +51,7 @@ export class BhxhChungTuService {
 
   /**
    * 1. API Lấy Token xác thực Cổng BHXH
+   * Quy chuẩn kỹ thuật: Password gửi lên Cổng BHXH bắt buộc băm MD5 viết hoa (UPPERCASE).
    */
   static async takeToken(
     req?: Partial<BhxhTokenRequest>,
@@ -47,14 +59,16 @@ export class BhxhChungTuService {
   ): Promise<BhxhTokenResponse> {
     try {
       const username = req?.username || BHXH_CONFIG.USERNAME;
-      const password = req?.password || BHXH_CONFIG.PASSWORD;
+      const rawPassword = req?.password || BHXH_CONFIG.PASSWORD;
 
-      if (!username || !password) {
+      if (!username || !rawPassword) {
         return {
           maKetQua: '401',
           thongDiep: 'Chưa cấu hình VITE_BHXH_USERNAME hoặc VITE_BHXH_PASSWORD trong file .env',
         };
       }
+
+      const password = formatBhxhPassword(rawPassword);
 
       const params = new URLSearchParams();
       params.append('username', username);
@@ -69,9 +83,32 @@ export class BhxhChungTuService {
         body: params.toString(),
       });
 
-      const data: BhxhTokenResponse = await response.json();
+      if (!response.ok && response.status === 401) {
+        return {
+          maKetQua: '401',
+          thongDiep: 'Xác thực tài khoản Cổng BHXH không thành công (HTTP 401 Unauthorized)',
+        };
+      }
+
+      const text = await response.text();
+      let data: BhxhTokenResponse;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        return {
+          maKetQua: String(response.status),
+          thongDiep: `Máy chủ Cổng BHXH phản hồi: ${text.slice(0, 150) || 'Lỗi không xác định'}`,
+        };
+      }
+
       if (!data.apiToken && data.APIKey?.access_token) {
         data.apiToken = data.APIKey.access_token;
+      }
+      data.idToken = data.APIKey?.id_token || '';
+      data.passwordHash = password;
+
+      if (String(data.maKetQua) === '401' && !data.thongDiep) {
+        data.thongDiep = 'Tài khoản hoặc mật khẩu kết nối Cổng BHXH không chính xác hoặc chưa được cấp quyền API (Mã 401).';
       }
       return data;
     } catch (err: unknown) {
@@ -103,15 +140,22 @@ export class BhxhChungTuService {
       params.append('token', req.token);
       params.append('loaiHs', req.loaiHs || '39');
       params.append('fileBase64Str', req.fileBase64Str);
+      params.append('fileHsBase64', req.fileBase64Str);
+      if (BHXH_CONFIG.USERNAME) {
+        params.append('username', BHXH_CONFIG.USERNAME);
+      }
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'accessToken': req.token,
+      };
 
       const baseUrl = BhxhChungTuService.getBaseUrl(env);
       const response = await fetch(
         `${baseUrl}${BHXH_CONFIG.ENDPOINTS.GUI_HO_SO_CHUNG_TU_2025}`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
+          headers,
           body: params.toString(),
         }
       );

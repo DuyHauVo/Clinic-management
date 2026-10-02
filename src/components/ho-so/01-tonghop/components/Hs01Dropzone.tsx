@@ -37,10 +37,10 @@ export const Hs01Dropzone: React.FC<Hs01DropzoneProps> = ({
     <DanhMucDropzone
       themeColor="indigo"
       isLoadingFile={isLoadingFile}
-      loadingTitle="Đang đọc và phân tích file Excel Hồ sơ tổng hợp..."
-      title="Nạp Tệp Excel Hồ Sơ Tổng Hợp KBCB (Mẫu 01/BH)"
+      loadingTitle="Đang đọc và phân tích file Excel / XML Hồ sơ tổng hợp..."
+      title="Nạp Tệp Excel / XML Hồ Sơ Tổng Hợp KBCB (Mẫu 01/BH)"
       description={
-        <>Kéo thả hoặc nhấp để chọn file (.xlsx, .xls, .csv). Tự động nhận diện &amp; đối soát {totalSchemaFields} trường thông tin chuẩn BHXH.</>
+        <>Kéo thả hoặc nhấp để chọn file (.xlsx, .xls, .csv, .xml). Tự động nhận diện &amp; đối soát {totalSchemaFields} trường thông tin chuẩn BHXH.</>
       }
       uploadStats={
         fileUploadStats
