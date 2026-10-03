@@ -37,8 +37,12 @@ const downloadHs01FileHandler = (items: Hs01TongHopItem[]) => {
   downloadHs01XmlFile(items, DEFAULT_MA_CSKCB);
 };
 
-const sendHs01GatewayHandler = (items: Hs01TongHopItem[]) => {
-  return sendHs01ToBhxhGateway(items);
+const sendHs01GatewayHandler = (
+  items: Hs01TongHopItem[],
+  signature?: any,
+  fileBase64?: string,
+) => {
+  return sendHs01ToBhxhGateway(items, undefined, signature, fileBase64);
 };
 
 const getHs01SendSuccessMessage = (res: SendHs01GatewayResult) => {

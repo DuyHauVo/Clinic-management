@@ -47,6 +47,19 @@ export interface CanonicalizeOptions {
   preserveOtherSignatures?: boolean;
 }
 
+/**
+ * Nén XML thành 1 dòng duy nhất (minified), loại bỏ khoảng trắng, tab và xuống dòng thừa giữa các thẻ XML.
+ * Đảm bảo dữ liệu nguyên vẹn 100% từng byte khi băm và khi gửi lên Cổng BHXH (C14N compliant).
+ */
+export function minifyXml(xml: string): string {
+  if (!xml) return "";
+  return xml
+    .replace(/\r\n/g, "")
+    .replace(/\n/g, "")
+    .replace(/>\s+</g, "><")
+    .trim();
+}
+
 export function canonicalizeForDigest(
   xml: string,
   options?: CanonicalizeOptions | string,
@@ -57,33 +70,31 @@ export function canonicalizeForDigest(
       ? { excludeSignatureId: options, preserveOtherSignatures: true }
       : options || {};
 
+  // Nén XML về 1 dòng không khoảng trắng giữa các thẻ để khớp 100% với C14N minified của Cổng BHXH
+  let res = minifyXml(xml);
+
+  // Loại bỏ khai báo XML declaration <?xml ...?> vì chuẩn W3C Canonical XML (C14N) không bao gồm XML declaration
+  res = res.replace(/<\?xml[^>]*\?>/gi, "").trim();
+
   if (opts.preserveOtherSignatures) {
     if (opts.excludeSignatureId) {
       const targetSigRegex = new RegExp(
-        `<Signature\\s+[^>]*Id="${opts.excludeSignatureId}"[\\s\\S]*?<\\/Signature>\\s*`,
+        `<Signature\\s+[^>]*Id="${opts.excludeSignatureId}"[\\s\\S]*?<\\/Signature>`,
         "gi",
       );
-      let res = xml.replace(targetSigRegex, "");
-      // Nếu CHUKYDONVI trống rỗng sau khi bỏ chữ ký này, đưa về dạng self-closing
-      res = res.replace(/<CHUKYDONVI>\s*<\/CHUKYDONVI>/gi, "<CHUKYDONVI />");
-      return res;
+      res = res.replace(targetSigRegex, "");
     }
-    return xml.replace(/<CHUKYDONVI>\s*<\/CHUKYDONVI>/gi, "<CHUKYDONVI />");
+  } else {
+    // Loại bỏ toàn bộ khối chữ ký <Signature>...</Signature> nếu đã có bên trong <CHUKYDONVI>
+    res = res.replace(/<Signature[\s\S]*?<\/Signature>/gi, "");
   }
 
-  // Mặc định: loại bỏ toàn bộ khối chữ ký để băm tài liệu gốc chưa ký
-  let res = xml.replace(
-    /<CHUKYDONVI>[\s\S]*?<\/CHUKYDONVI>/gi,
-    "<CHUKYDONVI />",
-  );
-  res = res.replace(/<CHUKYDONVI\s*\/>/gi, "<CHUKYDONVI />");
+  // Chuẩn hóa toàn bộ thẻ tự đóng thành thẻ cặp mở/đóng theo chuẩn W3C C14N (ví dụ: <NGAY_VAO_NOI_TRU/> -> <NGAY_VAO_NOI_TRU></NGAY_VAO_NOI_TRU>, <CHUKYDONVI /> -> <CHUKYDONVI></CHUKYDONVI>)
+  res = res.replace(/<([A-Za-z0-9_:-]+)([^>]*?)\s*\/>/g, "<$1$2></$1>");
+
   return res;
 }
 
-/**
- * Băm SHA-256 nội dung XML gốc (loại trừ thẻ CHUKYDONVI hoặc chữ ký tương ứng nếu đã có)
- * Trả về chuỗi DigestValue Base64 và mã Hex để hiển thị.
- */
 export async function computeXmlDigest(
   rawXml: string,
   options?: CanonicalizeOptions | string,
@@ -94,12 +105,173 @@ export async function computeXmlDigest(
 }
 
 /**
+ * Trích xuất các namespace xmlns: prefix từ root element để kế thừa vào SignedInfo theo chuẩn W3C C14N
+ */
+export function extractRootNamespaces(rawXml?: string): string[] {
+  const defaultNs = [
+    'xmlns:xsd="http://www.w3.org/2001/XMLSchema"',
+    'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"',
+  ];
+  if (!rawXml) return defaultNs;
+  const rootMatch = rawXml.match(/<([A-Za-z0-9_]+)([^>]*)>/);
+  if (!rootMatch) return defaultNs;
+
+  const attrs = rootMatch[2];
+  const nsMatches = attrs.match(/xmlns:[A-Za-z0-9_]+="[^"]+"/g) || [];
+  if (nsMatches.length === 0) return defaultNs;
+  return Array.from(new Set(nsMatches)).sort();
+}
+
+export function buildCanonicalSignedInfo(
+  documentDigest: string,
+  rawXml?: string,
+): string {
+  const rootNs = extractRootNamespaces(rawXml);
+  const nsString = [
+    'xmlns="http://www.w3.org/2000/09/xmldsig#"',
+    ...rootNs,
+  ].join(" ");
+
+  return `<SignedInfo ${nsString}><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"></CanonicalizationMethod><SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"></SignatureMethod><Reference URI=""><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"></Transform></Transforms><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"></DigestMethod><DigestValue>${documentDigest.trim()}</DigestValue></Reference></SignedInfo>`;
+}
+
+export async function computeSignedInfoDigest(
+  documentDigest: string,
+  rawXml?: string,
+): Promise<{
+  digestValue: string;
+  hexDigest: string;
+  canonicalSignedInfo: string;
+}> {
+  const canonicalSignedInfo = buildCanonicalSignedInfo(documentDigest, rawXml);
+  const { base64, hex } = await sha256Full(canonicalSignedInfo);
+  return { digestValue: base64, hexDigest: hex, canonicalSignedInfo };
+}
+
+/**
+ * Trích xuất RSA Modulus và Exponent từ chuỗi base64 của chứng thư số X.509 (DER ASN.1)
+ */
+export function extractRsaPublicKeyFromCert(
+  certBase64: string,
+): { modulus: string; exponent: string } | null {
+  try {
+    const cleanBase64 = certBase64.replace(/\s+/g, "");
+    const binary = Uint8Array.from(atob(cleanBase64), (c) => c.charCodeAt(0));
+
+    // Tìm OID RSA: 1.2.840.113549.1.1.1 (06 09 2a 86 48 86 f7 0d 01 01 01)
+    const rsaOid = [0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01];
+    let oidIdx = -1;
+    for (let i = 0; i <= binary.length - rsaOid.length; i++) {
+      let match = true;
+      for (let j = 0; j < rsaOid.length; j++) {
+        if (binary[i + j] !== rsaOid[j]) {
+          match = false;
+          break;
+        }
+      }
+      if (match) {
+        oidIdx = i;
+        break;
+      }
+    }
+    if (oidIdx === -1) return null;
+
+    // Sau OID và tham số NULL (05 00), tìm BIT STRING (tag 0x03)
+    let bitStringIdx = -1;
+    for (let i = oidIdx + rsaOid.length; i < binary.length; i++) {
+      if (binary[i] === 0x03) {
+        bitStringIdx = i;
+        break;
+      }
+    }
+    if (bitStringIdx === -1) return null;
+
+    let offset = bitStringIdx + 1;
+    let len = binary[offset++];
+    if (len & 0x80) {
+      const numBytes = len & 0x7f;
+      len = 0;
+      for (let i = 0; i < numBytes; i++) len = (len << 8) | binary[offset++];
+    }
+    offset++; // Bỏ qua byte unused bits
+
+    // Bên trong SEQUENCE của RSAPublicKey (tag 0x30)
+    if (binary[offset++] !== 0x30) return null;
+    let seqLen = binary[offset++];
+    if (seqLen & 0x80) {
+      const numBytes = seqLen & 0x7f;
+      seqLen = 0;
+      for (let i = 0; i < numBytes; i++)
+        seqLen = (seqLen << 8) | binary[offset++];
+    }
+
+    // Modulus INTEGER (tag 0x02)
+    if (binary[offset++] !== 0x02) return null;
+    let modLen = binary[offset++];
+    if (modLen & 0x80) {
+      const numBytes = modLen & 0x7f;
+      modLen = 0;
+      for (let i = 0; i < numBytes; i++)
+        modLen = (modLen << 8) | binary[offset++];
+    }
+    let modStart = offset;
+    // Bỏ qua byte 0x00 đệm dương nếu có
+    if (binary[modStart] === 0x00 && modLen > 256) {
+      modStart++;
+      modLen--;
+    }
+    const modBytes = binary.slice(modStart, modStart + modLen);
+    let modStr = "";
+    for (let i = 0; i < modBytes.length; i++)
+      modStr += String.fromCharCode(modBytes[i]);
+    const modulus = btoa(modStr);
+
+    // Exponent INTEGER (tag 0x02)
+    const expStartSearch = modStart + modLen;
+    let expIdx = -1;
+    for (let i = expStartSearch; i < binary.length - 2; i++) {
+      if (binary[i] === 0x02) {
+        expIdx = i;
+        break;
+      }
+    }
+    if (expIdx === -1) return null;
+    const expLen = binary[expIdx + 1];
+    const expBytes = binary.slice(expIdx + 2, expIdx + 2 + expLen);
+    let expStr = "";
+    for (let i = 0; i < expBytes.length; i++)
+      expStr += String.fromCharCode(expBytes[i]);
+    const exponent = btoa(expStr);
+
+    return { modulus, exponent };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Chuẩn hóa SubjectDN sang định dạng tương thích .NET/Windows CryptoAPI (Cổng BHXH)
+ * Ví dụ: ST= -> S=, UID= -> OID.0.9.2342.19200300.100.1.1=, ngăn cách bởi ", "
+ */
+export function normalizeSubjectDN(rawDN: string): string {
+  if (!rawDN) return "";
+  return rawDN
+    .split(/[\r\n,;]+/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((part) => {
+      if (part.startsWith("ST=")) return "S=" + part.slice(3);
+      if (part.startsWith("UID="))
+        return "OID.0.9.2342.19200300.100.1.1=" + part.slice(4);
+      return part;
+    })
+    .join(", ");
+}
+
+/**
  * Tạo khối <Signature> chuẩn W3C XMLDSig theo đặc tả VNPT SmartCA / QĐ 130 / BHXH 2025
  */
-export function buildXmlDSigBlock(
-  params: XmlDSigParams,
-  indent = "  ",
-): string {
+export function buildXmlDSigBlock(params: XmlDSigParams, indent = ""): string {
   const isBhxh2025 =
     params.signatureFormat === "bhxh2025" || Boolean(params.targetDataId);
   const rawId =
@@ -110,18 +282,29 @@ export function buildXmlDSigBlock(
   const sigPropId = `SignatureProperty-${signatureId}`;
   const signingTime = params.signingTime || formatXmlSigningTime();
 
-  const rsaModulus = params.rsaModulus;
-  const rsaExponent = params.rsaExponent || "AQAB";
-
   if (!params.x509Certificate) {
     throw new Error(
       "Lỗi ký số XMLDSig: Thiếu chứng thư số X.509 (x509Certificate).",
     );
   }
 
+  const cleanCert = params.x509Certificate.trim();
+  const normalizedSubject = normalizeSubjectDN(params.subjectDN);
+
+  // Tự động trích xuất RSA Modulus và Exponent từ chứng thư số nếu chưa truyền
+  let rsaModulus = params.rsaModulus;
+  let rsaExponent = params.rsaExponent || "AQAB";
+  if (!rsaModulus) {
+    const extracted = extractRsaPublicKeyFromCert(cleanCert);
+    if (extracted) {
+      rsaModulus = extracted.modulus;
+      rsaExponent = extracted.exponent;
+    }
+  }
+
   // --- A. CHUẨN BHXH 2025 (Phụ lục 02 - 2 References + Object SigningTime) --- Dùng cho Từng Chứng Từ Y Tế Cụ Thể
   if (isBhxh2025) {
-    const objectHash = params.objectDigestValue || params.digestValue; // Fallback hash nếu chưa băm riêng Object
+    const objectHash = params.objectDigestValue || params.digestValue;
 
     return `${indent}  <Signature Id="${signatureId}" xmlns="http://www.w3.org/2000/09/xmldsig#">
 ${indent}    <SignedInfo>
@@ -136,11 +319,11 @@ ${indent}        <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha25
 ${indent}        <DigestValue>${params.digestValue}</DigestValue>
 ${indent}      </Reference>
 ${indent}    </SignedInfo>
-${indent}    <SignatureValue>${params.signatureValue}</SignatureValue>
+${indent}    <SignatureValue>${params.signatureValue.trim()}</SignatureValue>
 ${indent}    <KeyInfo>
 ${indent}      <X509Data>
-${indent}        <X509SubjectName>${params.subjectDN}</X509SubjectName>
-${indent}        <X509Certificate>${params.x509Certificate}</X509Certificate>
+${indent}        <X509SubjectName>${normalizedSubject}</X509SubjectName>
+${indent}        <X509Certificate>${cleanCert}</X509Certificate>
 ${indent}      </X509Data>
 ${indent}    </KeyInfo>
 ${indent}    <Object Id="${objectId}">
@@ -153,36 +336,41 @@ ${indent}    </Object>
 ${indent}  </Signature>`;
   }
 
-  // --- B. CHUẨN W3C XMLDSig THÔNG THƯỜNG (QĐ 130 / Danh mục BHYT) --- Dùng cho Gói Dữ Liệu Thanh Toán BHYT & Danh Mục
-  const standardSigId =
-    params.signatureId || `Signature-${crypto.randomUUID()}`;
+  // --- B. CHUẨN W3C XMLDSig THÔNG THƯỜNG (QĐ 130 / Danh mục BHYT / Mẫu 01/BH)
+  // Định dạng Id thuần UUID để khớp 100% với bản chuẩn cổng tiếp nhận BHXH
+  const standardSigId = params.signatureId
+    ? params.signatureId.replace(/^(Id-|Signature-)/, "")
+    : crypto.randomUUID();
+
+  const isMinified = !indent;
+
   const keyValueBlock = rsaModulus
-    ? `${indent}      <KeyValue>
-${indent}        <RSAKeyValue xmlns="http://www.w3.org/2000/09/xmldsig#">
-${indent}          <Modulus>${rsaModulus}</Modulus>
-${indent}          <Exponent>${rsaExponent}</Exponent>
-${indent}        </RSAKeyValue>
-${indent}      </KeyValue>
-`
+    ? isMinified
+      ? `<KeyValue><RSAKeyValue xmlns="http://www.w3.org/2000/09/xmldsig#"><Modulus>${rsaModulus}</Modulus><Exponent>${rsaExponent}</Exponent></RSAKeyValue></KeyValue>`
+      : `${indent}      <KeyValue>\n${indent}        <RSAKeyValue xmlns="http://www.w3.org/2000/09/xmldsig#">\n${indent}          <Modulus>${rsaModulus}</Modulus>\n${indent}          <Exponent>${rsaExponent}</Exponent>\n${indent}        </RSAKeyValue>\n${indent}      </KeyValue>\n`
     : "";
 
-  return `${indent}  <Signature Id="${standardSigId}" xmlns="http://www.w3.org/2000/09/xmldsig#">
+  if (isMinified) {
+    return `<Signature xmlns="http://www.w3.org/2000/09/xmldsig#" Id="${standardSigId}"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><Reference URI=""><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><DigestValue>${params.digestValue.trim()}</DigestValue></Reference></SignedInfo><SignatureValue>${params.signatureValue.trim()}</SignatureValue><KeyInfo>${keyValueBlock}<X509Data><X509SubjectName>${normalizedSubject}</X509SubjectName><X509Certificate>${cleanCert}</X509Certificate></X509Data></KeyInfo></Signature>`;
+  }
+
+  return `${indent}  <Signature xmlns="http://www.w3.org/2000/09/xmldsig#" Id="${standardSigId}">
 ${indent}    <SignedInfo>
-${indent}      <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315" />
-${indent}      <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" />
+${indent}      <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+${indent}      <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
 ${indent}      <Reference URI="">
 ${indent}        <Transforms>
-${indent}          <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
+${indent}          <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
 ${indent}        </Transforms>
-${indent}        <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256" />
-${indent}        <DigestValue>${params.digestValue}</DigestValue>
+${indent}        <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+${indent}        <DigestValue>${params.digestValue.trim()}</DigestValue>
 ${indent}      </Reference>
 ${indent}    </SignedInfo>
-${indent}    <SignatureValue>${params.signatureValue}</SignatureValue>
+${indent}    <SignatureValue>${params.signatureValue.trim()}</SignatureValue>
 ${indent}    <KeyInfo>
 ${keyValueBlock}${indent}      <X509Data>
-${indent}        <X509SubjectName>${params.subjectDN}</X509SubjectName>
-${indent}        <X509Certificate>${params.x509Certificate}</X509Certificate>
+${indent}        <X509SubjectName>${normalizedSubject}</X509SubjectName>
+${indent}        <X509Certificate>${cleanCert}</X509Certificate>
 ${indent}      </X509Data>
 ${indent}    </KeyInfo>
 ${indent}  </Signature>`;
@@ -202,13 +390,22 @@ export function injectSignatureToXml(
   signatureBlockOrParams: string | XmlDSigParams,
   options?: InjectSignatureOptions,
 ): string {
+  const isDocMinified = !rawXml.includes("\n");
   const signatureXml =
     typeof signatureBlockOrParams === "string"
-      ? signatureBlockOrParams
-      : buildXmlDSigBlock(signatureBlockOrParams, "  ");
+      ? isDocMinified
+        ? minifyXml(signatureBlockOrParams)
+        : signatureBlockOrParams
+      : buildXmlDSigBlock(signatureBlockOrParams, isDocMinified ? "" : "  ");
+
+  const cleanSig = isDocMinified
+    ? minifyXml(signatureXml)
+    : signatureXml.trim();
+  const sep = isDocMinified ? "" : "\n  ";
+  const endSep = isDocMinified ? "" : "\n";
 
   const opts = options || {};
-  const sigIdMatch = signatureXml.match(/<Signature\s+[^>]*Id="([^"]+)"/i);
+  const sigIdMatch = cleanSig.match(/<Signature\s+[^>]*Id="([^"]+)"/i);
   const targetId = opts.targetSignatureId || sigIdMatch?.[1];
 
   const chuKyDonViFullRegex = /<CHUKYDONVI>([\s\S]*?)<\/CHUKYDONVI>/i;
@@ -226,16 +423,16 @@ export function injectSignatureToXml(
           "i",
         );
         if (singleSigRegex.test(innerContent)) {
-          const newInner = innerContent.replace(singleSigRegex, signatureXml);
+          const newInner = innerContent.replace(singleSigRegex, cleanSig);
           return rawXml.replace(
             chuKyDonViFullRegex,
-            `<CHUKYDONVI>\n${newInner.trim()}\n</CHUKYDONVI>`,
+            `<CHUKYDONVI>${sep}${newInner.trim()}${endSep}</CHUKYDONVI>`,
           );
         }
       }
       return rawXml.replace(
         chuKyDonViFullRegex,
-        `<CHUKYDONVI>\n  ${signatureXml.trim()}\n</CHUKYDONVI>`,
+        `<CHUKYDONVI>${sep}${cleanSig}${endSep}</CHUKYDONVI>`,
       );
     }
 
@@ -243,7 +440,7 @@ export function injectSignatureToXml(
     if (!innerContent.trim()) {
       return rawXml.replace(
         chuKyDonViFullRegex,
-        `<CHUKYDONVI>\n  ${signatureXml.trim()}\n</CHUKYDONVI>`,
+        `<CHUKYDONVI>${sep}${cleanSig}${endSep}</CHUKYDONVI>`,
       );
     }
 
@@ -254,22 +451,19 @@ export function injectSignatureToXml(
         "i",
       );
       if (existingSameIdRegex.test(innerContent)) {
-        const newInner = innerContent.replace(
-          existingSameIdRegex,
-          signatureXml.trim(),
-        );
+        const newInner = innerContent.replace(existingSameIdRegex, cleanSig);
         return rawXml.replace(
           chuKyDonViFullRegex,
-          `<CHUKYDONVI>\n${newInner.trim()}\n</CHUKYDONVI>`,
+          `<CHUKYDONVI>${sep}${newInner.trim()}${endSep}</CHUKYDONVI>`,
         );
       }
     }
 
     // Nối tiếp chữ ký mới vào danh sách chữ ký bên trong thẻ <CHUKYDONVI>
-    const updatedInner = `${innerContent.trim()}\n  ${signatureXml.trim()}`;
+    const updatedInner = `${innerContent.trim()}${sep}${cleanSig}`;
     return rawXml.replace(
       chuKyDonViFullRegex,
-      `<CHUKYDONVI>\n  ${updatedInner}\n</CHUKYDONVI>`,
+      `<CHUKYDONVI>${sep}${updatedInner.trim()}${endSep}</CHUKYDONVI>`,
     );
   }
 
@@ -277,7 +471,7 @@ export function injectSignatureToXml(
   if (chuKyDonViSelfClosingRegex.test(rawXml)) {
     return rawXml.replace(
       chuKyDonViSelfClosingRegex,
-      `<CHUKYDONVI>\n  ${signatureXml.trim()}\n</CHUKYDONVI>`,
+      `<CHUKYDONVI>${sep}${cleanSig}${endSep}</CHUKYDONVI>`,
     );
   }
 
@@ -289,7 +483,7 @@ export function injectSignatureToXml(
       .trim()
       .replace(
         rootCloseRegex,
-        `\n<CHUKYDONVI>\n  ${signatureXml.trim()}\n</CHUKYDONVI>$1`,
+        `${isDocMinified ? "" : "\n"}<CHUKYDONVI>${sep}${cleanSig}${endSep}</CHUKYDONVI>$1`,
       );
   }
 
@@ -326,7 +520,9 @@ export function extractXmlSignatures(xml: string): ExtractedSignatureInfo[] {
 
   return matches.map((sigContent) => {
     const sigIdMatch = sigContent.match(/<Signature\s+[^>]*Id="([^"]+)"/i);
-    const digestMatch = sigContent.match(/<DigestValue>([^<]+)<\/DigestValue>/i);
+    const digestMatch = sigContent.match(
+      /<DigestValue>([^<]+)<\/DigestValue>/i,
+    );
     const sigValMatch = sigContent.match(
       /<SignatureValue>([^<]+)<\/SignatureValue>/i,
     );
@@ -356,7 +552,9 @@ export function extractXmlSignatures(xml: string): ExtractedSignatureInfo[] {
       subjectDN: subjectMatch?.[1]?.trim(),
       serialNumber,
       signingTime: signingTimeMatch?.[1]?.trim(),
-      targetDataId: refMatch?.[1]?.startsWith("Object-") ? undefined : refMatch?.[1],
+      targetDataId: refMatch?.[1]?.startsWith("Object-")
+        ? undefined
+        : refMatch?.[1],
     };
   });
 }

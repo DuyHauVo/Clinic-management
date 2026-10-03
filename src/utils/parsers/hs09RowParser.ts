@@ -197,7 +197,7 @@ export function renderHs09ItemXml(
           ${tagOrEmpty("LYDO_DIEUCHINH", dc.lyDoDieuChinh)}
         </TT_XML1_DC>`,
       )
-      .join("\n");
+      .join("");
     dsXml1DcXml = `      <DS_XML1_DIEUCHINH>\n${rows}\n      </DS_XML1_DIEUCHINH>`;
   }
 
@@ -222,7 +222,7 @@ export function renderHs09ItemXml(
           ${tagOrEmpty("LYDO_DIEUCHINH", cp.lyDoDieuChinh)}
         </CHIPHI>`,
       )
-      .join("\n");
+      .join("");
     dsCpDcXml = `      <DSCP_DIEUCHINH>\n${rows}\n      </DSCP_DIEUCHINH>`;
   }
 

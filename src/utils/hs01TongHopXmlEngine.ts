@@ -21,7 +21,6 @@ import {
   pickBestSheetName,
   detectHeaderRow,
   generateUUID,
-  buildSignatureBlock,
   xmlToBase64,
   downloadXmlFile,
   getThoiGianTiepNhan,
@@ -332,19 +331,12 @@ export function generateHs01Xml(
   const containerGuid = `Id-${generateUUID()}`;
   const rowsXml = items
     .map((item) => renderHs01ItemXml(item, maCskcb))
-    .join("\n");
+    .join("");
 
-  const datasetXml = `  <DS_CHITIET Id="${containerGuid}">
-${rowsXml}
-  </DS_CHITIET>`;
+  const datasetXml = `<DS_CHITIET Id="${containerGuid}">${rowsXml}</DS_CHITIET>`;
+  const signatureXml = `<CHUKYDONVI></CHUKYDONVI>`;
 
-  const signatureXml = buildSignatureBlock();
-
-  return `<?xml version="1.0" encoding="utf-8"?>
-<HSTH01BH>
-${datasetXml}
-${signatureXml}
-</HSTH01BH>`;
+  return `<?xml version="1.0" encoding="utf-8"?><HSTH01BH xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${datasetXml}${signatureXml}</HSTH01BH>`;
 }
 
 /**
@@ -393,6 +385,7 @@ export async function sendHs01ToBhxhGateway(
     kyQT: string;
   }>,
   signature?: SmartCaSignatureResult,
+  customFileBase64?: string,
 ): Promise<SendHs01GatewayResult> {
   const maCskcb = credentials?.maCskcb || DEFAULT_MA_CSKCB;
   const currentKyQt = `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, "0")}`;
@@ -413,8 +406,13 @@ export async function sendHs01ToBhxhGateway(
   }
 
   try {
-    const xml = generateHs01Xml(items, maCskcb);
-    const base64 = xmlToBase64(xml);
+    // Ưu tiên tệp XML Base64 đã ký số thực tế để bảo toàn 100% chữ ký điện tử
+    const signedXmlFromSig = (signature as any)?.signedXml;
+    const base64 =
+      customFileBase64 ||
+      (signedXmlFromSig
+        ? xmlToBase64(signedXmlFromSig)
+        : xmlToBase64(generateHs01Xml(items, maCskcb)));
 
     const params = new URLSearchParams();
     params.append("username", BHXH_CONFIG.USERNAME || `${maCskcb}_BV`);

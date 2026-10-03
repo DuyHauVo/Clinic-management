@@ -331,7 +331,7 @@ export function buildHsChungTuXmlPackage(params: BuildHsChungTuPackageParams): {
           <NOIDUNGFILE>${base64}</NOIDUNGFILE>
         </FILEHOSO>`;
     })
-    .join("\n");
+    .join("");
 
   const xml = `<?xml version="1.0" encoding="utf-8"?>
 <HSCHUNGTU xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">

@@ -6,7 +6,7 @@ export function md5(message: string): string {
   const origLen = bytes.length;
   // Pad message: append 0x80, then zeros, then 64-bit length in bits
   const bitLen = origLen * 8;
-  const padLen = (origLen % 64 < 56) ? (56 - (origLen % 64)) : (120 - (origLen % 64));
+  const padLen = origLen % 64 < 56 ? 56 - (origLen % 64) : 120 - (origLen % 64);
   const totalLen = origLen + padLen + 8;
   const padded = new Uint8Array(totalLen);
   padded.set(bytes, 0);
@@ -23,10 +23,10 @@ export function md5(message: string): string {
     K[i] = Math.floor(Math.abs(Math.sin(i + 1)) * 0x100000000) >>> 0;
   }
   const S = [
-    7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,
-    5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,
-    4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,
-    6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21
+    7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 5, 9, 14, 20, 5,
+    9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11,
+    16, 23, 4, 11, 16, 23, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10,
+    15, 21,
   ];
 
   let a0 = 0x67452301 >>> 0;
@@ -48,16 +48,16 @@ export function md5(message: string): string {
     for (let i = 0; i < 64; i++) {
       let F: number, g: number;
       if (i < 16) {
-        F = (B & C) | ((~B) & D);
+        F = (B & C) | (~B & D);
         g = i;
       } else if (i < 32) {
-        F = (D & B) | ((~D) & C);
+        F = (D & B) | (~D & C);
         g = (5 * i + 1) % 16;
       } else if (i < 48) {
         F = B ^ C ^ D;
         g = (3 * i + 5) % 16;
       } else {
-        F = C ^ (B | (~D));
+        F = C ^ (B | ~D);
         g = (7 * i) % 16;
       }
 
@@ -83,19 +83,19 @@ export function md5(message: string): string {
   outView.setUint32(12, d0, true);
 
   const hexBytes = new Uint8Array(outView.buffer);
-  let hex = '';
+  let hex = "";
   for (let i = 0; i < 16; i++) {
-    hex += hexBytes[i].toString(16).padStart(2, '0');
+    hex += hexBytes[i].toString(16).padStart(2, "0");
   }
   return hex;
 }
 
 export function formatBhxhPassword(rawPassword: string): string {
-  if (!rawPassword) return '';
+  if (!rawPassword) return "";
   const trimmed = rawPassword.trim();
   const isAlreadyMd5 = /^[a-fA-F0-9]{32}$/.test(trimmed);
   if (isAlreadyMd5) {
-    return trimmed.toUpperCase();
+    return trimmed.toLowerCase();
   }
-  return md5(trimmed).toUpperCase();
+  return md5(trimmed).toLowerCase();
 }

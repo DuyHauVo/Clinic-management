@@ -1,6 +1,8 @@
 import {
   computeXmlDigest,
+  computeSignedInfoDigest,
   injectSignatureToXml,
+  extractRsaPublicKeyFromCert,
   type XmlDSigParams,
 } from "../../utils/xmlDsigEngine";
 import {
@@ -21,6 +23,8 @@ export interface SmartCaSignRequest {
   password?: string;
   accessToken?: string;
   digestValue: string;
+  signedInfoDigest?: string;
+  rawXml?: string;
   fileName?: string;
   refTranId?: string;
   subjectDN?: string;
@@ -46,6 +50,7 @@ export interface SmartCaQ1InitiateResponse {
   rsaModulus?: string;
   rsaExponent?: string;
   digestValue: string;
+  signedInfoDigest?: string;
   signer?: SignerProfile;
   error?: string;
 }
@@ -129,9 +134,18 @@ export async function initiateSignQ1(
         `Không thể lấy thông tin chứng thư số từ SmartCA (${JSON.stringify(credInfo || {})})`,
       );
     }
-    const x509Certificate = credInfo.cert?.certificates?.[0] || "";
-    const rsaModulus = credInfo.cert?.rsaModulus;
-    const rsaExponent = credInfo.cert?.rsaExponent || "AQAB";
+    const x509Certificate = (credInfo.cert?.certificates?.[0] || "").trim();
+    const extractedRsa = x509Certificate ? extractRsaPublicKeyFromCert(x509Certificate) : null;
+    const rsaModulus = credInfo.cert?.rsaModulus || extractedRsa?.modulus;
+    const rsaExponent = credInfo.cert?.rsaExponent || extractedRsa?.exponent || "AQAB";
+
+    // Xác định mã băm cần ký: theo chuẩn W3C XMLDSig, SmartCA phải ký vào mã băm SHA-256
+    // của khối <SignedInfo> (đã chuẩn hóa C14N), KHÔNG PHẢI băm nội dung tài liệu thô.
+    let hashToSign = req.signedInfoDigest;
+    if (!hashToSign) {
+      const siRes = await computeSignedInfoDigest(req.digestValue, req.rawXml);
+      hashToSign = siRes.digestValue;
+    }
 
     const refTranId =
       req.refTranId ||
@@ -143,7 +157,7 @@ export async function initiateSignQ1(
       datas: [
         {
           name: req.fileName || `DOC_${Date.now()}.xml`,
-          hash: req.digestValue,
+          hash: hashToSign,
         },
       ],
     });
@@ -168,6 +182,7 @@ export async function initiateSignQ1(
       rsaModulus,
       rsaExponent,
       digestValue: req.digestValue,
+      signedInfoDigest: hashToSign,
       signer: req.signer,
     };
   } catch (err: unknown) {
@@ -240,9 +255,10 @@ export async function checkSignStatusQ1(options: {
       const subjectDN = certInfo?.subjectDN || "";
       const serialNumber = certInfo?.serialNumber || "";
       const issuerDN = certInfo?.issuerDN || "";
-      const x509Certificate = certInfo?.x509Certificate || "";
-      const rsaModulus = certInfo?.rsaModulus || "";
-      const rsaExponent = certInfo?.rsaExponent || "AQAB";
+      const x509Certificate = (certInfo?.x509Certificate || "").trim();
+      const extractedRsa = x509Certificate ? extractRsaPublicKeyFromCert(x509Certificate) : null;
+      const rsaModulus = certInfo?.rsaModulus || extractedRsa?.modulus || "";
+      const rsaExponent = certInfo?.rsaExponent || extractedRsa?.exponent || "AQAB";
 
       let signedXml = rawXml;
       if (rawXml) {
@@ -252,7 +268,7 @@ export async function checkSignStatusQ1(options: {
           );
         }
         const dsigParams: XmlDSigParams = {
-          signatureId: `Id-${crypto.randomUUID()}`,
+          signatureId: crypto.randomUUID(),
           digestValue,
           signatureValue,
           subjectDN,

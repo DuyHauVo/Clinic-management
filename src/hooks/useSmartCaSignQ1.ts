@@ -2,7 +2,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSmartCa } from "../context/SmartCaContext";
 import { useToast } from "../context/ToastContext";
 import { useClipboard } from "./useClipboard";
-import { computeXmlDigest } from "../utils/xmlDsigEngine";
+import {
+  computeXmlDigest,
+  computeSignedInfoDigest,
+} from "../utils/xmlDsigEngine";
 import {
   initiateSignQ1,
   checkSignStatusQ1,
@@ -321,10 +324,17 @@ export function useSmartCaSignQ1({
           })
         ).digestValue;
 
+      const siRes = await computeSignedInfoDigest(
+        digestValue,
+        effectiveXmlToSign,
+      );
+
       const initResponse = await initiateSignQ1({
         username: trimmedIdentity,
         password: password.trim(),
         digestValue,
+        signedInfoDigest: siRes.digestValue,
+        rawXml: effectiveXmlToSign,
         fileName: effectiveFileName,
         signer: dynamicSigner,
       });
