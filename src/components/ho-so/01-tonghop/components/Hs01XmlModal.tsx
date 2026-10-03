@@ -66,7 +66,8 @@ export const Hs01XmlModal: React.FC<Hs01XmlModalProps> = ({
     xmlContent,
     base64Content,
     handleDownloadXml,
-    handleSendGateway
+    handleSendGateway,
+    handleResetSendResult,
   } = useXmlExportModal<Hs01TongHopItem, SendHs01GatewayResult>({
     isOpen,
     items,
@@ -99,6 +100,7 @@ export const Hs01XmlModal: React.FC<Hs01XmlModalProps> = ({
       onSendApi={handleSendGateway}
       isSendingApi={isSending}
       apiResponse={sendResult}
+      onResetApiResponse={handleResetSendResult}
       sourceFileInfo={fileUploadStats}
     />
   );
