@@ -21,6 +21,7 @@ import {
   Settings,
   Eye,
   EyeOff,
+  X,
 } from "lucide-react";
 import { useToast } from "../../context/ToastContext";
 import {
@@ -96,6 +97,8 @@ export interface XmlExportModalProps {
   onSendApi: (signatureResult?: any) => void;
   isSendingApi: boolean;
   apiResponse: any;
+  /** Callback xóa kết quả phản hồi Cổng BHXH của tệp cũ */
+  onResetApiResponse?: () => void;
   /** Tên file XML (mặc định tự tạo theo loaiHsCode & maCskcb) */
   customFileName?: string;
   /** Bật tab Ký Số SmartCA (mặc định: bật cho tất cả danh mục & hồ sơ) */
@@ -123,6 +126,7 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
   onSendApi,
   isSendingApi,
   apiResponse,
+  onResetApiResponse,
   customFileName,
   enableSmartCa = true,
   sourceFileInfo,
@@ -135,6 +139,18 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
     handleStopPropagation,
   } = useModalBehavior(isOpen, onClose);
 
+  // Trạng thái phản hồi Cổng BHXH cục bộ (tự động xóa khi nạp tệp mới)
+  const [localApiResponse, setLocalApiResponse] = useState<any>(apiResponse);
+
+  useEffect(() => {
+    setLocalApiResponse(apiResponse);
+  }, [apiResponse]);
+
+  const clearApiResponse = useCallback(() => {
+    setLocalApiResponse(null);
+    onResetApiResponse?.();
+  }, [onResetApiResponse]);
+
   // Trạng thái nội bộ cho tệp XML đã ký số hoặc tải lên từ máy tính
   const [signedXml, setSignedXml] = useState<string | null>(null);
   const [uploadedCustomFileName, setUploadedCustomFileName] = useState<
@@ -146,17 +162,35 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
   const xmlFileInputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
 
-  // Thông tin cấu hình tài khoản & mật khẩu Cổng BHXH (có fallback mặc định kể cả khi thiếu .env)
-  const [bhxhUsernameInput, setBhxhUsernameInput] = useState<string>(
+  const getEffectiveUsername = () =>
     import.meta.env.VITE_BHXH_USERNAME ||
-      BHXH_CONFIG.USERNAME ||
-      `${DEFAULT_MA_CSKCB}_BV`,
-  );
-  const [bhxhPasswordInput, setBhxhPasswordInput] = useState<string>(
-    import.meta.env.VITE_BHXH_PASSWORD || BHXH_CONFIG.PASSWORD || "Toc@8192",
-  );
+    BHXH_CONFIG.USERNAME ||
+    `${DEFAULT_MA_CSKCB}_BV`;
+
+  const getEffectivePassword = () =>
+    import.meta.env.VITE_BHXH_PASSWORD || BHXH_CONFIG.PASSWORD || "";
+
+  // Thông tin cấu hình tài khoản & mật khẩu Cổng BHXH (tự động đồng bộ từ file .env / BHXH_CONFIG)
+  const [bhxhUsernameInput, setBhxhUsernameInput] =
+    useState<string>(getEffectiveUsername);
+  const [bhxhPasswordInput, setBhxhPasswordInput] =
+    useState<string>(getEffectivePassword);
   const [showPasswordText, setShowPasswordText] = useState(false);
   const [showCredentialConfig, setShowCredentialConfig] = useState(false);
+
+  // Tự động đồng bộ tài khoản/mật khẩu mới nhất khi mở modal
+  useEffect(() => {
+    if (isOpen) {
+      const u = getEffectiveUsername();
+      const p = getEffectivePassword();
+      setBhxhUsernameInput(u);
+      setBhxhPasswordInput(p);
+      setTokenSession((prev) => ({
+        ...prev,
+        passwordHash: formatBhxhPassword(p),
+      }));
+    }
+  }, [isOpen]);
 
   // Trạng thái phiên làm việc Token Cổng BHXH (API /api/token/take)
   const [tokenSession, setTokenSession] = useState<{
@@ -170,16 +204,14 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
   }>({
     accessToken: "",
     tokenId: "",
-    passwordHash: formatBhxhPassword(
-      import.meta.env.VITE_BHXH_PASSWORD || BHXH_CONFIG.PASSWORD || "Toc@8192",
-    ),
+    passwordHash: formatBhxhPassword(getEffectivePassword()),
     isLoading: false,
     error: null,
     status: "idle",
   });
 
   const handleFetchSessionToken = useCallback(
-    async (isSilent = false) => {
+    async (isSilent = false, forceRefresh = false) => {
       setTokenSession((prev) => ({
         ...prev,
         isLoading: true,
@@ -187,12 +219,17 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
         status: "loading",
       }));
       try {
-        const res = await BhxhChungTuService.takeToken({
-          username: bhxhUsernameInput.trim(),
-          password: bhxhPasswordInput.trim(),
-        });
-        const pwdHash =
-          res.passwordHash || formatBhxhPassword(bhxhPasswordInput.trim());
+        const u = bhxhUsernameInput.trim() || getEffectiveUsername();
+        const p = bhxhPasswordInput.trim() || getEffectivePassword();
+        const res = await BhxhChungTuService.takeToken(
+          {
+            username: u,
+            password: p,
+          },
+          undefined,
+          forceRefresh,
+        );
+        const pwdHash = res.passwordHash || formatBhxhPassword(p);
         if (
           String(res.maKetQua) === "200" &&
           (res.apiToken || res.APIKey?.access_token)
@@ -278,6 +315,7 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
       const sig = extractXmlSignature(text);
       setSignedXml(text);
       setUploadedCustomFileName(file.name);
+      clearApiResponse();
       if (sig.hasSignature) {
         toast.success(
           `Đã nạp tệp XML đã ký: ${file.name}. Đã xác thực chữ ký số XML-DSig!`,
@@ -303,6 +341,7 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
     setSignedXml(null);
     setUploadedCustomFileName(null);
     setSignResponse(null);
+    clearApiResponse();
     toast.info(
       "Đã khôi phục lại dữ liệu XML tự động sinh từ bảng.",
       "Khôi Phục",
@@ -345,12 +384,14 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
   ) => {
     setSignedXml(newSignedXml);
     setSignResponse(res);
+    clearApiResponse();
   };
 
   // Reset về trạng thái chưa ký
   const handleResetSignature = () => {
     setSignedXml(null);
     setSignResponse(null);
+    clearApiResponse();
   };
 
   // Tải file XML (tự động tải bản chuẩn hóa C14N 1 dòng để bảo toàn chữ ký 100%)
@@ -955,7 +996,7 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
 
                         <button
                           type="button"
-                          onClick={() => handleFetchSessionToken(false)}
+                          onClick={() => handleFetchSessionToken(false, true)}
                           disabled={tokenSession.isLoading}
                           className="px-2.5 py-1 text-[11px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg flex items-center gap-1 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
                           title="Gọi API /api/token/take để cấp mới Token"
@@ -1018,7 +1059,7 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                                     ),
                                   }));
                                 }}
-                                placeholder="Toc@8192"
+                                placeholder="Mật khẩu Cổng BHXH"
                                 className="w-full px-2.5 py-1.5 pr-8 border border-slate-300 rounded-lg text-xs font-mono font-semibold focus:outline-blue-500 bg-slate-50 focus:bg-white"
                               />
                               <button
@@ -1041,7 +1082,7 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                               </button>
                             </div>
                             <p className="text-[10px] text-slate-400 mt-0.5">
-                              Tự động băm MD5 in hoa:{" "}
+                              Tự động băm MD5:{" "}
                               <code className="font-bold text-emerald-700">
                                 {formatBhxhPassword(bhxhPasswordInput.trim()) ||
                                   "Chưa có"}
@@ -1053,7 +1094,7 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                         <div className="flex justify-end pt-1">
                           <button
                             type="button"
-                            onClick={() => handleFetchSessionToken(false)}
+                            onClick={() => handleFetchSessionToken(false, true)}
                             disabled={tokenSession.isLoading}
                             className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
                           >
@@ -1193,19 +1234,23 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                   </div>
 
                   {/* Response Display */}
-                  {apiResponse &&
+                  {localApiResponse &&
                     (() => {
                       const isSuccess =
-                        String(apiResponse.maKetQua) === "200" ||
-                        apiResponse.isOk === true ||
-                        Boolean(apiResponse.maGiaoDich && !apiResponse.isError);
+                        String(localApiResponse.maKetQua) === "200" ||
+                        localApiResponse.isOk === true ||
+                        Boolean(
+                          localApiResponse.maGiaoDich &&
+                          !localApiResponse.isError,
+                        );
                       const maKetQua = String(
-                        apiResponse.maKetQua || (isSuccess ? "200" : "LỖI"),
+                        localApiResponse.maKetQua ||
+                          (isSuccess ? "200" : "LỖI"),
                       );
                       const thongDiep =
-                        apiResponse.thongDiep ||
-                        apiResponse.ghiChu ||
-                        apiResponse.message ||
+                        localApiResponse.thongDiep ||
+                        localApiResponse.ghiChu ||
+                        localApiResponse.message ||
                         (isSuccess
                           ? "Hồ sơ đã được Cổng BHXH tiếp nhận thành công."
                           : "Cổng BHXH từ chối tiếp nhận hồ sơ.");
@@ -1237,33 +1282,45 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                                   : `Cổng BHXH Từ Chối Tiếp Nhận (Mã ${maKetQua})`}
                               </span>
                             </div>
-                            <span
-                              className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
-                                isSuccess
-                                  ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                  : "bg-rose-100 text-rose-800 border-rose-300"
-                              }`}
-                            >
-                              {isSuccess ? "THÀNH CÔNG" : `MÃ LỖI ${maKetQua}`}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                                  isSuccess
+                                    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                    : "bg-rose-100 text-rose-800 border-rose-300"
+                                }`}
+                              >
+                                {isSuccess
+                                  ? "THÀNH CÔNG"
+                                  : `MÃ LỖI ${maKetQua}`}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={clearApiResponse}
+                                className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-md transition-all cursor-pointer"
+                                title="Đóng thông báo này"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                            {apiResponse.maGiaoDich && (
+                            {localApiResponse.maGiaoDich && (
                               <div className="bg-white/80 p-2.5 rounded-xl border border-slate-200/80 flex items-center justify-between">
                                 <div>
                                   <div className="text-[10px] font-bold text-slate-500 uppercase">
                                     Mã Giao Dịch Cổng
                                   </div>
                                   <div className="font-mono font-bold text-slate-800 break-all">
-                                    {apiResponse.maGiaoDich}
+                                    {localApiResponse.maGiaoDich}
                                   </div>
                                 </div>
                                 <button
                                   type="button"
                                   onClick={() =>
                                     handleCopy(
-                                      apiResponse.maGiaoDich,
+                                      localApiResponse.maGiaoDich,
                                       "Đã sao chép mã giao dịch!",
                                     )
                                   }
@@ -1275,13 +1332,14 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                               </div>
                             )}
 
-                            {(apiResponse.thoiGianTiepNhan || isSuccess) && (
+                            {(localApiResponse.thoiGianTiepNhan ||
+                              isSuccess) && (
                               <div className="bg-white/80 p-2.5 rounded-xl border border-slate-200/80">
                                 <div className="text-[10px] font-bold text-slate-500 uppercase">
                                   Thời Gian Tiếp Nhận
                                 </div>
                                 <div className="font-semibold text-slate-800">
-                                  {apiResponse.thoiGianTiepNhan ||
+                                  {localApiResponse.thoiGianTiepNhan ||
                                     new Date().toLocaleString("vi-VN")}
                                 </div>
                               </div>
@@ -1322,7 +1380,7 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                               Xem chi tiết phản hồi JSON gốc
                             </summary>
                             <pre className="mt-1.5 p-2.5 bg-slate-900 text-emerald-300 rounded-lg font-mono text-[10px] overflow-x-auto select-text">
-                              {JSON.stringify(apiResponse, null, 2)}
+                              {JSON.stringify(localApiResponse, null, 2)}
                             </pre>
                           </details>
                         </div>

@@ -37,8 +37,15 @@ export function useXmlExportModal<T, R = any>({
   useEffect(() => {
     if (isOpen) {
       setTab(defaultTab);
+    } else {
+      // Khi đóng modal thì xóa kết quả gửi để sẵn sàng cho phiên mới
+      setSendResult(null);
     }
   }, [isOpen, defaultTab]);
+
+  const handleResetSendResult = () => {
+    setSendResult(null);
+  };
 
   const generateXmlRef = useRef(generateXml);
   generateXmlRef.current = generateXml;
@@ -130,6 +137,7 @@ export function useXmlExportModal<T, R = any>({
     xmlContent,
     base64Content,
     handleDownloadXml,
-    handleSendGateway
+    handleSendGateway,
+    handleResetSendResult,
   };
 }

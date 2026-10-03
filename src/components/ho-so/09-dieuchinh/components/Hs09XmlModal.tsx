@@ -57,7 +57,8 @@ export const Hs09XmlModal: React.FC<Hs09XmlModalProps> = ({
     xmlContent,
     base64Content,
     handleDownloadXml,
-    handleSendGateway
+    handleSendGateway,
+    handleResetSendResult,
   } = useXmlExportModal<HoSoDieuChinh09Item, SendHs09GatewayResult>({
     isOpen,
     items,
@@ -90,6 +91,7 @@ export const Hs09XmlModal: React.FC<Hs09XmlModalProps> = ({
       onSendApi={handleSendGateway}
       isSendingApi={isSending}
       apiResponse={sendResult}
+      onResetApiResponse={handleResetSendResult}
       sourceFileInfo={fileUploadStats}
     />
   );

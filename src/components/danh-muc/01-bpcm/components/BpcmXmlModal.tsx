@@ -39,6 +39,7 @@ export const BpcmXmlModal: React.FC<BpcmXmlModalProps> = ({
     base64Content,
     handleDownloadXml,
     handleSendGateway,
+    handleResetSendResult,
   } = useXmlExportModal<DmBpcmItem, GatewaySendResult>({
     isOpen,
     items,
@@ -72,6 +73,7 @@ export const BpcmXmlModal: React.FC<BpcmXmlModalProps> = ({
       onSendApi={handleSendGateway}
       isSendingApi={isSending}
       apiResponse={sendResult}
+      onResetApiResponse={handleResetSendResult}
       customFileName={`DM01_BPCMKBCB_${DEFAULT_MA_CSKCB}.xml`}
       enableSmartCa
       sourceFileInfo={fileUploadStats}
