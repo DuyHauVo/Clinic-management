@@ -497,7 +497,7 @@ export function createDanhMucEngine<TItem>(
     const datasetId = `Id-${generateUUID()}`;
     const rowsXml = items
       .map((item) => config.renderItemXml(item, maCskcb))
-      .join("\n");
+      .join("");
 
     const containerXml = `  <${config.containerTag} Id="${datasetId}">
 ${rowsXml}
@@ -561,7 +561,8 @@ ${rowsXml}
     }
 
     const xml = generateXml(items, maCskcb);
-    const finalBase64 = fileBase64 || (xml ? generateBase64(items, xml) : undefined);
+    const finalBase64 =
+      fileBase64 || (xml ? generateBase64(items, xml) : undefined);
 
     return sendDanhMucToBhxhGateway(
       config.catalogCode,

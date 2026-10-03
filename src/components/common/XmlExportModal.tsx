@@ -1,4 +1,10 @@
-import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useMemo,
+  useRef,
+  useEffect,
+  useCallback,
+} from "react";
 import {
   FileCode,
   Send,
@@ -11,6 +17,10 @@ import {
   ShieldCheck,
   Upload,
   RefreshCw,
+  KeyRound,
+  Settings,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useToast } from "../../context/ToastContext";
 import {
@@ -25,7 +35,41 @@ import { SmartCaSignPanel } from "./SmartCaSignPanel";
 import type { SmartCaSignResponse } from "../../services/smartca/smartcaHandlers";
 import { extractXmlSignature } from "../../utils/xmlDsigEngine";
 import { formatBhxhPassword } from "../../utils/crypto/md5";
-import { BhxhChungTuService, BHXH_CONFIG } from "../../services/bhxh/bhxhChungTuService";
+import {
+  BhxhChungTuService,
+  BHXH_CONFIG,
+} from "../../services/bhxh/bhxhChungTuService";
+
+/**
+ * Thụt đầu dòng XML để hiển thị đẹp mắt và dễ đọc trên giao diện màn hình.
+ * Lưu ý: Chỉ dùng để render hiển thị; dữ liệu xuất file hoặc gửi cổng luôn dùng chuỗi C14N minified nguyên bản.
+ */
+function formatXmlForDisplay(xml: string): string {
+  if (!xml) return "";
+  let formatted = "";
+  let indent = 0;
+  const tab = "  ";
+  const clean = xml.replace(/\r\n/g, "\n");
+  const nodes = clean.replace(/>\s*</g, ">\n<").split("\n");
+  for (let node of nodes) {
+    node = node.trim();
+    if (!node) continue;
+    // Thẻ đóng </tag>
+    if (node.match(/^<\/\w/)) {
+      indent = Math.max(0, indent - 1);
+    }
+    formatted += tab.repeat(indent) + node + "\n";
+    // Thẻ mở <tag ...> không phải tự đóng <tag/> và không phải <?xml
+    if (
+      node.match(/^<[A-Za-z0-9_:-]+[^>]*[^\/]>$/) &&
+      !node.startsWith("<?") &&
+      !node.startsWith("<!")
+    ) {
+      indent++;
+    }
+  }
+  return formatted.trim();
+}
 
 export interface SourceFileUploadInfo {
   fileName: string;
@@ -93,11 +137,26 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
 
   // Trạng thái nội bộ cho tệp XML đã ký số hoặc tải lên từ máy tính
   const [signedXml, setSignedXml] = useState<string | null>(null);
-  const [uploadedCustomFileName, setUploadedCustomFileName] = useState<string | null>(null);
-  const [signResponse, setSignResponse] =
-    useState<SmartCaSignResponse | null>(null);
+  const [uploadedCustomFileName, setUploadedCustomFileName] = useState<
+    string | null
+  >(null);
+  const [signResponse, setSignResponse] = useState<SmartCaSignResponse | null>(
+    null,
+  );
   const xmlFileInputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
+
+  // Thông tin cấu hình tài khoản & mật khẩu Cổng BHXH (có fallback mặc định kể cả khi thiếu .env)
+  const [bhxhUsernameInput, setBhxhUsernameInput] = useState<string>(
+    import.meta.env.VITE_BHXH_USERNAME ||
+      BHXH_CONFIG.USERNAME ||
+      `${DEFAULT_MA_CSKCB}_BV`,
+  );
+  const [bhxhPasswordInput, setBhxhPasswordInput] = useState<string>(
+    import.meta.env.VITE_BHXH_PASSWORD || BHXH_CONFIG.PASSWORD || "Toc@8192",
+  );
+  const [showPasswordText, setShowPasswordText] = useState(false);
+  const [showCredentialConfig, setShowCredentialConfig] = useState(false);
 
   // Trạng thái phiên làm việc Token Cổng BHXH (API /api/token/take)
   const [tokenSession, setTokenSession] = useState<{
@@ -111,54 +170,74 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
   }>({
     accessToken: "",
     tokenId: "",
-    passwordHash: formatBhxhPassword(import.meta.env.VITE_BHXH_PASSWORD || BHXH_CONFIG.PASSWORD || ""),
+    passwordHash: formatBhxhPassword(
+      import.meta.env.VITE_BHXH_PASSWORD || BHXH_CONFIG.PASSWORD || "Toc@8192",
+    ),
     isLoading: false,
     error: null,
     status: "idle",
   });
 
-  const handleFetchSessionToken = useCallback(async (isSilent = false) => {
-    setTokenSession((prev) => ({
-      ...prev,
-      isLoading: true,
-      error: null,
-      status: "loading",
-    }));
-    try {
-      const res = await BhxhChungTuService.takeToken();
-      const pwdHash = res.passwordHash || formatBhxhPassword(import.meta.env.VITE_BHXH_PASSWORD || BHXH_CONFIG.PASSWORD || "");
-      if (String(res.maKetQua) === "200" && (res.apiToken || res.APIKey?.access_token)) {
-        setTokenSession({
-          accessToken: res.apiToken || res.APIKey?.access_token || "",
-          tokenId: res.idToken || res.APIKey?.id_token || "",
-          passwordHash: pwdHash,
-          isLoading: false,
-          error: null,
-          status: "success",
-          expiresIn: res.APIKey?.expires_in,
+  const handleFetchSessionToken = useCallback(
+    async (isSilent = false) => {
+      setTokenSession((prev) => ({
+        ...prev,
+        isLoading: true,
+        error: null,
+        status: "loading",
+      }));
+      try {
+        const res = await BhxhChungTuService.takeToken({
+          username: bhxhUsernameInput.trim(),
+          password: bhxhPasswordInput.trim(),
         });
-        if (!isSilent) {
-          toast.success("Đã lấy thành công Token phiên làm việc Cổng BHXH!", "Kết Nối Thành Công");
+        const pwdHash =
+          res.passwordHash || formatBhxhPassword(bhxhPasswordInput.trim());
+        if (
+          String(res.maKetQua) === "200" &&
+          (res.apiToken || res.APIKey?.access_token)
+        ) {
+          setTokenSession({
+            accessToken: res.apiToken || res.APIKey?.access_token || "",
+            tokenId: res.idToken || res.APIKey?.id_token || "",
+            passwordHash: pwdHash,
+            isLoading: false,
+            error: null,
+            status: "success",
+            expiresIn: res.APIKey?.expires_in,
+          });
+          if (!isSilent) {
+            toast.success(
+              "Đã lấy thành công Token phiên làm việc Cổng BHXH!",
+              "Kết Nối Thành Công",
+            );
+          }
+        } else {
+          setTokenSession((prev) => ({
+            ...prev,
+            passwordHash: pwdHash,
+            isLoading: false,
+            error:
+              res.thongDiep ||
+              `Cổng BHXH từ chối xác thực (Mã kết quả: ${res.maKetQua})`,
+            status: "error",
+          }));
         }
-      } else {
+      } catch (err: unknown) {
+        const msg =
+          err instanceof Error
+            ? err.message
+            : "Không thể kết nối máy chủ Cổng BHXH";
         setTokenSession((prev) => ({
           ...prev,
-          passwordHash: pwdHash,
           isLoading: false,
-          error: res.thongDiep || `Cổng BHXH từ chối xác thực (Mã kết quả: ${res.maKetQua})`,
+          error: msg,
           status: "error",
         }));
       }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Không thể kết nối máy chủ Cổng BHXH";
-      setTokenSession((prev) => ({
-        ...prev,
-        isLoading: false,
-        error: msg,
-        status: "error",
-      }));
-    }
-  }, [toast]);
+    },
+    [bhxhUsernameInput, bhxhPasswordInput, toast],
+  );
 
   // Tự động kiểm tra và lấy token khi người dùng chuyển sang tab "api"
   useEffect(() => {
@@ -182,25 +261,39 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
     xmlFileInputRef.current?.click();
   };
 
-  const handleXmlFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleXmlFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
       const text = await file.text();
       if (!text || !text.includes("<")) {
-        toast.error("Tệp tải lên không phải định dạng XML hợp lệ!", "Lỗi Định Dạng");
+        toast.error(
+          "Tệp tải lên không phải định dạng XML hợp lệ!",
+          "Lỗi Định Dạng",
+        );
         return;
       }
       const sig = extractXmlSignature(text);
       setSignedXml(text);
       setUploadedCustomFileName(file.name);
       if (sig.hasSignature) {
-        toast.success(`Đã nạp tệp XML đã ký: ${file.name}. Đã xác thực chữ ký số XML-DSig!`, "Tải Lên Thành Công");
+        toast.success(
+          `Đã nạp tệp XML đã ký: ${file.name}. Đã xác thực chữ ký số XML-DSig!`,
+          "Tải Lên Thành Công",
+        );
       } else {
-        toast.warning(`Tệp ${file.name} chưa có chữ ký số. Bạn có thể ký số ở tab SmartCA.`, "Chưa Ký Số");
+        toast.warning(
+          `Tệp ${file.name} chưa có chữ ký số. Bạn có thể ký số ở tab SmartCA.`,
+          "Chưa Ký Số",
+        );
       }
     } catch (err: unknown) {
-      toast.error("Không thể đọc tệp XML: " + (err instanceof Error ? err.message : ""), "Lỗi Tải Tệp");
+      toast.error(
+        "Không thể đọc tệp XML: " + (err instanceof Error ? err.message : ""),
+        "Lỗi Tải Tệp",
+      );
     } finally {
       e.target.value = "";
     }
@@ -210,11 +303,27 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
     setSignedXml(null);
     setUploadedCustomFileName(null);
     setSignResponse(null);
-    toast.info("Đã khôi phục lại dữ liệu XML tự động sinh từ bảng.", "Khôi Phục");
+    toast.info(
+      "Đã khôi phục lại dữ liệu XML tự động sinh từ bảng.",
+      "Khôi Phục",
+    );
   };
 
   // Nội dung XML hiệu lực (Ưu tiên bản đã ký số nếu có)
   const effectiveXml = signedXml || xmlContent;
+
+  // Chế độ xem trước XML: "pretty" (Dễ đọc thụt lề) hoặc "minified" (Chuẩn gửi Cổng 1 dòng)
+  const [xmlViewMode, setXmlViewMode] = useState<"pretty" | "minified">(
+    "pretty",
+  );
+
+  const displayedXml = useMemo(() => {
+    if (xmlViewMode === "pretty") {
+      return formatXmlForDisplay(effectiveXml);
+    }
+    return effectiveXml;
+  }, [effectiveXml, xmlViewMode]);
+
   const effectiveBase64 = useMemo(() => {
     if (signedXml) {
       return xmlToBase64(signedXml);
@@ -244,13 +353,17 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
     setSignResponse(null);
   };
 
-  // Tải file XML (tự động tải bản đã ký nếu có)
+  // Tải file XML (tự động tải bản chuẩn hóa C14N 1 dòng để bảo toàn chữ ký 100%)
   const handleDownloadEffectiveXml = () => {
     if (signedXml) {
       downloadXmlFile(signedXml, effectiveFileName);
     } else {
       onExportXml();
     }
+    toast.success(
+      "Đã tải tệp XML chuẩn hóa 1 dòng (W3C C14N - Bảo toàn chữ ký Cổng BHXH)",
+      "Tải Tệp XML Thành Công",
+    );
   };
 
   // ==========================================
@@ -274,7 +387,12 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
   const handleSelectTabSmartCa = () => onTabChange("smartca");
 
   const handleCopyXml = () => {
-    handleCopy(effectiveXml, "Đã sao chép nội dung XML vào bộ nhớ đệm!", "xml");
+    const textToCopy = xmlViewMode === "pretty" ? displayedXml : effectiveXml;
+    const msg =
+      xmlViewMode === "pretty"
+        ? "Đã sao chép nội dung XML (định dạng dễ đọc) vào bộ nhớ đệm!"
+        : "Đã sao chép nội dung XML chuẩn hóa 1 dòng (C14N Cổng BHXH) vào bộ nhớ đệm!";
+    handleCopy(textToCopy, msg, "xml");
   };
 
   const handleCopyBase64 = () => {
@@ -287,21 +405,30 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
 
   const curlCommandText = useMemo(() => {
     const shortBase64 = effectiveBase64.substring(0, 40);
-    const pwdHash = tokenSession.passwordHash || formatBhxhPassword(import.meta.env.VITE_BHXH_PASSWORD || BHXH_CONFIG.PASSWORD || "");
+    const pwdHash =
+      tokenSession.passwordHash || formatBhxhPassword(bhxhPasswordInput.trim());
     const accToken = tokenSession.accessToken || "{access_token}";
     const tokId = tokenSession.tokenId || "{token_id}";
+    const effUsername = bhxhUsernameInput.trim() || `${DEFAULT_MA_CSKCB}_BV`;
 
     return `curl --location '${apiEndpoint}' \\
 --header 'accessToken: ${accToken}' \\
 --header 'tokenId: ${tokId}' \\
 --header 'passwordHash: ${pwdHash}' \\
 --header 'Content-Type: application/x-www-form-urlencoded' \\
---data-urlencode 'username=${DEFAULT_MA_CSKCB}_BV' \\
+--data-urlencode 'username=${effUsername}' \\
 --data-urlencode 'loaiHs=${loaiHsCode}' \\
 --data-urlencode 'maTinh=${DEFAULT_MA_TINH}' \\
 --data-urlencode 'maCskcb=${DEFAULT_MA_CSKCB}' \\
 --data-urlencode 'fileHsBase64=${shortBase64}...'`;
-  }, [apiEndpoint, loaiHsCode, effectiveBase64, tokenSession]);
+  }, [
+    apiEndpoint,
+    loaiHsCode,
+    effectiveBase64,
+    tokenSession,
+    bhxhPasswordInput,
+    bhxhUsernameInput,
+  ]);
 
   const handleCopyCurlCommand = () => {
     handleCopy(curlCommandText);
@@ -311,7 +438,7 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
     if (!isSigned) {
       toast.warning(
         "Hồ sơ chưa có chữ ký số! Cổng BHXH bắt buộc gói dữ liệu XML phải có chữ ký điện tử hợp lệ (<CHUKYDONVI> hoặc <Signature>) trước khi gửi. Vui lòng ký số qua SmartCA hoặc tải lên tệp XML đã ký sẵn.",
-        "Bắt Buộc Chữ Ký Số"
+        "Bắt Buộc Chữ Ký Số",
       );
       if (enableSmartCa) {
         onTabChange("smartca");
@@ -371,21 +498,29 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
               <p className="text-xs text-slate-500 mt-0.5">
                 {uploadedCustomFileName ? (
                   <span>
-                    Đã nạp tệp từ máy • <b className="font-semibold text-slate-700">{uploadedCustomFileName}</b>
+                    Đã nạp tệp từ máy •{" "}
+                    <b className="font-semibold text-slate-700">
+                      {uploadedCustomFileName}
+                    </b>
                   </span>
                 ) : (
-                  <span>Dữ liệu hiện hành • {itemsCount} {itemLabel}</span>
+                  <span>
+                    Dữ liệu hiện hành • {itemsCount} {itemLabel}
+                  </span>
                 )}
                 {sourceFileInfo?.fileName && !uploadedCustomFileName && (
                   <>
-                    {" "}• Nguồn:{" "}
+                    {" "}
+                    • Nguồn:{" "}
                     <b className="font-semibold text-slate-700">
                       {sourceFileInfo.fileName}
-                      {sourceFileInfo.selectedSheet ? ` [${sourceFileInfo.selectedSheet}]` : ""}
+                      {sourceFileInfo.selectedSheet
+                        ? ` [${sourceFileInfo.selectedSheet}]`
+                        : ""}
                     </b>
                   </>
-                )}
-                {" "}• Tệp:{" "}
+                )}{" "}
+                • Tệp:{" "}
                 <b className="font-mono text-slate-700">{effectiveFileName}</b>
               </p>
             </div>
@@ -470,7 +605,10 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
           <div className="flex items-center gap-2 ml-auto">
             {uploadedCustomFileName ? (
               <div className="flex items-center gap-2 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900">
-                <span className="truncate max-w-[140px] font-semibold" title={uploadedCustomFileName}>
+                <span
+                  className="truncate max-w-[140px] font-semibold"
+                  title={uploadedCustomFileName}
+                >
                   {uploadedCustomFileName}
                 </span>
                 <button
@@ -517,7 +655,10 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                   Chưa có dữ liệu trên bảng
                 </p>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Bảng danh mục hiện chưa có bản ghi. Bạn có thể <b>nạp tệp XML đã ký sẵn từ máy tính</b> để gửi Cổng BHXH ngay, hoặc chuyển sang tab <b>Ký Số SmartCA (Q1)</b> để ký tệp.
+                  Bảng danh mục hiện chưa có bản ghi. Bạn có thể{" "}
+                  <b>nạp tệp XML đã ký sẵn từ máy tính</b> để gửi Cổng BHXH
+                  ngay, hoặc chuyển sang tab <b>Ký Số SmartCA (Q1)</b> để ký
+                  tệp.
                 </p>
               </div>
               <div className="flex items-center justify-center gap-3 pt-1">
@@ -566,19 +707,48 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
               {tab === "xml" && (
                 <div className="flex-1 min-h-0 p-6 flex flex-col space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2 shrink-0 select-none">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center flex-wrap gap-2">
                       <span className="text-xs text-slate-500 font-semibold">
-                        Kích thước XML:{" "}
+                        Kích thước:{" "}
                         <b>{(effectiveXml.length / 1024).toFixed(2)} KB</b> •{" "}
                         {itemsCount} {itemLabel}
                       </span>
                       {isSigned && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1 select-none">
                           <Check size={11} /> Đã đóng gói &lt;CHUKYDONVI&gt;
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
+
+                    <div className="flex items-center flex-wrap gap-2">
+                      {/* Nút chuyển đổi Preview: Dễ đọc vs Chuẩn Cổng */}
+                      <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-[11px] select-none">
+                        <button
+                          type="button"
+                          onClick={() => setXmlViewMode("pretty")}
+                          className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                            xmlViewMode === "pretty"
+                              ? "bg-white text-blue-700 shadow-xs"
+                              : "text-slate-500 hover:text-slate-800"
+                          }`}
+                          title="Hiển thị thụt dòng đẹp mắt để duyệt dữ liệu trên màn hình"
+                        >
+                          Format View
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setXmlViewMode("minified")}
+                          className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                            xmlViewMode === "minified"
+                              ? "bg-white text-blue-700 shadow-xs"
+                              : "text-slate-500 hover:text-slate-800"
+                          }`}
+                          title="Hiển thị chuỗi 1 dòng thực tế sẽ gửi lên Cổng BHXH"
+                        >
+                          Chuẩn Gửi Cổng
+                        </button>
+                      </div>
+
                       <button
                         type="button"
                         onClick={handleCopyXml}
@@ -610,23 +780,34 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                         className="text-indigo-600 shrink-0"
                       />
                       <span>
-                        File XML này <b>chưa có chữ ký số</b>. Bạn có thể
-                        chuyển sang tab <b>"Ký Số SmartCA (Q1)"</b> ở phía trên để thực hiện ký
-                        số trước khi gửi Cổng BHXH.
+                        File XML này <b>chưa có chữ ký số</b>. Bạn có thể chuyển
+                        sang tab <b>"Ký Số SmartCA (Q1)"</b> ở phía trên để thực
+                        hiện ký số trước khi gửi Cổng BHXH.
                       </span>
                     </div>
                   )}
 
                   {/* Khung xem XML dùng textarea readOnly: chống đơ chuột / kẹt selection 100% khi bôi đen liên tục */}
-                  <div className="flex-1 min-h-0">
+                  <div className="flex-1 min-h-0 flex flex-col space-y-1.5">
                     <textarea
                       readOnly
                       draggable={false}
                       onDragStart={handlePreventDrag}
                       spellCheck={false}
-                      value={effectiveXml}
-                      className="w-full h-full p-4 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded-2xl resize-none outline-none leading-relaxed border border-slate-800 selection:bg-blue-600 selection:text-white no-drag-select"
+                      value={displayedXml}
+                      className="w-full flex-1 p-4 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded-2xl resize-none outline-none leading-relaxed border border-slate-800 selection:bg-blue-600 selection:text-white no-drag-select"
                     />
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 px-1 select-none">
+                      <span>
+                        💡 <b>Chế độ xem:</b>{" "}
+                        {xmlViewMode === "pretty"
+                          ? "Đang thụt lề để dễ đọc. "
+                          : "Đang hiển thị dạng 1 dòng chuẩn gửi Cổng. "}
+                        Khi <b>Ký số SmartCA</b>, <b>Tải về</b> hoặc{" "}
+                        <b>Gửi Cổng BHXH</b>, hệ thống luôn tự động dùng bản{" "}
+                        <b>1 dòng chuẩn W3C C14N</b> để bảo toàn chữ ký số 100%.
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -700,9 +881,15 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                   >
                     <div className="flex items-center gap-2.5">
                       {isSigned ? (
-                        <ShieldCheck size={18} className="text-emerald-600 shrink-0" />
+                        <ShieldCheck
+                          size={18}
+                          className="text-emerald-600 shrink-0"
+                        />
                       ) : (
-                        <AlertTriangle size={18} className="text-rose-600 shrink-0" />
+                        <AlertTriangle
+                          size={18}
+                          className="text-rose-600 shrink-0"
+                        />
                       )}
                       <div>
                         <div className="font-bold">
@@ -710,7 +897,9 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                             ? "Hồ sơ ĐÃ KÝ SỐ - Đủ điều kiện gửi Cổng BHXH"
                             : "CẢNH BÁO: Hồ sơ CHƯA có chữ ký số điện tử"}
                         </div>
-                        <div className={`text-[11px] ${isSigned ? "text-emerald-800" : "text-rose-800"}`}>
+                        <div
+                          className={`text-[11px] ${isSigned ? "text-emerald-800" : "text-rose-800"}`}
+                        >
                           {isSigned
                             ? `Chủ thể: ${signatureInfo.subjectDN || "Chữ ký hợp lệ"} • Số serial: ${signatureInfo.serialNumber || "Hợp lệ"} (Chuỗi Base64 đã bao gồm chữ ký).`
                             : "Cổng Giám định BHXH bắt buộc hồ sơ phải có chữ ký số hợp lệ (<CHUKYDONVI>). Vui lòng ký số hoặc tải lên file đã ký trước khi gửi."}
@@ -737,7 +926,8 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                         </span>
                         {tokenSession.isLoading ? (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 animate-pulse flex items-center gap-1">
-                            <RefreshCw size={10} className="animate-spin" /> Đang lấy token...
+                            <RefreshCw size={10} className="animate-spin" />{" "}
+                            Đang lấy token...
                           </span>
                         ) : tokenSession.status === "success" ? (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
@@ -750,17 +940,134 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                         ) : null}
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleFetchSessionToken(false)}
-                        disabled={tokenSession.isLoading}
-                        className="px-2.5 py-1 text-[11px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg flex items-center gap-1 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
-                        title="Gọi API /api/token/take để cấp mới Token"
-                      >
-                        <RefreshCw size={11} className={tokenSession.isLoading ? "animate-spin" : ""} />
-                        <span>Lấy Lại Token</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowCredentialConfig(!showCredentialConfig)
+                          }
+                          className="px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg flex items-center gap-1 transition-all cursor-pointer"
+                          title="Tùy chỉnh tài khoản & mật khẩu kết nối Cổng BHXH"
+                        >
+                          <Settings size={11} />
+                          <span>Tài khoản / Mật khẩu</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleFetchSessionToken(false)}
+                          disabled={tokenSession.isLoading}
+                          className="px-2.5 py-1 text-[11px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg flex items-center gap-1 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+                          title="Gọi API /api/token/take để cấp mới Token"
+                        >
+                          <RefreshCw
+                            size={11}
+                            className={
+                              tokenSession.isLoading ? "animate-spin" : ""
+                            }
+                          />
+                          <span>Lấy Lại Token</span>
+                        </button>
+                      </div>
                     </div>
+
+                    {/* Khung Chỉnh Sửa Tài Khoản / Mật Khẩu (Nếu cần đổi hoặc máy chưa có .env) */}
+                    {showCredentialConfig && (
+                      <div className="p-3 bg-white rounded-xl border border-blue-200 space-y-2 text-xs shadow-xs animate-fadeIn">
+                        <div className="font-bold text-blue-900 flex items-center gap-1.5 pb-1 border-b border-blue-100">
+                          <KeyRound size={13} className="text-blue-600" />
+                          <span>
+                            Cấu hình tài khoản gọi API /api/token/take
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                              Tên đăng nhập Cổng BHXH:
+                            </label>
+                            <input
+                              type="text"
+                              value={bhxhUsernameInput}
+                              onChange={(e) =>
+                                setBhxhUsernameInput(e.target.value)
+                              }
+                              placeholder="49939_BV"
+                              className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-mono font-semibold focus:outline-blue-500 bg-slate-50 focus:bg-white"
+                            />
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              Thường là mã CSKCB kèm hậu tố <code>_BV</code>{" "}
+                              (vd: <code>49939_BV</code>)
+                            </p>
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                              Mật khẩu tài khoản (chưa băm):
+                            </label>
+                            <div className="relative">
+                              <input
+                                type={showPasswordText ? "text" : "password"}
+                                value={bhxhPasswordInput}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setBhxhPasswordInput(val);
+                                  setTokenSession((prev) => ({
+                                    ...prev,
+                                    passwordHash: formatBhxhPassword(
+                                      val.trim(),
+                                    ),
+                                  }));
+                                }}
+                                placeholder="Toc@8192"
+                                className="w-full px-2.5 py-1.5 pr-8 border border-slate-300 rounded-lg text-xs font-mono font-semibold focus:outline-blue-500 bg-slate-50 focus:bg-white"
+                              />
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setShowPasswordText(!showPasswordText)
+                                }
+                                className="absolute right-2 top-2 text-slate-400 hover:text-slate-700 cursor-pointer"
+                                title={
+                                  showPasswordText
+                                    ? "Ẩn mật khẩu"
+                                    : "Hiện mật khẩu"
+                                }
+                              >
+                                {showPasswordText ? (
+                                  <EyeOff size={13} />
+                                ) : (
+                                  <Eye size={13} />
+                                )}
+                              </button>
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              Tự động băm MD5 in hoa:{" "}
+                              <code className="font-bold text-emerald-700">
+                                {formatBhxhPassword(bhxhPasswordInput.trim()) ||
+                                  "Chưa có"}
+                              </code>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleFetchSessionToken(false)}
+                            disabled={tokenSession.isLoading}
+                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
+                          >
+                            <RefreshCw
+                              size={12}
+                              className={
+                                tokenSession.isLoading ? "animate-spin" : ""
+                              }
+                            />
+                            <span>Áp Dụng & Thử Lấy Token Lại</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[11px]">
                       {/* passwordHash */}
@@ -769,14 +1076,22 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                           <span>passwordHash (MD5)</span>
                           <button
                             type="button"
-                            onClick={() => handleCopy(tokenSession.passwordHash, "Đã sao chép passwordHash!")}
+                            onClick={() =>
+                              handleCopy(
+                                tokenSession.passwordHash,
+                                "Đã sao chép passwordHash!",
+                              )
+                            }
                             className="hover:text-blue-600 cursor-pointer"
                             title="Sao chép MD5 Hash"
                           >
                             <Copy size={11} />
                           </button>
                         </div>
-                        <div className="font-mono text-xs font-bold text-slate-800 truncate mt-1 select-all" title={tokenSession.passwordHash}>
+                        <div
+                          className="font-mono text-xs font-bold text-slate-800 truncate mt-1 select-all"
+                          title={tokenSession.passwordHash}
+                        >
                           {tokenSession.passwordHash || "(Trống)"}
                         </div>
                       </div>
@@ -788,7 +1103,12 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                           {tokenSession.tokenId && (
                             <button
                               type="button"
-                              onClick={() => handleCopy(tokenSession.tokenId, "Đã sao chép tokenId!")}
+                              onClick={() =>
+                                handleCopy(
+                                  tokenSession.tokenId,
+                                  "Đã sao chép tokenId!",
+                                )
+                              }
                               className="hover:text-blue-600 cursor-pointer"
                               title="Sao chép tokenId"
                             >
@@ -796,8 +1116,17 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                             </button>
                           )}
                         </div>
-                        <div className="font-mono text-xs font-bold text-slate-800 truncate mt-1 select-all" title={tokenSession.tokenId || "Chưa lấy được từ máy chủ"}>
-                          {tokenSession.tokenId || <span className="text-slate-400 italic">Chưa cấp</span>}
+                        <div
+                          className="font-mono text-xs font-bold text-slate-800 truncate mt-1 select-all"
+                          title={
+                            tokenSession.tokenId || "Chưa lấy được từ máy chủ"
+                          }
+                        >
+                          {tokenSession.tokenId || (
+                            <span className="text-slate-400 italic">
+                              Chưa cấp
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -808,7 +1137,12 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                           {tokenSession.accessToken && (
                             <button
                               type="button"
-                              onClick={() => handleCopy(tokenSession.accessToken, "Đã sao chép accessToken!")}
+                              onClick={() =>
+                                handleCopy(
+                                  tokenSession.accessToken,
+                                  "Đã sao chép accessToken!",
+                                )
+                              }
                               className="hover:text-blue-600 cursor-pointer"
                               title="Sao chép accessToken"
                             >
@@ -816,11 +1150,19 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                             </button>
                           )}
                         </div>
-                        <div className="font-mono text-xs font-bold text-slate-800 truncate mt-1 select-all" title={tokenSession.accessToken || "Chưa lấy được từ máy chủ"}>
+                        <div
+                          className="font-mono text-xs font-bold text-slate-800 truncate mt-1 select-all"
+                          title={
+                            tokenSession.accessToken ||
+                            "Chưa lấy được từ máy chủ"
+                          }
+                        >
                           {tokenSession.accessToken ? (
                             `${tokenSession.accessToken.substring(0, 15)}...${tokenSession.accessToken.substring(tokenSession.accessToken.length - 8)}`
                           ) : (
-                            <span className="text-slate-400 italic">Chưa cấp</span>
+                            <span className="text-slate-400 italic">
+                              Chưa cấp
+                            </span>
                           )}
                         </div>
                       </div>
@@ -851,13 +1193,15 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                   </div>
 
                   {/* Response Display */}
-                  {apiResponse && (
+                  {apiResponse &&
                     (() => {
                       const isSuccess =
                         String(apiResponse.maKetQua) === "200" ||
                         apiResponse.isOk === true ||
                         Boolean(apiResponse.maGiaoDich && !apiResponse.isError);
-                      const maKetQua = String(apiResponse.maKetQua || (isSuccess ? "200" : "LỖI"));
+                      const maKetQua = String(
+                        apiResponse.maKetQua || (isSuccess ? "200" : "LỖI"),
+                      );
                       const thongDiep =
                         apiResponse.thongDiep ||
                         apiResponse.ghiChu ||
@@ -877,9 +1221,15 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                           <div className="flex items-center justify-between">
                             <div className="font-extrabold text-xs flex items-center gap-2">
                               {isSuccess ? (
-                                <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                                <CheckCircle2
+                                  size={18}
+                                  className="text-emerald-600 shrink-0"
+                                />
                               ) : (
-                                <AlertTriangle size={18} className="text-rose-600 shrink-0" />
+                                <AlertTriangle
+                                  size={18}
+                                  className="text-rose-600 shrink-0"
+                                />
                               )}
                               <span>
                                 {isSuccess
@@ -902,12 +1252,21 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                             {apiResponse.maGiaoDich && (
                               <div className="bg-white/80 p-2.5 rounded-xl border border-slate-200/80 flex items-center justify-between">
                                 <div>
-                                  <div className="text-[10px] font-bold text-slate-500 uppercase">Mã Giao Dịch Cổng</div>
-                                  <div className="font-mono font-bold text-slate-800 break-all">{apiResponse.maGiaoDich}</div>
+                                  <div className="text-[10px] font-bold text-slate-500 uppercase">
+                                    Mã Giao Dịch Cổng
+                                  </div>
+                                  <div className="font-mono font-bold text-slate-800 break-all">
+                                    {apiResponse.maGiaoDich}
+                                  </div>
                                 </div>
                                 <button
                                   type="button"
-                                  onClick={() => handleCopy(apiResponse.maGiaoDich, "Đã sao chép mã giao dịch!")}
+                                  onClick={() =>
+                                    handleCopy(
+                                      apiResponse.maGiaoDich,
+                                      "Đã sao chép mã giao dịch!",
+                                    )
+                                  }
                                   className="text-slate-500 hover:text-slate-800 p-1 rounded-md cursor-pointer"
                                   title="Sao chép mã giao dịch"
                                 >
@@ -918,24 +1277,43 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
 
                             {(apiResponse.thoiGianTiepNhan || isSuccess) && (
                               <div className="bg-white/80 p-2.5 rounded-xl border border-slate-200/80">
-                                <div className="text-[10px] font-bold text-slate-500 uppercase">Thời Gian Tiếp Nhận</div>
+                                <div className="text-[10px] font-bold text-slate-500 uppercase">
+                                  Thời Gian Tiếp Nhận
+                                </div>
                                 <div className="font-semibold text-slate-800">
-                                  {apiResponse.thoiGianTiepNhan || new Date().toLocaleString("vi-VN")}
+                                  {apiResponse.thoiGianTiepNhan ||
+                                    new Date().toLocaleString("vi-VN")}
                                 </div>
                               </div>
                             )}
                           </div>
 
                           <div className="bg-white/90 p-3 rounded-xl border border-slate-200/80 text-xs">
-                            <span className="font-bold text-slate-600">Thông điệp: </span>
-                            <span className={isSuccess ? "text-emerald-800 font-medium" : "text-rose-700 font-medium"}>
+                            <span className="font-bold text-slate-600">
+                              Thông điệp:{" "}
+                            </span>
+                            <span
+                              className={
+                                isSuccess
+                                  ? "text-emerald-800 font-medium"
+                                  : "text-rose-700 font-medium"
+                              }
+                            >
                               {thongDiep}
                             </span>
                           </div>
 
                           {!isSuccess && maKetQua === "401" && (
                             <div className="text-[11px] p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 leading-relaxed">
-                              <b>💡 Hướng dẫn:</b> Tài khoản kết nối Cổng BHXH (<code className="font-mono">{DEFAULT_MA_CSKCB}_BV</code>) chưa xác thực thành công. Vui lòng kiểm tra lại mật khẩu tài khoản trong file <code className="font-mono">.env</code> hoặc liên hệ cơ quan BHXH tỉnh/thành phố để kiểm tra quyền API.
+                              <b>💡 Hướng dẫn:</b> Tài khoản kết nối Cổng BHXH (
+                              <code className="font-mono">
+                                {DEFAULT_MA_CSKCB}_BV
+                              </code>
+                              ) chưa xác thực thành công. Vui lòng kiểm tra lại
+                              mật khẩu tài khoản trong file{" "}
+                              <code className="font-mono">.env</code> hoặc liên
+                              hệ cơ quan BHXH tỉnh/thành phố để kiểm tra quyền
+                              API.
                             </div>
                           )}
 
@@ -949,12 +1327,18 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                           </details>
                         </div>
                       );
-                    })()
-                  )}
+                    })()}
 
                   <div className="flex items-center justify-between pt-2 select-none">
                     <div className="text-[11px] text-slate-500">
-                      Cơ sở: <span className="font-semibold text-slate-700">{DEFAULT_MA_CSKCB}</span> • Tỉnh: <span className="font-semibold text-slate-700">{DEFAULT_MA_TINH}</span>
+                      Cơ sở:{" "}
+                      <span className="font-semibold text-slate-700">
+                        {DEFAULT_MA_CSKCB}
+                      </span>{" "}
+                      • Tỉnh:{" "}
+                      <span className="font-semibold text-slate-700">
+                        {DEFAULT_MA_TINH}
+                      </span>
                     </div>
                     <button
                       type="button"
@@ -973,7 +1357,10 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
                           : "Hồ sơ chưa ký số. Bấm để chuyển sang ký số hoặc tải tệp XML đã ký sẵn!"
                       }
                     >
-                      <Send size={15} className={isSendingApi ? "animate-pulse" : ""} />
+                      <Send
+                        size={15}
+                        className={isSendingApi ? "animate-pulse" : ""}
+                      />
                       <span>
                         {isSendingApi
                           ? "Đang gửi Cổng Giám Định..."
@@ -994,8 +1381,14 @@ export const XmlExportModal: React.FC<XmlExportModalProps> = ({
           <div className="text-xs text-slate-500">
             {uploadedCustomFileName ? (
               <span>
-                Tệp tải lên: <b className="text-slate-700">{uploadedCustomFileName}</b>
-                {itemsCount > 0 && <span> ({itemsCount} {itemLabel})</span>}
+                Tệp tải lên:{" "}
+                <b className="text-slate-700">{uploadedCustomFileName}</b>
+                {itemsCount > 0 && (
+                  <span>
+                    {" "}
+                    ({itemsCount} {itemLabel})
+                  </span>
+                )}
               </span>
             ) : (
               <span>

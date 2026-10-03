@@ -628,23 +628,19 @@ export const getSigningTimeIso = formatXmlSigningTime;
  */
 export function buildSignatureBlock(
   innerSignatureXml?: string,
-  indent = "  ",
+  _indent = "",
 ): string {
   if (innerSignatureXml && innerSignatureXml.trim()) {
-    return `${indent}<CHUKYDONVI>\n${innerSignatureXml}\n${indent}</CHUKYDONVI>`;
+    return `<CHUKYDONVI>${innerSignatureXml.trim()}</CHUKYDONVI>`;
   }
-  return `${indent}<CHUKYDONVI />`;
+  return `<CHUKYDONVI></CHUKYDONVI>`;
 }
 
 export function buildHsDanhMucDocument(
   datasetContainerXml: string,
   signatureBlock: string,
 ): string {
-  return `<?xml version="1.0" encoding="utf-8"?>
-<HSDANHMUC xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-${datasetContainerXml}
-  ${signatureBlock}
-</HSDANHMUC>`;
+  return `<?xml version="1.0" encoding="utf-8"?><HSDANHMUC xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${datasetContainerXml}${signatureBlock}</HSDANHMUC>`;
 }
 
 export function xmlToBase64(xmlString: string): string {

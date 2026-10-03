@@ -4,7 +4,6 @@ import {
   parseYmdHmDate,
   isValidYmdHmDate,
   parseGender,
-  formatCurrencyDecimals,
   DEFAULT_MA_CSKCB,
   escapeXml,
 } from "../shared";
@@ -43,8 +42,15 @@ export function parseHs01Row(
     : undefined;
   const ngayRa = parseYmdHmDate(rowObj["NGAY_RA"]);
 
+  let maLoaiKcb = String(rowObj["MA_LOAI_KCB"] ?? "").trim();
+  if (maLoaiKcb.length === 1) maLoaiKcb = `0${maLoaiKcb}`;
+
   let soNgayDtri = parseNumberCell(rowObj["SO_NGAY_DTRI"], 0);
-  if (
+  // Theo chuẩn Quyết định 130 và quy tắc kiểm tra Cổng BHXH:
+  // MA_LOAI_KCB = "01" (Khám bệnh ngoại trú) thì số ngày điều trị bắt buộc là 0.
+  if (maLoaiKcb === "01") {
+    soNgayDtri = 0;
+  } else if (
     soNgayDtri <= 0 &&
     isValidYmdHmDate(ngayVao) &&
     isValidYmdHmDate(ngayRa)
@@ -67,9 +73,6 @@ export function parseHs01Row(
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     soNgayDtri = Math.max(1, diffDays > 0 ? diffDays : 1);
   }
-
-  let maLoaiKcb = String(rowObj["MA_LOAI_KCB"] ?? "").trim();
-  if (maLoaiKcb.length === 1) maLoaiKcb = `0${maLoaiKcb}`;
 
   const tTongchiBv = parseNumberCell(rowObj["T_TONGCHI_BV"], 0);
   const tTongchiBh = parseNumberCell(rowObj["T_TONGCHI_BH"], 0);
@@ -136,27 +139,7 @@ export function renderHs01ItemXml(
   defaultMaCskcb = DEFAULT_MA_CSKCB,
 ): string {
   const cskcb = item.maCskcb || defaultMaCskcb;
+  const fmtMoney = (val?: number) => Math.round(val || 0).toString();
 
-  return `    <CHITIET_HS01BH>
-      <STT>${item.stt}</STT>
-      <HO_TEN>${escapeXml(item.hoTen)}</HO_TEN>
-      <NGAY_SINH>${escapeXml(item.ngaySinh)}</NGAY_SINH>
-      <GIOI_TINH>${escapeXml(item.gioiTinh)}</GIOI_TINH>
-      <MA_THE_BHYT>${escapeXml(item.maTheBhyt)}</MA_THE_BHYT>
-      <MA_BENH_CHINH>${escapeXml(item.maBenhChinh)}</MA_BENH_CHINH>
-      <NGAY_VAO>${escapeXml(item.ngayVao)}</NGAY_VAO>
-      <NGAY_VAO_NOI_TRU>${escapeXml(item.ngayVaoNoiTru || "")}</NGAY_VAO_NOI_TRU>
-      <NGAY_RA>${escapeXml(item.ngayRa)}</NGAY_RA>
-      <SO_NGAY_DTRI>${item.soNgayDtri}</SO_NGAY_DTRI>
-      <MA_LOAI_KCB>${escapeXml(item.maLoaiKcb)}</MA_LOAI_KCB>
-      <T_TONGCHI_BV>${formatCurrencyDecimals(item.tTongchiBv)}</T_TONGCHI_BV>
-      <T_TONGCHI_BH>${formatCurrencyDecimals(item.tTongchiBh)}</T_TONGCHI_BH>
-      <T_BHTT>${formatCurrencyDecimals(item.tBhtt)}</T_BHTT>
-      <T_BNCCT>${formatCurrencyDecimals(item.tBncct)}</T_BNCCT>
-      <T_BNTT>${formatCurrencyDecimals(item.tBntt)}</T_BNTT>
-      <T_NGUONKHAC>${formatCurrencyDecimals(item.tNguonkhac || 0)}</T_NGUONKHAC>
-      <MA_CSKCB>${escapeXml(cskcb)}</MA_CSKCB>
-      <NAM_QT>${item.namQt}</NAM_QT>
-      <THANG_QT>${escapeXml(item.thangQt)}</THANG_QT>
-    </CHITIET_HS01BH>`;
+  return `<CHITIET_HS01BH><STT>${item.stt}</STT><HO_TEN>${escapeXml(item.hoTen)}</HO_TEN><NGAY_SINH>${escapeXml(item.ngaySinh)}</NGAY_SINH><GIOI_TINH>${escapeXml(item.gioiTinh)}</GIOI_TINH><MA_THE_BHYT>${escapeXml(item.maTheBhyt)}</MA_THE_BHYT><MA_BENH_CHINH>${escapeXml(item.maBenhChinh)}</MA_BENH_CHINH><NGAY_VAO>${escapeXml(item.ngayVao)}</NGAY_VAO><NGAY_VAO_NOI_TRU>${escapeXml(item.ngayVaoNoiTru || "")}</NGAY_VAO_NOI_TRU><NGAY_RA>${escapeXml(item.ngayRa)}</NGAY_RA><SO_NGAY_DTRI>${item.soNgayDtri}</SO_NGAY_DTRI><MA_LOAI_KCB>${escapeXml(item.maLoaiKcb)}</MA_LOAI_KCB><T_TONGCHI_BV>${fmtMoney(item.tTongchiBv)}</T_TONGCHI_BV><T_TONGCHI_BH>${fmtMoney(item.tTongchiBh)}</T_TONGCHI_BH><T_BHTT>${fmtMoney(item.tBhtt)}</T_BHTT><T_BNCCT>${fmtMoney(item.tBncct)}</T_BNCCT><T_BNTT>${fmtMoney(item.tBntt)}</T_BNTT><T_NGUONKHAC>${fmtMoney(item.tNguonkhac || 0)}</T_NGUONKHAC><MA_CSKCB>${escapeXml(cskcb)}</MA_CSKCB><NAM_QT>${item.namQt}</NAM_QT><THANG_QT>${escapeXml(item.thangQt)}</THANG_QT></CHITIET_HS01BH>`;
 }

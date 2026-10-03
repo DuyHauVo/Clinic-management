@@ -13,8 +13,8 @@ export type BhxhEnv = 'sandbox' | 'production';
 export const BHXH_CONFIG = {
   ENV: (import.meta.env.VITE_BHXH_ENV || 'production') as BhxhEnv,
   BASE_URL: import.meta.env.VITE_BHXH_BASE_URL || 'https://egw.baohiemxahoi.gov.vn',
-  USERNAME: import.meta.env.VITE_BHXH_USERNAME || '',
-  PASSWORD: import.meta.env.VITE_BHXH_PASSWORD || '',
+  USERNAME: import.meta.env.VITE_BHXH_USERNAME || '49939_BV',
+  PASSWORD: import.meta.env.VITE_BHXH_PASSWORD || 'Toc@8192',
   ENDPOINTS: {
     TAKE_TOKEN: '/api/token/take',
     GUI_HO_SO_CHUNG_TU_2025: '/api/chungtugw/GuiHoSoChungTu2025', // Mã 39

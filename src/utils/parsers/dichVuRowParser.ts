@@ -103,10 +103,7 @@ export function renderDichVuItemXml(
 ): string {
   const cskcb = item.maCskcb || defaultMaCskcb;
 
-  const tagOrEmpty = (
-    tag: string,
-    val: string | number | undefined | null,
-  ) => {
+  const tagOrEmpty = (tag: string, val: string | number | undefined | null) => {
     if (val === undefined || val === null || val === "") {
       return `      <${tag}/>`;
     }
@@ -138,7 +135,7 @@ ${tagOrEmpty("TL_THUCTE_BQ_PX", px.tlThucTeBqPx)}
           <THANH_TIEN_THUOC>${px.thanhTienThuoc || 0}</THANH_TIEN_THUOC>
         </TT_THUOCPX>`;
       })
-      .join("\n");
+      .join("");
 
     dsThuocPxXml = `      <DS_THUOCPX>\n${thuocPxItemsXml}\n      </DS_THUOCPX>`;
   }

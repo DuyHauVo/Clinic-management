@@ -302,15 +302,11 @@ export function generateHs09Xml(
 ): string {
   const recordsXml = items
     .map((item) => renderHs09ItemXml(item, maCskcb))
-    .join("\n");
+    .join("");
 
   const signatureXml = buildSignatureBlock();
 
-  return `<?xml version="1.0" encoding="utf-8"?>
-<HOSO_DIEUCHINH_GD>
-${recordsXml}
-${signatureXml}
-</HOSO_DIEUCHINH_GD>`;
+  return `<?xml version="1.0" encoding="utf-8"?><HOSO_DIEUCHINH_GD xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${recordsXml}${signatureXml}</HOSO_DIEUCHINH_GD>`;
 }
 
 /**
